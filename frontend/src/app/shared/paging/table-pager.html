@@ -1,0 +1,38 @@
+<hr class="mt-4 border-border" />
+<div class="flex flex-wrap items-center justify-start gap-x-10 gap-y-3 py-3" data-slot="table-pager">
+  <p class="text-sm text-muted-foreground" aria-live="polite">
+    @if (range().to === 0) {
+      No rows
+    } @else {
+      Showing {{ range().from }}–{{ range().to }} of {{ total() }}
+    }
+  </p>
+  <div class="flex items-center gap-3">
+    <button hlmBtn variant="outline" size="sm" type="button" aria-label="First page" [disabled]="atFirst()" (click)="first()">
+      <ng-icon name="lucideChevronsLeft" aria-hidden="true" />
+    </button>
+    <button hlmBtn variant="outline" size="sm" type="button" aria-label="Previous page" [disabled]="atFirst()" (click)="previous()">
+      <ng-icon name="lucideChevronLeft" aria-hidden="true" />
+    </button>
+    <span data-slot="page-number" class="px-3 text-sm whitespace-nowrap">Page {{ page() }} of {{ range().pageCount }}</span>
+    <button hlmBtn variant="outline" size="sm" type="button" aria-label="Next page" [disabled]="atLast()" (click)="next()">
+      <ng-icon name="lucideChevronRight" aria-hidden="true" />
+    </button>
+    <button hlmBtn variant="outline" size="sm" type="button" aria-label="Last page" [disabled]="atLast()" (click)="last()">
+      <ng-icon name="lucideChevronsRight" aria-hidden="true" />
+    </button>
+  </div>
+  <div class="flex items-center gap-3">
+    <label hlmLabel for="page-size">Rows per page</label>
+    <select
+      id="page-size"
+      class="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+      (change)="setPageSize($event)"
+    >
+      @for (size of pageSizes; track size) {
+        <option [value]="size" [selected]="size === pageSize()">{{ size }}</option>
+      }
+    </select>
+  </div>
+</div>
+<hr class="border-border" />

@@ -11,5 +11,6 @@
     <ProjectReference Include="..\iErp.Data\iErp.Data.csproj" />
     <ProjectReference Include="..\iErp.Shared\iErp.Shared.csproj" />
     <ProjectReference Include="..\iErp.ModuleTemplate\iErp.ModuleTemplate.csproj" />
+    <ProjectReference Include="..\iErp.Reports\iErp.Reports.csproj" />
   </ItemGroup>
 </Project>

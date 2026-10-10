@@ -1,0 +1,82 @@
+<div class="mb-4 flex items-center gap-2">
+  <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+    <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+  </button>
+  <h1 appPageTitle>Company List</h1>
+</div>
+
+<app-table-toolbar>
+  <div class="flex items-center gap-2">
+    <label hlmLabel for="filter-code">Code</label>
+    <input hlmInput id="filter-code" class="w-48" type="text" autocomplete="off" [value]="codeInput()" (input)="setCodeInput($event)" />
+  </div>
+  <div class="flex items-center gap-2">
+    <label hlmLabel for="filter-name">Name</label>
+    <input hlmInput id="filter-name" class="w-48" type="text" autocomplete="off" [value]="nameInput()" (input)="setNameInput($event)" />
+  </div>
+  <button hlmBtn type="button" (click)="search()">
+    <ng-icon name="lucideSearch" aria-hidden="true" />
+    Search
+  </button>
+</app-table-toolbar>
+
+@if (service.error()) {
+  <div role="alert" class="flex flex-wrap items-center gap-4 rounded-md border p-4">
+    <p>The companies could not be loaded.</p>
+    <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
+  </div>
+} @else if (service.loading()) {
+  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
+    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+    Loading companies…
+  </div>
+} @else {
+  <div class="mb-2"><app-table-wrap-toggle [(wrap)]="wrap" /></div>
+  <div hlmTableContainer [attr.data-wrap]="wrap() ? 'true' : null">
+    <table hlmTable aria-label="Companies">
+      <thead hlmTHead>
+        <tr hlmTr>
+          @for (column of columns; track column.key) {
+            <th hlmTh [attr.aria-sort]="ariaSort(column.key)">
+              <button type="button" class="inline-flex items-center gap-1 font-medium" (click)="toggleSort(column.key)">
+                {{ column.label }}
+                <ng-icon [name]="sortIcon(column.key)" size="12" aria-hidden="true" />
+              </button>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody hlmTBody>
+        @for (company of rows(); track company.id) {
+          <tr
+            hlmTr
+            tabindex="0"
+            [attr.data-state]="isSelected(company.id) ? 'selected' : null"
+            [attr.aria-selected]="isSelected(company.id)"
+            (click)="toggleRow(company.id)"
+            (keydown.enter)="toggleRow(company.id)"
+            (keydown.space)="toggleRow(company.id); $event.preventDefault()"
+          >
+            @for (column of columns; track column.key) {
+              <td hlmTd>{{ company[column.key] }}</td>
+            }
+          </tr>
+        } @empty {
+          <tr hlmTr>
+            <td hlmTd [attr.colspan]="columns.length" class="text-center text-muted-foreground">
+              {{ hasFilters() ? 'No companies match the filters.' : 'There are no companies.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-table-pager
+    [total]="service.total()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    (pageChange)="goToPage($event)"
+    (pageSizeChange)="changePageSize($event)"
+  />
+}

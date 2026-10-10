@@ -13,9 +13,12 @@ describe('Dashboard', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        ...(extraEntries
-          ? [{ provide: NAV_MENU, useValue: [...NAV_ITEMS, { label: 'Reports', icon: 'lucideHouse', route: '/reports' }] }]
-          : []),
+        {
+          provide: NAV_MENU,
+          useValue: extraEntries
+            ? [NAV_ITEMS[0], { label: 'Reports', icon: 'lucideHouse', route: '/reports' }]
+            : [NAV_ITEMS[0]],
+        },
       ],
     });
     const fixture = TestBed.createComponent(Dashboard);
@@ -30,6 +33,12 @@ describe('Dashboard', () => {
     expect(el.textContent).toContain('Welcome to iErp');
   });
 
+  it('shows the heading in the primary color', () => {
+    const { el } = create(false);
+
+    expect(el.querySelector('h1')!.classList).toContain('text-primary');
+  });
+
   it('shows no quick-links section while the menu has only the Dashboard', () => {
     const { el } = create(false);
 
@@ -42,6 +51,32 @@ describe('Dashboard', () => {
 
     const links = Array.from(el.querySelectorAll('.quick-links a')).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
     expect(links).toEqual([['Reports', '/reports']]);
+  });
+
+  it('links to the Company List through the real menu', () => {
+    TestBed.configureTestingModule({
+      imports: [Dashboard],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+
+    const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.quick-links a')).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
+    expect(links).toEqual([['Company List', '/reports/companies']]);
+  });
+
+  it('colors a quick link\'s icon with the same tone as its menu entry', () => {
+    TestBed.configureTestingModule({
+      imports: [Dashboard],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    });
+    const fixture = TestBed.createComponent(Dashboard);
+    fixture.detectChanges();
+
+    const icon = (fixture.nativeElement as HTMLElement).querySelector('.quick-links a ng-icon') as HTMLElement;
+    const companyList = NAV_ITEMS.find((i) => i.label === 'Company List')!;
+    expect(icon.getAttribute('data-icon-tone')).toBe(companyList.tone);
+    expect(icon.style.getPropertyValue('--ng-icon__color')).toBe(`var(--icon-${companyList.tone})`);
   });
 
   it('sends no backend requests', () => {

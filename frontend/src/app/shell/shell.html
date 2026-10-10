@@ -9,9 +9,22 @@
       aria-label="Open menu"
       (click)="menuOpen.set(true)"
     >
-      <ng-icon name="lucideMenu" />
+      <ng-icon name="lucideMenu" appIconTone="brand" />
     </button>
-    <span class="text-xl font-bold">iErp</span>
+    <button
+      hlmBtn
+      variant="ghost"
+      size="icon"
+      class="hidden md:inline-flex"
+      type="button"
+      aria-controls="sidebar"
+      [attr.aria-label]="sidebarLabel()"
+      [attr.aria-expanded]="sidebarOpen()"
+      (click)="toggleSidebar()"
+    >
+      <ng-icon name="lucideMenu" appIconTone="brand" aria-hidden="true" />
+    </button>
+    <a routerLink="/" class="text-xl font-bold" title="Go to the Dashboard">Cargomar Pvt Ltd</a>
     <button
       hlmBtn
       variant="ghost"
@@ -26,11 +39,11 @@
   </header>
 
   <div class="flex flex-1">
-    <aside class="hidden w-56 flex-none border-r md:block">
+    <aside id="sidebar" class="w-56 flex-none border-r" [class]="sidebarOpen() ? 'hidden md:block' : 'hidden'">
       <app-nav />
     </aside>
 
-    <main class="page mx-auto w-full min-w-0 max-w-5xl flex-1 p-6">
+    <main class="page w-full min-w-0 flex-1 p-6">
       <router-outlet />
     </main>
   </div>

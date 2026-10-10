@@ -11,8 +11,12 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
-      // Feature routes are added here as lazy children, e.g.
-      // { path: 'customers', loadChildren: () => import('./features/.../customers.routes').then((m) => m.CUSTOMER_ROUTES) },
+      {
+        path: 'reports/companies',
+        loadChildren: () =>
+          import('./features/reports/company-list/company-list.routes').then((m) => m.COMPANY_LIST_ROUTES),
+      },
+      // Further feature routes are added here as lazy children.
     ],
   },
   { path: '**', redirectTo: '' },

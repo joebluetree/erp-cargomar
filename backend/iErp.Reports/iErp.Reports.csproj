@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\iErp.Entities\iErp.Entities.csproj" />
+    <ProjectReference Include="..\iErp.Data\iErp.Data.csproj" />
+    <ProjectReference Include="..\iErp.Shared\iErp.Shared.csproj" />
+    <ProjectReference Include="..\iErp.SharedBusiness\iErp.SharedBusiness.csproj" />
+  </ItemGroup>
+</Project>

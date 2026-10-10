@@ -22,7 +22,7 @@ describe('AppNav', () => {
     TestBed.configureTestingModule({
       imports: [Host],
       providers: [
-        { provide: NAV_MENU, useValue: [...NAV_ITEMS, { label: 'Reports', icon: 'lucideHouse', route: '/reports' }] },
+        { provide: NAV_MENU, useValue: [NAV_ITEMS[0], { label: 'Reports', icon: 'lucideHouse', route: '/reports' }] },
         provideRouter([
           { path: '', pathMatch: 'full', component: Blank },
           { path: 'reports', component: Blank },
@@ -40,6 +40,23 @@ describe('AppNav', () => {
 
   const links = (el: HTMLElement) => Array.from(el.querySelectorAll('a'));
   const active = (el: HTMLElement) => links(el).filter((a) => a.classList.contains('active')).map((a) => a.textContent?.trim());
+
+  it('colors each entry\'s icon with its own tone, and an entry without a tone keeps the text color', async () => {
+    const { el } = await render();
+
+    const icons = Array.from(el.querySelectorAll('a ng-icon')) as HTMLElement[];
+    expect(icons.map((i) => i.getAttribute('data-icon-tone'))).toEqual(['blue', null]);
+    expect(icons[0].style.getPropertyValue('--ng-icon__color')).toBe('var(--icon-blue)');
+    expect(icons[1].style.getPropertyValue('--ng-icon__color')).toBe('');
+  });
+
+  it('keeps the icon color when an entry is the current page', async () => {
+    const { el } = await render('/');
+
+    const current = links(el).find((a) => a.classList.contains('active'))!;
+    expect(current.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('blue');
+    expect((current.querySelector('ng-icon') as HTMLElement).style.getPropertyValue('--ng-icon__color')).toBe('var(--icon-blue)');
+  });
 
   it('lists the menu entries with icons and links', async () => {
     const { el } = await render();

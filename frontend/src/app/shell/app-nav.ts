@@ -2,11 +2,12 @@ import { Component, inject, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NAV_ICONS, NAV_MENU } from '../core/navigation/nav-items';
+import { AppIconTone } from '../shared/ui/icon-tone/icon-tone';
 
 /** The navigation menu. Used in the desktop sidebar and inside the mobile sheet. */
 @Component({
   selector: 'app-nav',
-  imports: [RouterLink, RouterLinkActive, NgIcon],
+  imports: [RouterLink, RouterLinkActive, NgIcon, AppIconTone],
   providers: [provideIcons(NAV_ICONS)],
   template: `
     <nav aria-label="Main menu">
@@ -20,7 +21,7 @@ import { NAV_ICONS, NAV_MENU } from '../core/navigation/nav-items';
               [routerLinkActiveOptions]="{ exact: item.route === '/' }"
               (click)="navigated.emit()"
             >
-              <ng-icon [name]="item.icon" class="text-base" aria-hidden="true" />
+              <ng-icon [name]="item.icon" [appIconTone]="item.tone" class="text-base" aria-hidden="true" />
               <span>{{ item.label }}</span>
             </a>
           </li>

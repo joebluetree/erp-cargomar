@@ -1,6 +1,7 @@
 using iErp.Api.Middleware;
 using iErp.Data;
 using iErp.ModuleTemplate;
+using iErp.Reports;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +19,11 @@ builder.Host.UseSerilog((context, services, logger) => logger
 
 builder.Services.AddData(builder.Configuration);
 builder.Services.AddModuleTemplate();
+builder.Services.AddReports();
 
 builder.Services.AddControllers(o => o.Filters.Add<ValidationFilter>())
-    .AddApplicationPart(typeof(ModuleTemplateRegistration).Assembly);
+    .AddApplicationPart(typeof(ModuleTemplateRegistration).Assembly)
+    .AddApplicationPart(typeof(ReportsRegistration).Assembly);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();

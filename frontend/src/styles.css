@@ -10,6 +10,17 @@
 @import '@fontsource/roboto/500.css';
 @import '@fontsource/roboto/700.css';
 
+/* The solid green behind primary buttons and table headers ("surface"). Separate from --primary (titles, tints) so the dark theme can dim the fills without dimming the title. */
+@theme inline {
+  --color-primary-surface: var(--primary-surface);
+  --color-table-header: var(--table-header-bg);
+  --color-table-header-foreground: var(--table-header-fg);
+  --color-table-header-line: var(--table-header-line);
+  --color-table-stripe: var(--table-stripe);
+  --color-table-selected: var(--table-selected);
+  --color-table-line: var(--table-line);
+}
+
 :root {
   color-scheme: light;
 
@@ -29,8 +40,31 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* Brand green, toned down (about #246e3a). The same value in both themes: white text on it is about 6.2:1 and it is about 3.2:1 against the dark page background (large text needs 3:1). Do not go duller without checking the dark-mode title. */
+  --primary: oklch(0.48 0.11 150);
   --primary-foreground: oklch(0.985 0 0);
+  /* The solid fill behind primary buttons and table headers: darker than --primary (about #225a31, white text 8.1:1). The title keeps --primary. */
+  --primary-surface: oklch(0.42 0.09 150);
+
+  /* The common look of tables, defined once. They refer to the theme values above and below, so the dark theme
+     changes them without repeating them. Use the Tailwind names (bg-table-header, bg-table-stripe, ...), only from
+     the shared table pieces in shared/ui; screens do not set these colors themselves. */
+  --table-header-bg: var(--primary-surface);
+  --table-header-fg: var(--primary-foreground);
+  --table-header-line: color-mix(in oklab, var(--primary-foreground) 30%, transparent);
+  --table-stripe: color-mix(in oklab, var(--muted) 50%, transparent);
+  --table-selected: color-mix(in oklab, var(--primary) 15%, transparent);
+  --table-line: var(--border);
+
+  /* Named icon colors for the navigation (and any icon that takes a tone), light theme: each at least 3.4:1 on the sidebar and its hover background. Used through the appIconTone directive. */
+  --icon-blue: oklch(0.55 0.2 260);
+  --icon-green: oklch(0.52 0.13 150);
+  --icon-amber: oklch(0.62 0.15 70);
+  --icon-violet: oklch(0.55 0.2 295);
+  --icon-rose: oklch(0.58 0.2 15);
+  --icon-teal: oklch(0.55 0.1 195);
+  /* The brand green for icons that should match the page titles: it follows --primary, so it is not repeated in the dark block. */
+  --icon-brand: var(--primary);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -65,8 +99,18 @@
   --card-foreground: oklch(0.87 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.87 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.48 0.11 150);
+  --primary-foreground: oklch(0.985 0 0);
+  /* The fill in the dark theme, darker still (about #1e4729): white text on it is 10.5:1. The title keeps --primary. */
+  --primary-surface: oklch(0.36 0.07 150);
+
+  /* The same icon colors, lighter, for the dark theme (at least 5.6:1 on the dark sidebar and its hover background). */
+  --icon-blue: oklch(0.7 0.14 255);
+  --icon-green: oklch(0.72 0.14 150);
+  --icon-amber: oklch(0.78 0.14 80);
+  --icon-violet: oklch(0.72 0.14 295);
+  --icon-rose: oklch(0.74 0.14 15);
+  --icon-teal: oklch(0.74 0.1 195);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.87 0 0);
   --muted: oklch(0.269 0 0);
@@ -93,5 +137,18 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer base {
+  /* clickable-cursor: the hand pointer on everything the user can click, set once for the whole application so a new
+     button or link gets it without styling. Disabled things keep the normal pointer. Selectable table rows get the
+     hand from the shared table row (hlmTr), since a row is not a button. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  a[href],
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
   }
 }
