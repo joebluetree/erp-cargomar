@@ -6,7 +6,7 @@ Defines how the frontend tells users what happened and how it responds to failed
 ## Requirements
 
 ### Requirement: User notifications
-The application SHALL show transient notifications for success, information, warning and error outcomes in a consistent place and style, through one notification service that features use.
+The application SHALL show transient notifications for success, information, warning and error outcomes in a consistent place and style, through one notification service that features use. That place SHALL be the top right corner of the window, on every screen, including the login screen.
 
 #### Scenario: Success notification
 - **WHEN** a feature reports a successful action through the notification service
@@ -19,6 +19,10 @@ The application SHALL show transient notifications for success, information, war
 #### Scenario: Notifications dismiss
 - **WHEN** a notification has been visible for a few seconds
 - **THEN** it disappears, and the user can also close it earlier
+
+#### Scenario: Top right
+- **WHEN** any notification is shown, on any screen
+- **THEN** it appears in the top right corner of the window
 
 ### Requirement: Central handling of HTTP errors
 Failed backend calls SHALL be handled in one central place that turns them into user-friendly messages, without exposing technical details.

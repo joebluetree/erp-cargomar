@@ -63,6 +63,11 @@ namespace iErp.Data.Migrations
                         .HasColumnType("NVARCHAR2(60)")
                         .HasColumnName("COMP_NAME");
 
+                    b.Property<string>("ParentId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("COMP_PARENT_ID");
+
                     b.Property<string>("Tel")
                         .HasMaxLength(60)
                         .HasColumnType("NVARCHAR2(60)")
@@ -81,6 +86,125 @@ namespace iErp.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("COMPANYM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("iErp.Entities.FinancialYear", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("YEAR_PKID");
+
+                    b.Property<string>("Closed")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("YEAR_CLOSED")
+                        .IsFixedLength();
+
+                    b.Property<decimal?>("Code")
+                        .HasColumnType("DECIMAL(18, 2)")
+                        .HasColumnName("YEAR_CODE");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("REC_COMPANY_CODE");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("YEAR_END_DATE");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(25)
+                        .HasColumnType("NVARCHAR2(25)")
+                        .HasColumnName("YEAR_NAME");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("YEAR_START_DATE");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("YEARM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("iErp.Entities.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("USER_PKID");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("USER_BRANCH_ID");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("USER_CODE");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("NVARCHAR2(10)")
+                        .HasColumnName("REC_COMPANY_CODE");
+
+                    b.Property<string>("Deleted")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("REC_DELETED")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("REC_DELETED_DATE");
+
+                    b.Property<string>("Locked")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("USER_ISLOCKED")
+                        .IsFixedLength();
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("USER_NAME");
+
+                    b.Property<string>("Password")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("USER_PASSWORD");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("USERM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("iErp.Entities.UserBranch", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("USER_ID");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("USER_BRANCH_ID");
+
+                    b.HasKey("UserId", "BranchId");
+
+                    b.ToTable("USERD", null, t =>
                         {
                             t.ExcludeFromMigrations();
                         });

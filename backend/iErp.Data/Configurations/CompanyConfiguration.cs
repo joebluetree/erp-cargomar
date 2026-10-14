@@ -17,6 +17,7 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 
         builder.Property(c => c.Id).HasColumnName("COMP_PKID").HasMaxLength(40).ValueGeneratedNever();
         builder.Property(c => c.Type).HasColumnName("COMP_TYPE").HasMaxLength(1);
+        builder.Property(c => c.ParentId).HasColumnName("COMP_PARENT_ID").HasMaxLength(40);
         builder.Property(c => c.Code).HasColumnName("COMP_CODE").HasMaxLength(10);
         builder.Property(c => c.Name).HasColumnName("COMP_NAME").HasMaxLength(60);
         builder.Property(c => c.Address1).HasColumnName("COMP_ADDRESS1").HasMaxLength(60);

@@ -1,7 +1,13 @@
+using System.Text;
+using iErp.Admin;
+using iErp.Api.Auth;
 using iErp.Api.Middleware;
 using iErp.Data;
 using iErp.ModuleTemplate;
 using iErp.Reports;
+using iErp.Shared.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,14 +26,44 @@ builder.Host.UseSerilog((context, services, logger) => logger
 builder.Services.AddData(builder.Configuration);
 builder.Services.AddModuleTemplate();
 builder.Services.AddReports();
+builder.Services.AddAdmin();
+
+// Access tokens: issued by the Admin login, required by every controller endpoint (see MapControllers). The signing
+// key comes from user secrets, the local settings file or the environment; the API does not start without it.
+builder.Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .Validate(o => Encoding.UTF8.GetByteCount(o.SigningKey) >= JwtOptions.MinSigningKeyBytes,
+        $"Jwt:SigningKey must be set to a secret of at least {JwtOptions.MinSigningKeyBytes} bytes.")
+    .Validate(o => o.LifetimeMinutes > 0, "Jwt:LifetimeMinutes must be greater than 0.")
+    .ValidateOnStart();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.ConfigureOptions<ConfigureJwtBearer>();
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentSession, HttpCurrentSession>();
 
 builder.Services.AddControllers(o => o.Filters.Add<ValidationFilter>())
     .AddApplicationPart(typeof(ModuleTemplateRegistration).Assembly)
-    .AddApplicationPart(typeof(ReportsRegistration).Assembly);
+    .AddApplicationPart(typeof(ReportsRegistration).Assembly)
+    .AddApplicationPart(typeof(AdminRegistration).Assembly);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o =>
+{
+    // Lets developers paste the token from POST /api/admin/login into the Swagger UI.
+    o.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "The token returned by POST /api/admin/login.",
+    });
+    o.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
+    });
+});
 
 var app = builder.Build();
 
@@ -40,7 +76,11 @@ if (!app.Environment.IsProduction())
     app.UseSwaggerUI();
 }
 
-app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
+// Every controller action requires a valid token unless it is marked [AllowAnonymous] (only the login is).
+// Applied here rather than as a fallback policy, so a wrong HTTP method still answers 405, not 401.
+app.MapControllers().RequireAuthorization();
 app.Run();
 
 public partial class Program;

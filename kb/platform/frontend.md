@@ -264,7 +264,7 @@ abstractions that are not required.
 
 -   Establish basic HTTP interceptor infrastructure.
 -   Interceptors may handle common HTTP request and response concerns.
--   Authentication or JWT handling shall not be implemented in this PRD.
+-   Authentication or JWT handling shall not be implemented in this PRD. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 -   Interceptors shall remain small and focused.
 -   Feature-specific business logic shall not be placed in interceptors.
 
@@ -390,10 +390,10 @@ and shall be addressed later:
 1.  Application Shell.
 2.  Dashboard.
 3.  Navigation Menus.
-4.  Authentication and Authorization.
+4.  Authentication and Authorization. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 5.  User Management.
 6.  Multi-Company and Multi-Branch.
-7.  Route Guards.
+7.  Route Guards. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 8.  Localization and Regional Settings.
 9.  Advanced end-to-end testing.
 10. External error monitoring.
@@ -423,7 +423,7 @@ The Frontend Foundation PRD shall be considered complete when:
 -   [ ] The application builds without errors.
 -   [ ] The application runs successfully.
 -   [ ] Application Shell and Dashboard are not implemented.
--   [ ] Authentication and Authorization are not implemented.
+-   [ ] Authentication and Authorization are not implemented. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 -   [ ] `kb/architecture/frontend.md` is created and reflects the
     implemented frontend architecture.
 

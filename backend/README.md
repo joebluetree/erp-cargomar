@@ -15,6 +15,11 @@ dotnet user-secrets set "ConnectionStrings:Default" "User Id=app;Password=...;Da
 # ...or an environment variable
 $env:ConnectionStrings__Default = "User Id=app;Password=...;Data Source=localhost:1521/FREEPDB1"
 
+# Token signing key: a random secret of at least 32 characters, set the same three ways
+# ("Jwt": { "SigningKey": "..." } in the local file, "Jwt:SigningKey" in user secrets, or $env:Jwt__SigningKey).
+# The API does not start without it.
+dotnet user-secrets set "Jwt:SigningKey" "<random secret>" --project iErp.Api
+
 # Apply migrations
 dotnet ef database update -p iErp.Data -s iErp.Api
 

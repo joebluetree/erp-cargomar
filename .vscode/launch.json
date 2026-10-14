@@ -10,6 +10,19 @@
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:4200",
             "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "Backend API (debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-backend",
+            "program": "${workspaceFolder}/backend/iErp.Api/bin/Debug/net9.0/iErp.Api.dll",
+            "cwd": "${workspaceFolder}/backend/iErp.Api",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5000"
+            },
+            "console": "integratedTerminal"
         }
     ]
 }

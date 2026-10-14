@@ -1,0 +1,87 @@
+<div class="flex min-h-screen items-center justify-center p-4">
+  <div class="w-full max-w-sm rounded-lg border p-6 shadow-sm">
+    <h1 appPageTitle class="text-center">Login</h1>
+    <p class="mt-1 mb-6 text-center text-sm text-muted-foreground">Log in to continue</p>
+
+    <form class="flex flex-col gap-4" novalidate [formGroup]="form" (ngSubmit)="login()">
+      <div class="flex flex-col gap-2">
+        <label hlmLabel for="login-user-code">User</label>
+        <input
+          hlmInput
+          id="login-user-code"
+          type="text"
+          autocomplete="username"
+          formControlName="userCode"
+          [attr.aria-invalid]="error('userCode') ? true : null"
+          [attr.aria-describedby]="error('userCode') ? 'login-user-code-error' : null"
+        />
+        @if (error('userCode'); as message) {
+          <p appFieldError id="login-user-code-error">{{ message }}</p>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label hlmLabel for="login-password">Password</label>
+        <div class="relative">
+          <input
+            hlmInput
+            id="login-password"
+            class="pr-10"
+            autocomplete="current-password"
+            formControlName="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            [attr.aria-invalid]="error('password') ? true : null"
+            [attr.aria-describedby]="error('password') ? 'login-password-error' : null"
+          />
+          <button
+            hlmBtn
+            variant="ghost"
+            size="icon-sm"
+            type="button"
+            class="absolute top-1/2 right-0.5 -translate-y-1/2"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            (click)="togglePassword()"
+          >
+            <ng-icon [name]="showPassword() ? 'lucideEye' : 'lucideEyeOff'" aria-hidden="true" />
+          </button>
+        </div>
+        @if (error('password'); as message) {
+          <p appFieldError id="login-password-error">{{ message }}</p>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label hlmLabel for="login-company-code">Company</label>
+        <input
+          hlmInput
+          id="login-company-code"
+          type="text"
+          autocomplete="organization"
+          formControlName="companyCode"
+          [attr.aria-invalid]="error('companyCode') ? true : null"
+          [attr.aria-describedby]="error('companyCode') ? 'login-company-code-error' : null"
+        />
+        @if (error('companyCode'); as message) {
+          <p appFieldError id="login-company-code-error">{{ message }}</p>
+        }
+      </div>
+
+      <div class="flex items-center gap-2">
+        <hlm-checkbox inputId="login-remember" formControlName="remember" />
+        <label hlmLabel for="login-remember" class="cursor-pointer">Remember me</label>
+      </div>
+
+      <div class="mt-2 flex justify-end gap-2">
+        <button hlmBtn type="submit" [disabled]="service.busy()">
+          @if (service.busy()) {
+            <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+            Logging in…
+          } @else {
+            Login
+          }
+        </button>
+        <button hlmBtn variant="outline" type="button" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

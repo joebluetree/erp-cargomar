@@ -19,6 +19,10 @@
   --color-table-stripe: var(--table-stripe);
   --color-table-selected: var(--table-selected);
   --color-table-line: var(--table-line);
+  --color-header-company: var(--header-company);
+  --color-header-user: var(--header-user);
+  --color-header-branch: var(--header-branch);
+  --color-header-year: var(--header-year);
 }
 
 :root {
@@ -65,6 +69,13 @@
   --icon-teal: oklch(0.55 0.1 195);
   /* The brand green for icons that should match the page titles: it follows --primary, so it is not repeated in the dark block. */
   --icon-brand: var(--primary);
+  /* Header: the company title in the brand green of the page titles (6.2:1 on white; it follows --primary, so it is not
+     repeated in the dark block, where it is 3.2:1, enough for large text), the user in blue (6.3:1), the branch in dark
+     yellow (4.9:1), the year in the text color. */
+  --header-company: var(--primary);
+  --header-user: oklch(0.5 0.2 262);  /*oklch(0.5 0.2 262);*/
+  --header-branch: oklch(67.042% 0.2853 343.298);
+  --header-year: var(--foreground);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -111,6 +122,12 @@
   --icon-violet: oklch(0.72 0.14 295);
   --icon-rose: oklch(0.74 0.14 15);
   --icon-teal: oklch(0.74 0.1 195);
+  /* Lighter header colors on the dark background (user 8.6:1, branch 11.3:1); the company and the year follow
+     --primary and --foreground. */
+  --header-user: oklch(0.74 0.13 255);
+  --header-branch: oklch(67.042% 0.2853 343.298);
+  /* --header-branch: oklch(0.82 0.15 88); */
+
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.87 0 0);
   --muted: oklch(0.269 0 0);

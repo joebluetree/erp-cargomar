@@ -8,7 +8,7 @@ namespace iErp.Tests.Integration;
 /// <summary>HTTP pipeline behaviour (validation, error format, Swagger) through test-only endpoints. No database needed.</summary>
 public class PipelineTests
 {
-    private static HttpClient Client() => new ApiFactory().CreateClient();
+    private static HttpClient Client() => new ApiFactory().CreateClient().Authenticated();
 
     [Fact]
     public async Task Not_found_returns_404_problem_details_with_trace_id()

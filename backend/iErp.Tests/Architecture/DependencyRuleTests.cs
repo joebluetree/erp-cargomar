@@ -1,4 +1,5 @@
 using System.Reflection;
+using iErp.Admin;
 using iErp.Data;
 using iErp.Entities;
 using iErp.ModuleTemplate;
@@ -15,7 +16,7 @@ public class DependencyRuleTests
     private static readonly Assembly Data = typeof(AppDbContext).Assembly;
     private static readonly Assembly SharedBusiness = typeof(SharedBusinessMarker).Assembly;
     private static readonly Assembly[] Modules =
-        [typeof(ModuleTemplateRegistration).Assembly, typeof(ReportsRegistration).Assembly];
+        [typeof(ModuleTemplateRegistration).Assembly, typeof(ReportsRegistration).Assembly, typeof(AdminRegistration).Assembly];
 
     private static IEnumerable<string> References(Assembly a) =>
         a.GetReferencedAssemblies().Select(r => r.Name!).Where(n => n.StartsWith("iErp."));

@@ -24,18 +24,47 @@
     >
       <ng-icon name="lucideMenu" appIconTone="brand" aria-hidden="true" />
     </button>
-    <a routerLink="/" class="text-xl font-bold" title="Go to the Dashboard">Cargomar Pvt Ltd</a>
+    <!-- The main title: the logged-in company (the fixed name only without a session). -->
+    <a routerLink="/" class="text-xl font-bold text-header-company" title="Go to the Dashboard">{{ title() }}</a>
+    @if (auth.details(); as details) {
+      <!-- The session: user, branch and financial year. Shortened on narrow screens; the full text is in the title
+           and read by screen readers. -->
+      <div data-slot="session-details" class="ml-auto flex min-w-0 items-center gap-4 text-sm" [title]="detailsText()">
+        <span class="truncate font-semibold text-header-user" aria-hidden="true">{{ details.user }}</span>
+        <span class="hidden truncate font-semibold text-header-branch sm:inline" aria-hidden="true">{{ details.branch }}</span>
+        <span class="hidden shrink-0 font-semibold text-header-year sm:inline" aria-hidden="true">{{ details.year }}</span>
+        <span class="sr-only">Logged in as {{ detailsText() }}</span>
+      </div>
+      <button
+        hlmBtn
+        variant="ghost"
+        size="icon"
+        class="shrink-0"
+        type="button"
+        aria-label="Change branch"
+        title="Change branch"
+        (click)="changeBranch()"
+      >
+        <ng-icon name="lucideArrowLeftRight" aria-hidden="true" />
+      </button>
+    }
     <button
       hlmBtn
       variant="ghost"
       size="icon"
-      class="ml-auto"
+      class="shrink-0"
+      [class.ml-auto]="!auth.details()"
       type="button"
       [attr.aria-label]="themeLabel()"
       (click)="toggleTheme()"
     >
       <ng-icon [name]="themeIcon()" aria-hidden="true" />
     </button>
+    @if (auth.isLoggedIn()) {
+      <button hlmBtn variant="ghost" size="icon" class="shrink-0" type="button" aria-label="Log out" title="Log out" (click)="logout()">
+        <ng-icon name="lucideLogOut" aria-hidden="true" />
+      </button>
+    }
   </header>
 
   <div class="flex flex-1">
