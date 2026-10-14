@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using iErp.Entities;
 using iErp.Reports.CompanyList;
+using iErp.Tests.TestSupport;
 
 namespace iErp.Tests.Integration;
 
@@ -14,7 +15,7 @@ public class CompaniesEndpointTests
 {
     private static HttpClient ClientWith(ICompanyListRepository repository) =>
         new ApiFactory().WithWebHostBuilder(b => b.ConfigureServices(s =>
-            s.AddScoped(_ => repository))).CreateClient();
+            s.AddScoped(_ => repository))).CreateClient().Authenticated();
 
     private static ICompanyListRepository RepositoryReturning(int total, params Company[] companies)
     {

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iErp.Tests", "iErp.Tests\iE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iErp.Reports", "iErp.Reports\iErp.Reports.csproj", "{8278C2FF-F3E8-47AF-BA1B-277596143368}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iErp.Admin", "iErp.Admin\iErp.Admin.csproj", "{B8CC786B-1A06-436B-BC07-2B11BECFA55C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{8278C2FF-F3E8-47AF-BA1B-277596143368}.Release|x64.Build.0 = Release|Any CPU
 		{8278C2FF-F3E8-47AF-BA1B-277596143368}.Release|x86.ActiveCfg = Release|Any CPU
 		{8278C2FF-F3E8-47AF-BA1B-277596143368}.Release|x86.Build.0 = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|x64.Build.0 = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Debug|x86.Build.0 = Debug|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|x64.ActiveCfg = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|x64.Build.0 = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|x86.ActiveCfg = Release|Any CPU
+		{B8CC786B-1A06-436B-BC07-2B11BECFA55C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

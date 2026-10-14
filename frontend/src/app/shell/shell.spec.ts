@@ -1,8 +1,16 @@
-import { Component } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { AuthSession, SESSION_STORAGE_KEY } from '../core/auth/auth-session';
+import { testSession } from '../core/auth/auth-session.testing';
+import { authGuard } from '../core/auth/auth.guards';
 import { NAV_ITEMS, NAV_MENU } from '../core/navigation/nav-items';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { vi } from 'vitest';
 import { Shell } from './shell';
 
 @Component({ template: '<p id="page-body">Page body</p>' })
@@ -11,12 +19,15 @@ class PageStub {}
 describe('Shell', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     document.documentElement.classList.remove('dark');
   });
 
   async function render() {
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: NAV_MENU, useValue: [NAV_ITEMS[0], { label: 'Reports', icon: 'lucideHouse', route: '/reports' }] },
         provideRouter([
           {
@@ -75,15 +86,16 @@ describe('Shell', () => {
     expect(el.querySelector('header')?.textContent).not.toContain('iErp');
   });
 
-  it('makes the application name a link to the Dashboard, with the same look as before', async () => {
+  it('makes the application name a link to the Dashboard, in the page-title green, with its size and weight', async () => {
     const { el } = await render();
 
     const caption = el.querySelector('header a') as HTMLAnchorElement;
     expect(caption.getAttribute('href')).toBe('/');
     expect(caption.textContent?.trim()).toBe('Cargomar Pvt Ltd');
     expect(Array.from(caption.classList)).toEqual(expect.arrayContaining(['text-xl', 'font-bold']));
-    // No color or underline of its own: it keeps the text color and the base styles give links no underline.
-    expect(caption.className).not.toMatch(/text-(primary|blue|green)|underline|bg-/);
+    // The header token (the page-title green, see the token test), with no hover color change, no underline (the base styles give links none) and no fill.
+    expect(caption.classList).toContain('text-header-company');
+    expect(caption.className).not.toMatch(/hover:|text-(primary|blue|green)|underline|bg-/);
     expect(caption.getAttribute('title')).toBe('Go to the Dashboard');
   });
 
@@ -202,11 +214,12 @@ describe('Shell', () => {
     expect(sidebarToggle(el).tabIndex).toBe(0);
   });
 
-  it('has no user menu in the header', async () => {
+  it('has no user menu in the header: only the menu buttons, Change branch, the theme switch and Log out', async () => {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
     const { el } = await render();
 
     const labels = Array.from(el.querySelectorAll('header button')).map((b) => b.getAttribute('aria-label'));
-    expect(labels).toEqual(['Open menu', 'Hide navigation bar', 'Switch to dark theme']);
+    expect(labels).toEqual(['Open menu', 'Hide navigation bar', 'Change branch', 'Switch to dark theme', 'Log out']);
   });
 
   const themeButton = (el: HTMLElement) => el.querySelector('header button[aria-label^="Switch to"]') as HTMLButtonElement;
@@ -302,5 +315,184 @@ describe('Shell', () => {
 
     expect(drawerNav()).toBeNull();
     expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  describe('session in the header', () => {
+    const details = (el: HTMLElement) => el.querySelector('[data-slot="session-details"]') as HTMLElement | null;
+    const logoutButton = (el: HTMLElement) => el.querySelector('header button[aria-label="Log out"]') as HTMLButtonElement;
+
+    /** A stored session, as after a login: AuthSession reads it when the test creates it. */
+    async function renderLoggedIn() {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      return render();
+    }
+
+    const changeBranchButton = (el: HTMLElement) =>
+      el.querySelector('header button[aria-label="Change branch"]') as HTMLButtonElement | null;
+
+    it('puts Change branch right after the session details and before the theme switch', async () => {
+      const { el } = await renderLoggedIn();
+
+      const button = changeBranchButton(el)!;
+      expect(details(el)!.nextElementSibling).toBe(button);
+      expect(button.nextElementSibling).toBe(themeButton(el));
+      expect(button.getAttribute('type')).toBe('button');
+      expect(button.getAttribute('title')).toBe('Change branch');
+      expect(button.classList).toContain('shrink-0');
+      expect(button.querySelector('ng-icon')?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('shows no Change branch button without a session', async () => {
+      const { el } = await render();
+
+      expect(changeBranchButton(el)).toBeNull();
+    });
+
+    it('opens the Change Branch dialog, which loads the lists', async () => {
+      const { el } = await renderLoggedIn();
+
+      changeBranchButton(el)!.click();
+      // The dialog's code is loaded on first use, so wait until it has arrived and rendered.
+      const app = TestBed.inject(ApplicationRef);
+      await vi.waitFor(
+        () => {
+          app.tick();
+          expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+        },
+        { timeout: 5000, interval: 20 },
+      );
+
+      const dialog = document.querySelector('[role="dialog"]')!;
+      expect(dialog.querySelector('[hlmDialogTitle]')?.textContent?.trim()).toBe('Change Branch');
+      // Wide enough for each label to sit beside its field (36rem), capped to the screen by the dialog itself.
+      const content = dialog.querySelector('hlm-dialog-content')!;
+      expect(Array.from(content.classList)).toEqual(expect.arrayContaining(['w-xl', 'sm:max-w-xl']));
+      expect(content.classList).not.toContain('sm:max-w-md'); // the generated cap is replaced, not stacked
+      TestBed.inject(HttpTestingController).expectOne('admin/session/options');
+      document.body.querySelectorAll('.cdk-overlay-container').forEach((c) => c.replaceChildren());
+    });
+
+    it('shows the new branch and year as soon as the session switches', async () => {
+      const { harness, el } = await renderLoggedIn();
+
+      TestBed.inject(AuthSession).start(testSession({ branchName: 'Mumbai', yearName: '2024-2025' }));
+      harness.detectChanges();
+
+      const parts = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]')).map((s) => s.textContent?.trim());
+      expect(parts).toEqual(['ADMIN', 'Mumbai', '2024-2025']);
+    });
+
+    it('shows the user name, the branch and the year, before the theme switch', async () => {
+      const { el } = await renderLoggedIn();
+
+      const parts = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]')).map((s) => s.textContent?.trim());
+      expect(parts).toEqual(['ADMIN', 'Kochi', '2025-2026']);
+      expect(details(el)!.compareDocumentPosition(themeButton(el)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(themeButton(el).compareDocumentPosition(logoutButton(el)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('shows the user in bold blue, the branch in dark yellow and the year in bold in the text color', async () => {
+      const { el } = await renderLoggedIn();
+
+      const [user, branch, year] = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]'));
+      expect(Array.from(user.classList)).toEqual(expect.arrayContaining(['font-semibold', 'text-header-user']));
+      expect(branch.classList).toContain('text-header-branch');
+      expect(branch.className).not.toMatch(/font-(semibold|bold)/);
+      expect(Array.from(year.classList)).toEqual(expect.arrayContaining(['font-semibold', 'text-header-year']));
+      expect(details(el)!.querySelectorAll('.text-muted-foreground')).toHaveLength(0);
+    });
+
+    it('takes the title color from the page titles and gives the branch a dark yellow, in both themes', () => {
+      const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+      const values = (token: string) => Array.from(css.matchAll(new RegExp(`^\\s*--${token}:\\s*([^;]+);`, 'gm'))).map((m) => m[1].trim());
+
+      // The page titles are text-primary, so the company title follows --primary in both themes (no dark override).
+      expect(values('header-company')).toEqual(['var(--primary)']);
+      // Dark yellow: a light and a dark value, both with a yellow hue (oklch hue 80 to 95).
+      const branch = values('header-branch');
+      expect(branch).toHaveLength(2);
+      for (const value of branch) {
+        const hue = Number(/oklch\([\d.]+ [\d.]+ ([\d.]+)\)/.exec(value)?.[1]);
+        expect(hue).toBeGreaterThanOrEqual(80);
+        expect(hue).toBeLessThanOrEqual(95);
+      }
+    });
+
+    it('keeps the full text available on hover and to screen readers', async () => {
+      const { el } = await renderLoggedIn();
+
+      expect(details(el)!.getAttribute('title')).toBe('ADMIN, Kochi, 2025-2026');
+      expect(details(el)!.querySelector('.sr-only')?.textContent?.trim()).toBe('Logged in as ADMIN, Kochi, 2025-2026');
+    });
+
+    it('shortens the details on narrow screens and never pushes the buttons out of view', async () => {
+      const { el } = await renderLoggedIn();
+
+      const [user, company, year] = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]'));
+      expect(Array.from(details(el)!.classList)).toEqual(expect.arrayContaining(['min-w-0', 'ml-auto']));
+      expect(user.classList).toContain('truncate');
+      expect(Array.from(company.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline', 'truncate']));
+      expect(Array.from(year.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline']));
+      expect(themeButton(el).classList).toContain('shrink-0');
+      expect(logoutButton(el).classList).toContain('shrink-0');
+    });
+
+    it('uses the logged-in company as the main title, still a link to the Dashboard with the same look', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession({ companyName: 'CARGOMAR PRIVATE LTD' })));
+      const { el } = await render();
+
+      const title = el.querySelector('header a')!;
+      expect(title.textContent?.trim()).toBe('CARGOMAR PRIVATE LTD');
+      expect(title.getAttribute('href')).toBe('/');
+      expect(Array.from(title.classList)).toEqual(expect.arrayContaining(['text-xl', 'font-bold']));
+      expect(details(el)!.textContent).not.toContain('CARGOMAR PRIVATE LTD');
+    });
+
+    it('shows no session details and no Log out without a session', async () => {
+      const { el } = await render();
+
+      expect(details(el)).toBeNull();
+      expect(logoutButton(el)).toBeNull();
+      expect(themeButton(el).classList).toContain('ml-auto');
+    });
+
+    it('logs out: ends the session and shows the login screen; Back stays on the login screen', async () => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([
+            { path: 'login', component: PageStub },
+            {
+              path: '',
+              component: Shell,
+              canMatch: [authGuard],
+              children: [
+                { path: '', pathMatch: 'full', component: PageStub },
+                { path: 'reports', component: PageStub },
+              ],
+            },
+          ]),
+        ],
+      });
+      TestBed.inject(AuthSession).start(testSession());
+      const harness = await RouterTestingHarness.create('/');
+      await harness.navigateByUrl('/reports');
+      const router = TestBed.inject(Router);
+
+      logoutButton(harness.routeNativeElement as HTMLElement).click();
+      await settle(harness);
+
+      expect(router.url).toBe('/login');
+      expect(TestBed.inject(AuthSession).isLoggedIn()).toBe(false);
+      expect(document.querySelector('[data-slot="session-details"]')).toBeNull();
+
+      history.back();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await settle(harness);
+      expect(router.url).toBe('/login');
+
+      // Whatever Back restores, the page that was open before cannot be shown again without a login.
+      await harness.navigateByUrl('/reports');
+      expect(router.url).toBe('/login');
+    });
   });
 });

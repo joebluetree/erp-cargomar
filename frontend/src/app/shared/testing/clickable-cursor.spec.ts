@@ -1,8 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
+import { testSession } from '../../core/auth/auth-session.testing';
+import { AuthSession } from '../../core/auth/auth-session';
+import { ChangeBranchDialog } from '../../features/admin/change-branch/change-branch.dialog';
+import { SESSION_OPTIONS } from '../../features/admin/change-branch/change-branch.testing';
+import { LoginPage } from '../../features/admin/login/login.page';
+import { LoginService } from '../../features/admin/login/login.service';
 import { Dashboard } from '../../features/dashboard/dashboard';
 import { CompanyListPage } from '../../features/reports/company-list/company-list.page';
 import { CompanyListService } from '../../features/reports/company-list/company-list.service';
@@ -47,6 +55,7 @@ describe('hand pointer on everything clickable', () => {
 
   describe('the shell with the Dashboard', () => {
     async function render() {
+      sessionStorage.clear(); // no session: the header shows no Change branch or Log out, whatever ran before
       TestBed.configureTestingModule({
         providers: [
           provideRouter([{ path: '', component: Shell, children: [{ path: '', component: Dashboard }] }]),
@@ -68,6 +77,30 @@ describe('hand pointer on everything clickable', () => {
       expect(labels).toEqual(expect.arrayContaining(['Cargomar Pvt Ltd', 'Open menu', 'Hide navigation bar', 'Switch to dark theme', 'Dashboard', 'Company List']));
       const missing = clickable.filter((c) => !covered(c)).map((c) => c.outerHTML.slice(0, 80));
       expect(missing).toEqual([]);
+    });
+  });
+
+  describe('the login screen', () => {
+    it('gives a hand to the eye, Remember me, Cancel and Login buttons, and to the Remember me label', () => {
+      TestBed.configureTestingModule({
+        imports: [LoginPage],
+        providers: [LoginService, provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      });
+      const fixture = TestBed.createComponent(LoginPage);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+
+      const clickable = clickableElements(el);
+      const labels = clickable.map((c) => c.getAttribute('aria-label') ?? c.textContent?.replace(/\s+/g, ' ').trim());
+      expect(labels).toEqual(expect.arrayContaining(['Show password', 'Cancel', 'Login']));
+      const missing = clickable.filter((c) => !covered(c)).map((c) => c.outerHTML.slice(0, 80));
+      expect(missing).toEqual([]);
+      // The checkbox is a button (covered above) whose own class would otherwise win over the global rule.
+      const remember = el.querySelector('#login-remember')!;
+      expect(clickable).toContain(remember);
+      expect(remember.classList).toContain('cursor-pointer');
+      // A label is not a button: clicking it toggles the box, so it gets the hand itself.
+      expect(el.querySelector('label[for="login-remember"]')!.classList).toContain('cursor-pointer');
     });
   });
 
@@ -118,6 +151,39 @@ describe('hand pointer on everything clickable', () => {
       expect(Array.from(row.classList)).toContain('[&[tabindex]]:cursor-pointer');
       // Rows are not buttons, so the global rule does not cover them; the table row directive does.
       expect(covered(row)).toBe(false);
+    });
+  });
+
+  describe('the Change Branch dialog', () => {
+    it('gives a hand to Select, Cancel, Close, both dropdowns and every list row', async () => {
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+      TestBed.inject(AuthSession).start(testSession());
+      const app = TestBed.inject(ApplicationRef);
+      const settle = async () => {
+        app.tick();
+        await app.whenStable();
+        await new Promise((r) => setTimeout(r));
+        app.tick();
+      };
+      TestBed.inject(HlmDialogService).open(ChangeBranchDialog);
+      await settle();
+      TestBed.inject(HttpTestingController).expectOne('admin/session/options').flush(SESSION_OPTIONS);
+      await settle();
+      const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+
+      const clickable = clickableElements(dialog);
+      const labels = clickable.map((c) => c.getAttribute('aria-label') ?? c.textContent?.replace(/\s+/g, ' ').trim());
+      // The dropdowns are buttons named by their current value.
+      expect(labels).toEqual(expect.arrayContaining(['Select', 'Cancel', 'Close', 'Kochi', '2025-2026']));
+      expect(clickable.filter((c) => !covered(c)).map((c) => c.outerHTML.slice(0, 80))).toEqual([]);
+      // List rows are options, not buttons: the shared select item gives them the hand itself.
+      (document.getElementById('change-branch-branch') as HTMLButtonElement).click();
+      await settle();
+      const items = Array.from(document.querySelectorAll('hlm-select-item'));
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.every((i) => i.classList.contains('cursor-pointer'))).toBe(true);
+      document.body.replaceChildren();
+      sessionStorage.clear();
     });
   });
 });

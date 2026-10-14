@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
@@ -12,5 +13,6 @@
     <ProjectReference Include="..\iErp.Shared\iErp.Shared.csproj" />
     <ProjectReference Include="..\iErp.ModuleTemplate\iErp.ModuleTemplate.csproj" />
     <ProjectReference Include="..\iErp.Reports\iErp.Reports.csproj" />
+    <ProjectReference Include="..\iErp.Admin\iErp.Admin.csproj" />
   </ItemGroup>
 </Project>

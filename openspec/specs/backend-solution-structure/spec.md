@@ -7,11 +7,11 @@ Defines the backend solution layout, project responsibilities and dependency bou
 ## Requirements
 
 ### Requirement: Backend solution layout
-The system SHALL provide a .NET 9 solution inside a top-level `backend/` folder containing the projects Api, Data, Entities, Shared, SharedBusiness, ModuleTemplate and Tests, and the solution SHALL build without errors.
+The system SHALL provide a .NET 9 solution inside a top-level `backend/` folder containing the projects Api, Data, Entities, Shared, SharedBusiness, ModuleTemplate and Tests, plus one project per business module added to the system (currently Reports), and the solution SHALL build without errors.
 
 #### Scenario: Clean build
 - **WHEN** the solution is built from a clean checkout
-- **THEN** the build succeeds and all seven projects are part of the solution
+- **THEN** the build succeeds and all eight projects (the seven foundation projects and Reports) are part of the solution
 
 ### Requirement: Shared build settings
 The solution SHALL define shared build settings and centralized package versions so that individual projects do not declare their own package versions.
@@ -42,11 +42,11 @@ A new module SHALL be addable by creating a new class library, its registration 
 - **THEN** no existing module project requires modification
 
 ### Requirement: Flat project layout
-All seven projects SHALL be direct child folders of `backend/`, with no intermediate `src/` or `tests/` folder.
+All projects, including each business module, SHALL be direct child folders of `backend/`, with no intermediate `src/` or `tests/` folder.
 
 #### Scenario: Project folders
 - **WHEN** the contents of `backend/` are listed
-- **THEN** each project folder (Api, Data, Entities, Shared, SharedBusiness, ModuleTemplate, Tests) is a direct child and no `src/` or `tests/` folder exists
+- **THEN** each project folder (Api, Data, Entities, Shared, SharedBusiness, ModuleTemplate, Reports, Tests) is a direct child and no `src/` or `tests/` folder exists
 
 ### Requirement: Project naming prefix
 Projects, assemblies and root namespaces SHALL use the prefix `iErp` (for example `iErp.Api`), and the solution file SHALL be named `iErp.sln`.

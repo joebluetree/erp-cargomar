@@ -227,7 +227,7 @@ It shall document:
 
 The following capabilities are excluded from the initial implementation and will be addressed through separate PRDs.
 
-1. Authentication and Authorization.
+1. Authentication and Authorization. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 2. Multi-Company and Multi-Branch.
 3. Auditing and Change Tracking.
 4. Soft Delete and Concurrency Management.

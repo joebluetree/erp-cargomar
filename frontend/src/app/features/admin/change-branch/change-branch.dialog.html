@@ -1,0 +1,51 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Change Branch</h2>
+</hlm-dialog-header>
+
+<form class="flex flex-col gap-4" novalidate [formGroup]="form" (ngSubmit)="select()">
+  <div data-slot="field-row" class="flex flex-col gap-2 sm:grid sm:grid-cols-[6rem_1fr] sm:items-center sm:gap-x-4">
+    <label hlmLabel for="change-branch-branch">Branch</label>
+    <hlm-select formControlName="branch" [itemToString]="branchName" [isItemEqualToValue]="sameId">
+      <hlm-select-trigger buttonId="change-branch-branch" class="w-full" [aria-invalid]="error('branch') ? true : undefined">
+        <hlm-select-value placeholder="Select a branch" />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (branch of branches(); track branch.id) {
+          <hlm-select-item [value]="branch">{{ branch.name }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+    @if (error('branch'); as message) {
+      <p appFieldError id="change-branch-branch-error" class="sm:col-start-2">{{ message }}</p>
+    }
+  </div>
+
+  <div data-slot="field-row" class="flex flex-col gap-2 sm:grid sm:grid-cols-[6rem_1fr] sm:items-center sm:gap-x-4">
+    <label hlmLabel for="change-branch-year">Year</label>
+    <hlm-select formControlName="year" [itemToString]="yearName" [isItemEqualToValue]="sameId">
+      <hlm-select-trigger buttonId="change-branch-year" class="w-full" [aria-invalid]="error('year') ? true : undefined">
+        <hlm-select-value placeholder="Select a year" />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (year of years(); track year.id) {
+          <hlm-select-item [value]="year">{{ year.name }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+    @if (error('year'); as message) {
+      <p appFieldError id="change-branch-year-error" class="sm:col-start-2">{{ message }}</p>
+    }
+  </div>
+
+  <div class="mt-2 flex justify-end gap-2">
+    <button hlmBtn type="submit" [disabled]="service.busy() || loading()">
+      @if (service.busy()) {
+        <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+        Selecting…
+      } @else {
+        Select
+      }
+    </button>
+    <button hlmBtn variant="outline" type="button" (click)="cancel()">Cancel</button>
+  </div>
+</form>

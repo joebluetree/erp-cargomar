@@ -9,6 +9,8 @@ public class Company
     /// <summary>Opaque string key (<c>COMP_PKID</c>), not a GUID.</summary>
     public string Id { get; set; } = "";
     public string? Type { get; set; }
+    /// <summary>For a branch, the <see cref="Id"/> of its company (<c>COMP_PARENT_ID</c>).</summary>
+    public string? ParentId { get; set; }
     public string? Code { get; set; }
     public string? Name { get; set; }
     public string? Address1 { get; set; }

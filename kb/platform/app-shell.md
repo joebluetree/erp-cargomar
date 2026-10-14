@@ -117,7 +117,7 @@ The Application Shell shall include:
 - Feature pages shall not provide their own page frame; the shell supplies the page width and padding.
 - Notifications and confirmation dialogs shall remain available on every page, independent of the shell.
 - The header shall contain the theme switch described in FR-010.
-- The header shall not contain a user menu until authentication exists.
+- The header shall not contain a user menu until authentication exists. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 
 ### FR-002 [v1.0 → v1.3] — Navigation Menu
 
@@ -148,7 +148,7 @@ The Application Shell shall include:
 - The Dashboard shall replace the Home page. The Home page and its route shall be removed.
 - All feature routes shall be displayed inside the shell.
 - Unknown paths shall redirect to the Dashboard.
-- Route guards shall not be introduced.
+- Route guards shall not be introduced. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 
 ### FR-007 [v1.0] — Testing
 
@@ -196,8 +196,8 @@ The Application Shell shall include:
 
 ## Out of Scope — Future PRDs
 
-1. Authentication, authorization, and a user menu.
-2. Route guards and menu entries driven by permissions.
+1. Authentication, authorization, and a user menu. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
+2. Route guards and menu entries driven by permissions. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 3. Multi-company and multi-branch selection in the header.
 4. Breadcrumbs and per-page titles.
 5. Collapse-to-icons sidebar on desktop.
@@ -223,7 +223,7 @@ The Application Shell PRD shall be considered complete when:
 - [ ] On a first visit the operating system's preference is used, with no flash of the other theme.
 - [ ] Every screen and component is readable in both themes.
 - [ ] Dark-mode text is softened (not near-white) and keeps at least 4.5:1 contrast.
-- [ ] No user menu, guards, breadcrumbs, or new libraries were added.
+- [ ] No user menu, guards, breadcrumbs, or new libraries were added. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)
 - [ ] Shell, menu, and Dashboard tests pass, and existing tests still pass.
 - [ ] The application builds without errors.
 - [ ] `kb/architecture/frontend.md` is updated and reflects the implemented shell.
@@ -245,4 +245,4 @@ Add the shell to the existing frontend without disturbing existing features.
 
 Keep the menu a plain list so that future modules extend it with one entry each.
 
-Do not add authentication, guards, breadcrumbs, or other future capabilities until their requirements are defined.
+Do not add authentication, guards, breadcrumbs, or other future capabilities until their requirements are defined. (Superseded: login, session and guards were added by the `user-loginpage` change; see `kb/modules/admin/login-screen.md`.)

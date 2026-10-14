@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using iErp.Shared.Auth;
 using iErp.Shared.Exceptions;
 
 namespace iErp.Tests.TestSupport;
@@ -29,4 +30,10 @@ public class TestEndpointsController : ControllerBase
 
     [HttpPost("echo")]
     public IActionResult Echo(EchoRequest request) => Ok(request);
+
+    [HttpGet("session")]
+    public IActionResult Session([FromServices] ICurrentSession session) => Ok(new
+    {
+        session.IsAuthenticated, session.UserId, session.UserCode, session.CompanyId, session.CompanyCode, session.BranchId, session.YearId
+    });
 }
