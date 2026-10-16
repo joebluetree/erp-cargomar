@@ -4,6 +4,7 @@ using System.Text;
 using iErp.Admin.Session;
 using iErp.Entities;
 using iErp.Shared.Auth;
+using iErp.Shared.Lib;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -59,20 +60,22 @@ public class LoginService(
             user.Code ?? "", user.Name ?? "",
             company.Id, company.Code ?? "", company.Name ?? "",
             branch.Id, branch.Name ?? "",
-            year.Id, year.Code?.ToString(CultureInfo.InvariantCulture) ?? "", year.Name ?? "");
+            year.Id, year.Code?.ToString(CultureInfo.InvariantCulture) ?? "", year.Name ?? "",
+            SessionDto.CleanEmployeeId(user.EmployeeId));
         var expiresAt = time.GetUtcNow().AddMinutes(jwtOptions.Value.LifetimeMinutes);
         var token = tokens.Issue(user.Id, session, expiresAt);
         return new LoginResult(LoginOutcome.Success, new LoginResponse(token, expiresAt, session));
     }
 
     /// <summary>
-    /// Compares the typed password with the stored one in fixed time. For now the stored value is compared as text
-    /// (design D3): USERM holds the legacy system's encrypted values, and their encryption is added here once known.
+    /// Compares the typed password with the stored one in fixed time. USERM holds the legacy system's encrypted values,
+    /// so the typed password is encrypted the same way (<see cref="Lib.Encrypt"/>) and the two encrypted texts are
+    /// compared; the stored password is never decrypted.
     /// </summary>
     private static bool PasswordMatches(string? stored, string typed)
     {
         var storedBytes = Encoding.UTF8.GetBytes(stored ?? "");
-        var typedBytes = Encoding.UTF8.GetBytes(typed);
-        return CryptographicOperations.FixedTimeEquals(storedBytes, typedBytes) && stored is not null;
+        var typedBytes = Encoding.UTF8.GetBytes(Lib.Encrypt(typed));
+        return CryptographicOperations.FixedTimeEquals(storedBytes, typedBytes) && !string.IsNullOrEmpty(stored);
     }
 }

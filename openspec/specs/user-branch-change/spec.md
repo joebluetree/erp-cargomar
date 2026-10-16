@@ -74,7 +74,7 @@ Branch and Year SHALL both be required (BR-001.1). Select with either field empt
 - **THEN** Year starts empty, "Year is required." is shown under Year and nothing is sent
 
 ### Requirement: Select switches the session
-Select SHALL send the chosen branch and year to the backend. On success the session SHALL keep its user, company and expiry time, take the new branch and year, and the header SHALL show the new branch and year at once. The dialog SHALL close and the current page SHALL stay open, without a notification: the updated header is the confirmation. The change SHALL last for the browser tab, including reloads, until logout.
+Select SHALL send the chosen branch and year to the backend. On success the session SHALL keep its user, employee id, company and expiry time, take the new branch and year, and the header SHALL show the new branch and year at once. The dialog SHALL close and the current page SHALL stay open, without a notification: the updated header is the confirmation. The change SHALL last for the browser tab, including reloads, until logout.
 
 #### Scenario: Switch
 - **WHEN** a user in "Kochi" / "2025-2026" selects "Mumbai" and "2024-2025"
@@ -91,6 +91,10 @@ Select SHALL send the chosen branch and year to the backend. On success the sess
 #### Scenario: Default branch unchanged
 - **WHEN** the user switches the branch, logs out and logs in again
 - **THEN** the session starts in the user's default branch and the latest year, as before
+
+#### Scenario: Employee id kept
+- **WHEN** a user with employee id "E-1" switches branch and year
+- **THEN** the new session still carries employee id "E-1"
 
 ### Requirement: Backend checks the switch
 The backend SHALL accept a switch only for a branch allotted to the logged-in user that is a not-deleted branch of the session's company, and an open year (`YEAR_CLOSED` = 'N') of the session's company. Any other branch or year SHALL be refused with 403 problem details and the session SHALL stay as it was. Missing values SHALL be refused with 400. No data SHALL be written.

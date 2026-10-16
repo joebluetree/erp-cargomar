@@ -53,6 +53,7 @@ describe('ChangeBranchService', () => {
     expect(auth.session()).toEqual(expected);
     expect(auth.details()).toEqual({ company: 'Cargomar Pvt Ltd', user: 'ADMIN', branch: 'Mumbai', year: '2024-2025' });
     expect(JSON.parse(sessionStorage.getItem(SESSION_STORAGE_KEY)!)).toEqual(expected);
+    expect(auth.session()!.employeeId).toBe('e-1');
   });
 
   it('keeps the session and clears busy when the switch is refused', () => {

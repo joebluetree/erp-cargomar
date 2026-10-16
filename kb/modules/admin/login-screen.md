@@ -54,6 +54,16 @@ Login Screen check auth and allow user to login to software based on login crede
 <!-- - ADDED Company List report (BR-001): read-only, filter by code and name, sort, page. -->
 - ADDED "Remember me" checkbox on the login screen (BR-001): after a successful login with it ticked, the browser remembers the user code, password and company code and fills them in next time; unticked, it forgets them. The password is kept in plain text in the browser.
 
+### v1.1 — Employee ID Fetched   [Status: Implemented]
+
+- **Date:** 2026-10-14 
+- **Change Ref:** `user-empid-add`
+- **Affects:** data model of table userm
+
+**Changes:**
+
+- Added data retrive emp_id from user table
+
 ---
 
 ## Login Screen Requirments
@@ -84,6 +94,7 @@ All data and menu display on screen are based on selected company id, branch id 
 | 1.0 | USER_PASSWORD | login check this password |
 | 1.0 | REC_COMPANY_CODE | Login check Company code |
 | 1.0 | USER_BRANCH_ID | Default branch, retrive branch after login matches and datas are based on this branch only |
+| 1.1 | USER_EMP_ID | to fetch employee id |
 
 ### Table :yearm
 

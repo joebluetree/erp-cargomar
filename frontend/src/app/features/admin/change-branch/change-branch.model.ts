@@ -38,5 +38,6 @@ export interface ChangeBranchResponse {
     yearId: string;
     yearCode: string;
     yearName: string;
+    employeeId: string | null;
   };
 }

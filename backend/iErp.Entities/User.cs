@@ -16,6 +16,8 @@ public class User
     public string? CompanyCode { get; set; }
     /// <summary>The <see cref="Company.Id"/> of the user's default branch (<c>USER_BRANCH_ID</c>).</summary>
     public string? BranchId { get; set; }
+    /// <summary>The user's employee (<c>USER_EMP_ID</c>, an <c>EMPM.EMP_PKID</c>); empty for users without one.</summary>
+    public string? EmployeeId { get; set; }
     /// <summary>"Y" when the user is locked (<c>USER_ISLOCKED</c>).</summary>
     public string? Locked { get; set; }
     /// <summary>"Y" when the row is marked deleted (<c>REC_DELETED</c>).</summary>

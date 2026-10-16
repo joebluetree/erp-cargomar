@@ -23,6 +23,10 @@
   --color-header-user: var(--header-user);
   --color-header-branch: var(--header-branch);
   --color-header-year: var(--header-year);
+  --color-profile-heading: var(--profile-heading);
+  --color-profile-label: var(--profile-label);
+  --color-profile-box: var(--profile-box);
+  --color-profile-photo: var(--profile-photo);
 }
 
 :root {
@@ -76,6 +80,15 @@
   --header-user: oklch(0.5 0.2 262);  /*oklch(0.5 0.2 262);*/
   --header-branch: oklch(67.042% 0.2853 343.298);
   --header-year: var(--foreground);
+  /* Profile screen, the colors of its reference UI template. The page keeps its white background and the boxes are
+     tinted pale blue-grey (--profile-box). On that tint: box headings in dark slate (11.4:1), field labels in blue (5.0:1;
+     the template's lighter blue is only 2.9:1 on white; it is used for every label, including the basic rows). */
+  --profile-heading: oklch(0.33 0.03 257);
+  --profile-label: oklch(0.52 0.12 240);
+  --profile-box: oklch(0.975 0.014 255);
+  /* Behind a whole (not cropped) employee photo in its circle: white, the photos' own studio background, so the space
+     beside a portrait photo blends in. The same in the dark theme, because it belongs to the photo, not the page. */
+  --profile-photo: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -127,6 +140,10 @@
   --header-user: oklch(0.74 0.13 255);
   --header-branch: oklch(67.042% 0.2853 343.298);
   /* --header-branch: oklch(0.82 0.15 88); */
+  /* Profile boxes, a dark tint a little lighter than the page; on it the heading is 10.8:1 and the label 7.1:1. */
+  --profile-heading: oklch(0.87 0.02 257);
+  --profile-label: oklch(0.74 0.11 235);
+  --profile-box: oklch(0.25 0.02 255);
 
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.87 0 0);

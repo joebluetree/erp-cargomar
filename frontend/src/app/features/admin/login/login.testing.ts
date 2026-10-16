@@ -15,5 +15,6 @@ export const LOGIN_RESPONSE: LoginResponse = {
     yearId: 'y-1',
     yearCode: '2025',
     yearName: '2025-2026',
+    employeeId: 'e-1',
   },
 };

@@ -16,6 +16,8 @@ export interface Session {
   yearId: string;
   yearCode: string;
   yearName: string;
+  /** The user's employee (`USERM.USER_EMP_ID`); null when the user has none. Not shown on screen. */
+  employeeId: string | null;
 }
 
 export const SESSION_STORAGE_KEY = 'ierp-session';
@@ -91,7 +93,8 @@ export class AuthSession {
       const raw = this.doc.defaultView?.sessionStorage.getItem(SESSION_STORAGE_KEY);
       const stored = raw ? (JSON.parse(raw) as Session) : null;
       if (stored && typeof stored.token === 'string' && !isExpired(stored)) {
-        return stored;
+        // A session stored before the employee id existed has no such field; it reads as none.
+        return { ...stored, employeeId: stored.employeeId ?? null };
       }
       if (raw) {
         this.doc.defaultView?.sessionStorage.removeItem(SESSION_STORAGE_KEY);

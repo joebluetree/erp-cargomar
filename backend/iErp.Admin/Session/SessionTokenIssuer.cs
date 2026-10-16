@@ -23,20 +23,29 @@ public class SessionTokenIssuer(IOptions<JwtOptions> jwtOptions, TimeProvider ti
             IssuedAt = now.UtcDateTime,
             NotBefore = now.UtcDateTime,
             Expires = expiresAt.UtcDateTime,
-            Subject = new ClaimsIdentity(
-            [
-                new Claim(SessionClaims.UserId, userId),
-                new Claim(SessionClaims.UserCode, session.UserCode),
-                new Claim(SessionClaims.UserName, session.UserName),
-                new Claim(SessionClaims.CompanyId, session.CompanyId),
-                new Claim(SessionClaims.CompanyCode, session.CompanyCode),
-                new Claim(SessionClaims.BranchId, session.BranchId),
-                new Claim(SessionClaims.YearId, session.YearId),
-            ]),
+            Subject = new ClaimsIdentity(Claims(userId, session)),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SigningKey)), SecurityAlgorithms.HmacSha256),
         };
 
         return new JsonWebTokenHandler().CreateToken(descriptor);
+    }
+
+    /// <summary>The session claims; the employee claim only when the user has an employee (design D3).</summary>
+    private static List<Claim> Claims(string userId, SessionDto session)
+    {
+        List<Claim> claims =
+        [
+            new Claim(SessionClaims.UserId, userId),
+            new Claim(SessionClaims.UserCode, session.UserCode),
+            new Claim(SessionClaims.UserName, session.UserName),
+            new Claim(SessionClaims.CompanyId, session.CompanyId),
+            new Claim(SessionClaims.CompanyCode, session.CompanyCode),
+            new Claim(SessionClaims.BranchId, session.BranchId),
+            new Claim(SessionClaims.YearId, session.YearId),
+        ];
+        if (session.EmployeeId is not null)
+            claims.Add(new Claim(SessionClaims.EmployeeId, session.EmployeeId));
+        return claims;
     }
 }

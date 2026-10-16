@@ -6,6 +6,7 @@ using iErp.Admin.Login;
 using iErp.Admin.Session;
 using iErp.Entities;
 using iErp.Shared.Auth;
+using iErp.Shared.Lib;
 using iErp.Tests.TestSupport;
 
 namespace iErp.Tests.Admin;
@@ -21,7 +22,7 @@ public class LoginServiceTests
 
     private static User Admin() => new()
     {
-        Id = "u-1", Code = "U01", Name = "ADMIN", Password = Password, CompanyCode = "CMP", BranchId = "b-1"
+        Id = "u-1", Code = "U01", Name = "ADMIN", Password = Lib.Encrypt(Password), CompanyCode = "CMP", BranchId = "b-1", EmployeeId = "e-1"
     };
 
     private sealed class FixedTime(DateTimeOffset now) : TimeProvider
@@ -67,7 +68,7 @@ public class LoginServiceTests
 
         Assert.Equal(LoginOutcome.Success, result.Outcome);
         Assert.Equal(
-            new SessionDto("U01", "ADMIN", "c-1", "CMP", "Cargomar Pvt Ltd", "b-1", "Kochi", "y-2", "2025", "2025-2026"),
+            new SessionDto("U01", "ADMIN", "c-1", "CMP", "Cargomar Pvt Ltd", "b-1", "Kochi", "y-2", "2025", "2025-2026", "e-1"),
             result.Response!.Session);
         Assert.Equal(Now.AddMinutes(480), result.Response.ExpiresAt);
         Assert.False(string.IsNullOrEmpty(result.Response.Token));
@@ -90,7 +91,26 @@ public class LoginServiceTests
         Assert.Equal("CMP", token.GetClaim(SessionClaims.CompanyCode).Value);
         Assert.Equal("b-1", token.GetClaim(SessionClaims.BranchId).Value);
         Assert.Equal("y-2", token.GetClaim(SessionClaims.YearId).Value);
+        Assert.Equal("e-1", token.GetClaim(SessionClaims.EmployeeId).Value);
         Assert.Equal("HS256", token.Alg);
+    }
+
+    [Theory]
+    [InlineData(" E-1 ", "E-1")]
+    [InlineData(null, null)]
+    [InlineData("   ", null)]
+    public async Task The_employee_id_is_trimmed_and_a_missing_one_does_not_block_the_login(string? stored, string? expected)
+    {
+        var user = Admin();
+        user.EmployeeId = stored;
+        var (service, _, _) = ServiceWith(users: [user]);
+
+        var result = await service.LoginAsync(Request());
+
+        Assert.Equal(LoginOutcome.Success, result.Outcome);
+        Assert.Equal(expected, result.Response!.Session.EmployeeId);
+        var token = new JsonWebToken(result.Response.Token);
+        Assert.Equal(expected, token.TryGetClaim(SessionClaims.EmployeeId, out var claim) ? claim.Value : null);
     }
 
     [Fact]
@@ -128,6 +148,25 @@ public class LoginServiceTests
 
         Assert.All(new[] { unknownUser, wrongPassword, unknownCompany },
             r => Assert.Equal(new LoginResult(LoginOutcome.InvalidCredentials), r));
+    }
+
+    [Fact]
+    public async Task The_typed_password_is_compared_in_the_legacy_encrypted_form()
+    {
+        // USERM holds Lib.Encrypt(password); the user types the password itself.
+        var (service, _, _) = ServiceWith();
+
+        Assert.Equal(LoginOutcome.Success, (await service.LoginAsync(Request(password: Password))).Outcome);
+    }
+
+    [Fact]
+    public async Task Typing_the_stored_encrypted_text_does_not_log_in()
+    {
+        var (service, _, _) = ServiceWith();
+
+        var result = await service.LoginAsync(Request(password: Lib.Encrypt(Password)));
+
+        Assert.Equal(LoginOutcome.InvalidCredentials, result.Outcome);
     }
 
     [Fact]

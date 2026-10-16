@@ -30,6 +30,25 @@ describe('AuthSession', () => {
     const restored = create();
     expect(restored.isLoggedIn()).toBe(true);
     expect(restored.session()).toEqual(session);
+    expect(restored.session()!.employeeId).toBe('e-1');
+  });
+
+  it('restores a session stored before the employee id existed, with no employee', () => {
+    const { employeeId: _, ...older } = testSession();
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(older));
+
+    const auth = create();
+
+    expect(auth.isLoggedIn()).toBe(true);
+    expect(auth.session()!.employeeId).toBeNull();
+    expect(auth.session()!.userCode).toBe('U01');
+  });
+
+  it('keeps a session without an employee as it is', () => {
+    create().start(testSession({ employeeId: null }));
+
+    TestBed.resetTestingModule();
+    expect(create().session()!.employeeId).toBeNull();
   });
 
   it('gives the company for the header title, and the user, the branch and the year', () => {

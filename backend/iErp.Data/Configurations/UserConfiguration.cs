@@ -21,6 +21,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Password).HasColumnName("USER_PASSWORD").HasMaxLength(50);
         builder.Property(u => u.CompanyCode).HasColumnName("REC_COMPANY_CODE").HasMaxLength(10);
         builder.Property(u => u.BranchId).HasColumnName("USER_BRANCH_ID").HasMaxLength(40);
+        builder.Property(u => u.EmployeeId).HasColumnName("USER_EMP_ID").HasMaxLength(40);
         builder.Property(u => u.Locked).HasColumnName("USER_ISLOCKED").HasMaxLength(1).IsFixedLength();
         builder.Property(u => u.Deleted).HasColumnName("REC_DELETED").HasMaxLength(1).IsFixedLength();
         builder.Property(u => u.DeletedDate).HasColumnName("REC_DELETED_DATE");

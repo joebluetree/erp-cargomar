@@ -301,12 +301,13 @@ describe('LoginPage', () => {
   });
 
   describe('login', () => {
-    it('sends the trimmed user name and company code and the unchanged password, then opens the Dashboard', () => {
+    it('sends the trimmed user name and company code, the user name and password in upper case, then opens the Dashboard', () => {
       fill();
       clickLogin();
 
       const req = controller.expectOne('admin/login');
-      expect(req.request.body).toEqual({ userCode: 'admin', password: 'Secret 1', companyCode: 'cmp' });
+      // The password keeps its spaces; only its case changes.
+      expect(req.request.body).toEqual({ userCode: 'ADMIN', password: 'SECRET 1', companyCode: 'cmp' });
       req.flush(LOGIN_RESPONSE);
 
       expect(TestBed.inject(AuthSession).details()).toEqual({ company: 'Cargomar Pvt Ltd', user: 'ADMIN', branch: 'Kochi', year: '2025-2026' });

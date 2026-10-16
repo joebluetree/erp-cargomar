@@ -2,10 +2,12 @@ import { ICON_TONES } from '../../shared/ui/icon-tone/icon-tone';
 import { NAV_ICONS, NAV_ITEMS } from './nav-items';
 
 describe('NAV_ITEMS', () => {
-  it('lists the Dashboard, then the Company List', () => {
+  it('lists the Dashboard, the Company List, Profile, then the Employee List', () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.route])).toEqual([
       ['Dashboard', '/'],
       ['Company List', '/reports/companies'],
+      ['Profile', '/admin/profile'],
+      ['Employee List', '/admin/employees'],
     ]);
   });
 
@@ -20,10 +22,12 @@ describe('NAV_ITEMS', () => {
     expect(new Set(tones).size).toBe(NAV_ITEMS.length);
   });
 
-  it('colors the Dashboard blue and the Company List green', () => {
+  it('colors the Dashboard blue, the Company List green, Profile violet and the Employee List amber', () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.tone])).toEqual([
       ['Dashboard', 'blue'],
       ['Company List', 'green'],
+      ['Profile', 'violet'],
+      ['Employee List', 'amber'],
     ]);
   });
 

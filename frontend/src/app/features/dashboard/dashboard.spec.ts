@@ -53,7 +53,7 @@ describe('Dashboard', () => {
     expect(links).toEqual([['Reports', '/reports']]);
   });
 
-  it('links to the Company List through the real menu', () => {
+  it('links to the Company List, Profile and the Employee List through the real menu', () => {
     TestBed.configureTestingModule({
       imports: [Dashboard],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
@@ -62,7 +62,11 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.quick-links a')).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
-    expect(links).toEqual([['Company List', '/reports/companies']]);
+    expect(links).toEqual([
+      ['Company List', '/reports/companies'],
+      ['Profile', '/admin/profile'],
+      ['Employee List', '/admin/employees'],
+    ]);
   });
 
   it('colors a quick link\'s icon with the same tone as its menu entry', () => {
@@ -73,10 +77,12 @@ describe('Dashboard', () => {
     const fixture = TestBed.createComponent(Dashboard);
     fixture.detectChanges();
 
-    const icon = (fixture.nativeElement as HTMLElement).querySelector('.quick-links a ng-icon') as HTMLElement;
-    const companyList = NAV_ITEMS.find((i) => i.label === 'Company List')!;
-    expect(icon.getAttribute('data-icon-tone')).toBe(companyList.tone);
-    expect(icon.style.getPropertyValue('--ng-icon__color')).toBe(`var(--icon-${companyList.tone})`);
+    const icons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.quick-links a ng-icon')) as HTMLElement[];
+    for (const [index, label] of ['Company List', 'Profile', 'Employee List'].entries()) {
+      const entry = NAV_ITEMS.find((i) => i.label === label)!;
+      expect(icons[index].getAttribute('data-icon-tone')).toBe(entry.tone);
+      expect(icons[index].style.getPropertyValue('--ng-icon__color')).toBe(`var(--icon-${entry.tone})`);
+    }
   });
 
   it('sends no backend requests', () => {

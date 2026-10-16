@@ -21,5 +21,6 @@ export interface LoginResponse {
     yearId: string;
     yearCode: string;
     yearName: string;
+    employeeId: string | null;
   };
 }

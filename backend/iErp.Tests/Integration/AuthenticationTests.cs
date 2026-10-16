@@ -114,7 +114,7 @@ public class AuthenticationTests
     public async Task The_current_session_comes_from_the_token()
     {
         var client = new ApiFactory().CreateClient()
-            .Authenticated(TestTokens.Create(companyId: "c-9", branchId: "b-9", yearId: "y-9"));
+            .Authenticated(TestTokens.Create(companyId: "c-9", branchId: "b-9", yearId: "y-9", employeeId: "e-9"));
 
         var body = await client.GetFromJsonAsync<JsonElement>("/test-endpoints/session");
 
@@ -125,5 +125,17 @@ public class AuthenticationTests
         Assert.Equal("CMP", body.GetProperty("companyCode").GetString());
         Assert.Equal("b-9", body.GetProperty("branchId").GetString());
         Assert.Equal("y-9", body.GetProperty("yearId").GetString());
+        Assert.Equal("e-9", body.GetProperty("employeeId").GetString());
+    }
+
+    [Fact]
+    public async Task A_token_without_an_employee_gives_no_current_employee()
+    {
+        var client = new ApiFactory().CreateClient().Authenticated(TestTokens.Create());
+
+        var body = await client.GetFromJsonAsync<JsonElement>("/test-endpoints/session");
+
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("employeeId").ValueKind);
+        Assert.Equal("U01", body.GetProperty("userCode").GetString());
     }
 }

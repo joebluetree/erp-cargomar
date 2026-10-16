@@ -34,6 +34,6 @@ public class TestEndpointsController : ControllerBase
     [HttpGet("session")]
     public IActionResult Session([FromServices] ICurrentSession session) => Ok(new
     {
-        session.IsAuthenticated, session.UserId, session.UserCode, session.CompanyId, session.CompanyCode, session.BranchId, session.YearId
+        session.IsAuthenticated, session.UserId, session.UserCode, session.EmployeeId, session.CompanyId, session.CompanyCode, session.BranchId, session.YearId
     });
 }

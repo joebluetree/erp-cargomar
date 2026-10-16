@@ -1,5 +1,6 @@
 using System.Text;
 using iErp.Admin;
+using iErp.Admin.EmployeeProfile;
 using iErp.Api.Auth;
 using iErp.Api.Middleware;
 using iErp.Data;
@@ -36,6 +37,8 @@ builder.Services.AddOptions<JwtOptions>()
         $"Jwt:SigningKey must be set to a secret of at least {JwtOptions.MinSigningKeyBytes} bytes.")
     .Validate(o => o.LifetimeMinutes > 0, "Jwt:LifetimeMinutes must be greater than 0.")
     .ValidateOnStart();
+// Employee photos: the folder is set in appsettings.json (EmployeeImages:Folder) and may be changed without a code change.
+builder.Services.AddOptions<EmployeeImagesOptions>().Bind(builder.Configuration.GetSection(EmployeeImagesOptions.SectionName));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 builder.Services.ConfigureOptions<ConfigureJwtBearer>();
 builder.Services.AddAuthorization();

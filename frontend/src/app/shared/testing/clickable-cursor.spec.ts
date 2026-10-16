@@ -72,9 +72,9 @@ describe('hand pointer on everything clickable', () => {
       const el = await render();
 
       const clickable = clickableElements(el);
-      expect(clickable).toHaveLength(7); // the name link, 2 hamburgers, the theme button, 2 menu entries and 1 quick link
+      expect(clickable).toHaveLength(11); // the name link, 2 hamburgers, the theme button, 4 menu entries and 3 quick links
       const labels = clickable.map((c) => c.getAttribute('aria-label') ?? c.textContent?.trim());
-      expect(labels).toEqual(expect.arrayContaining(['Cargomar Pvt Ltd', 'Open menu', 'Hide navigation bar', 'Switch to dark theme', 'Dashboard', 'Company List']));
+      expect(labels).toEqual(expect.arrayContaining(['Cargomar Pvt Ltd', 'Open menu', 'Hide navigation bar', 'Switch to dark theme', 'Dashboard', 'Company List', 'Profile', 'Employee List']));
       const missing = clickable.filter((c) => !covered(c)).map((c) => c.outerHTML.slice(0, 80));
       expect(missing).toEqual([]);
     });
