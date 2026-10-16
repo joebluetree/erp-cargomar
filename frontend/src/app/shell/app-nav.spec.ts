@@ -106,4 +106,40 @@ describe('AppNav', () => {
 
     expect(onNavigated).toHaveBeenCalledOnce();
   });
+
+  it('highlights the real Profile entry, with its violet icon, on the Profile page', async () => {
+    TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [provideRouter([{ path: '**', component: Blank }])],
+    });
+    await RouterTestingHarness.create('/admin/profile');
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(active(el)).toEqual(['Profile']);
+    const profile = links(el).find((a) => a.textContent?.trim() === 'Profile')!;
+    expect(profile.getAttribute('href')).toBe('/admin/profile');
+    expect(profile.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('violet');
+  });
+
+  it('highlights the real Employee List entry, with its amber icon, on a listed employee profile', async () => {
+    TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [provideRouter([{ path: '**', component: Blank }])],
+    });
+    await RouterTestingHarness.create('/admin/employees/e-9');
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(active(el)).toEqual(['Employee List']);
+    const entry = links(el).find((a) => a.textContent?.trim() === 'Employee List')!;
+    expect(entry.getAttribute('href')).toBe('/admin/employees');
+    expect(entry.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('amber');
+  });
 });

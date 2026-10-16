@@ -2,6 +2,8 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using iErp.Admin.ChangeBranch;
+using iErp.Admin.EmployeeList;
+using iErp.Admin.EmployeeProfile;
 using iErp.Admin.Login;
 using iErp.Admin.Session;
 
@@ -19,6 +21,12 @@ public static class AdminRegistration
         services.AddScoped<ILoginService, LoginService>();
         services.AddScoped<IChangeBranchRepository, ChangeBranchRepository>();
         services.AddScoped<IChangeBranchService, ChangeBranchService>();
+        services.AddScoped<IEmployeeProfileRepository, EmployeeProfileRepository>();
+        services.AddScoped<IEmployeeProfileService, EmployeeProfileService>();
+        services.AddSingleton<IEmployeePhotoStore, EmployeePhotoStore>();
+        services.AddScoped<IEmployeeScopeResolver, EmployeeScopeResolver>();
+        services.AddScoped<IEmployeeListRepository, EmployeeListRepository>();
+        services.AddScoped<IEmployeeListService, EmployeeListService>();
         return services;
     }
 }

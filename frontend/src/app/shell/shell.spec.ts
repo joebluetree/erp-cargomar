@@ -391,30 +391,29 @@ describe('Shell', () => {
       expect(themeButton(el).compareDocumentPosition(logoutButton(el)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
-    it('shows the user in bold blue, the branch in dark yellow and the year in bold in the text color', async () => {
+    it('shows the user in bold blue, the branch in bold pink and the year in bold in the text color', async () => {
       const { el } = await renderLoggedIn();
 
       const [user, branch, year] = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]'));
       expect(Array.from(user.classList)).toEqual(expect.arrayContaining(['font-semibold', 'text-header-user']));
-      expect(branch.classList).toContain('text-header-branch');
-      expect(branch.className).not.toMatch(/font-(semibold|bold)/);
+      expect(Array.from(branch.classList)).toEqual(expect.arrayContaining(['font-semibold', 'text-header-branch']));
       expect(Array.from(year.classList)).toEqual(expect.arrayContaining(['font-semibold', 'text-header-year']));
       expect(details(el)!.querySelectorAll('.text-muted-foreground')).toHaveLength(0);
     });
 
-    it('takes the title color from the page titles and gives the branch a dark yellow, in both themes', () => {
+    it('takes the title color from the page titles and gives the branch a pink, in both themes', () => {
       const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
       const values = (token: string) => Array.from(css.matchAll(new RegExp(`^\\s*--${token}:\\s*([^;]+);`, 'gm'))).map((m) => m[1].trim());
 
       // The page titles are text-primary, so the company title follows --primary in both themes (no dark override).
       expect(values('header-company')).toEqual(['var(--primary)']);
-      // Dark yellow: a light and a dark value, both with a yellow hue (oklch hue 80 to 95).
+      // Pink: a light and a dark value, both with a pink hue (oklch hue 330 to 355). Lightness may be a number or a percentage.
       const branch = values('header-branch');
       expect(branch).toHaveLength(2);
       for (const value of branch) {
-        const hue = Number(/oklch\([\d.]+ [\d.]+ ([\d.]+)\)/.exec(value)?.[1]);
-        expect(hue).toBeGreaterThanOrEqual(80);
-        expect(hue).toBeLessThanOrEqual(95);
+        const hue = Number(/oklch\([\d.]+%? [\d.]+ ([\d.]+)\)/.exec(value)?.[1]);
+        expect(hue).toBeGreaterThanOrEqual(330);
+        expect(hue).toBeLessThanOrEqual(355);
       }
     });
 

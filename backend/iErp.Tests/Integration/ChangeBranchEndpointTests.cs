@@ -27,7 +27,7 @@ public class ChangeBranchEndpointTests
         var y2024 = new FinancialYear { Id = "y-0", Code = 2024, Name = "2024-2025", CompanyCode = "CMP" };
         var repository = Substitute.For<IChangeBranchRepository>();
         repository.FindActiveUserAsync("u-1", Arg.Any<CancellationToken>())
-            .Returns(new User { Id = "u-1", Code = "U01", Name = "ADMIN", CompanyCode = "CMP", BranchId = "b-1" });
+            .Returns(new User { Id = "u-1", Code = "U01", Name = "ADMIN", CompanyCode = "CMP", BranchId = "b-1", EmployeeId = "e-1" });
         repository.FindCompanyAsync("c-1", Arg.Any<CancellationToken>())
             .Returns(new Company { Id = "c-1", Type = "C", Code = "CMP", Name = "Cargomar Pvt Ltd" });
         repository.ListBranchesAsync("u-1", "c-1", Arg.Any<CancellationToken>())
@@ -90,6 +90,7 @@ public class ChangeBranchEndpointTests
         Assert.Equal(("Mumbai", "2024-2025", "Cargomar Pvt Ltd", "ADMIN"), (session.GetProperty("branchName").GetString(),
             session.GetProperty("yearName").GetString(), session.GetProperty("companyName").GetString(), session.GetProperty("userName").GetString()));
         Assert.Equal(Expiry, body.GetProperty("expiresAt").GetDateTimeOffset());
+        Assert.Equal("e-1", session.GetProperty("employeeId").GetString());
 
         var token = new JsonWebToken(body.GetProperty("token").GetString());
         Assert.Equal(Expiry.UtcDateTime, token.ValidTo);
@@ -99,6 +100,7 @@ public class ChangeBranchEndpointTests
         client.Authenticated(token.EncodedToken);
         var current = await client.GetFromJsonAsync<JsonElement>("/test-endpoints/session");
         Assert.Equal("b-2", current.GetProperty("branchId").GetString());
+        Assert.Equal("e-1", current.GetProperty("employeeId").GetString());
     }
 
     [Fact]

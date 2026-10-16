@@ -28,7 +28,8 @@ describe('LoginService', () => {
 
     const req = controller.expectOne('admin/login');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ userCode: 'admin', password: 'secret', companyCode: 'CMP' });
+    // The user code and password go to the backend in upper case; the company code as typed.
+    expect(req.request.body).toEqual({ userCode: 'ADMIN', password: 'SECRET', companyCode: 'CMP' });
     expect(req.request.context.get(LOGIN_REQUEST)).toBe(true);
     expect(req.request.context.get(SKIP_ERROR_NOTIFICATION)).toBe(true); // the page reports failures itself
     expect(service.busy()).toBe(true);
@@ -38,6 +39,18 @@ describe('LoginService', () => {
     expect(done).toBe(true);
     expect(service.busy()).toBe(false);
     expect(auth.session()).toEqual({ token: 'token-1', expiresAt: '2099-01-01T00:00:00Z', ...LOGIN_RESPONSE.session });
+    expect(auth.session()!.employeeId).toBe('e-1');
+  });
+
+  it('sends the user code and password in upper case, whatever case they were typed in', () => {
+    const typed = { userCode: 'aDmIn', password: 'pass@123x', companyCode: 'cmp' };
+    service.login(typed).subscribe();
+
+    const req = controller.expectOne('admin/login');
+    expect(req.request.body).toEqual({ userCode: 'ADMIN', password: 'PASS@123X', companyCode: 'cmp' });
+    // What was typed (and may be remembered) is not changed.
+    expect(typed).toEqual({ userCode: 'aDmIn', password: 'pass@123x', companyCode: 'cmp' });
+    req.flush(LOGIN_RESPONSE);
   });
 
   it('starts no session and clears busy when the login is refused', () => {

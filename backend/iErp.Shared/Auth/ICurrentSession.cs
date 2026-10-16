@@ -10,6 +10,8 @@ public interface ICurrentSession
     /// <summary>The user's internal id (<c>USERM.USER_PKID</c>, the token's <c>sub</c>).</summary>
     string? UserId { get; }
     string? UserCode { get; }
+    /// <summary>The user's employee (<c>USERM.USER_EMP_ID</c>); null when the user has none.</summary>
+    string? EmployeeId { get; }
     string? CompanyId { get; }
     string? CompanyCode { get; }
     string? BranchId { get; }

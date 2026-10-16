@@ -25,6 +25,16 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/reports/company-list/company-list.routes').then((m) => m.COMPANY_LIST_ROUTES),
       },
+      {
+        path: 'admin/profile',
+        loadChildren: () =>
+          import('./features/admin/employee-profile/employee-profile.routes').then((m) => m.EMPLOYEE_PROFILE_ROUTES),
+      },
+      {
+        path: 'admin/employees',
+        loadChildren: () =>
+          import('./features/admin/employee-list/employee-list.routes').then((m) => m.EMPLOYEE_LIST_ROUTES),
+      },
       // Further feature routes are added here as lazy children.
     ],
   },

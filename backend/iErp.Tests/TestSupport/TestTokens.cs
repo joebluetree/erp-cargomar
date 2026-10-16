@@ -19,7 +19,8 @@ public static class TestTokens
         string audience = "iErp",
         string companyId = "c-1",
         string branchId = "b-1",
-        string yearId = "y-1")
+        string yearId = "y-1",
+        string? employeeId = null)
     {
         var expiresAt = expires ?? DateTimeOffset.UtcNow.AddHours(1);
         var descriptor = new SecurityTokenDescriptor
@@ -30,6 +31,7 @@ public static class TestTokens
             NotBefore = expiresAt.UtcDateTime.AddHours(-8),
             Expires = expiresAt.UtcDateTime,
             Subject = new ClaimsIdentity(
+            (Claim[])
             [
                 new Claim(SessionClaims.UserId, "u-1"),
                 new Claim(SessionClaims.UserCode, "U01"),
@@ -38,6 +40,7 @@ public static class TestTokens
                 new Claim(SessionClaims.CompanyCode, "CMP"),
                 new Claim(SessionClaims.BranchId, branchId),
                 new Claim(SessionClaims.YearId, yearId),
+                .. employeeId is null ? [] : new[] { new Claim(SessionClaims.EmployeeId, employeeId) },
             ]),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256),

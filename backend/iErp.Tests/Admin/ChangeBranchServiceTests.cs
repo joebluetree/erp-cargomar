@@ -15,7 +15,7 @@ public class ChangeBranchServiceTests
     private static readonly DateTimeOffset Now = new(2026, 10, 13, 9, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset Expiry = Now.AddMinutes(95); // the current token's expiry
 
-    private static readonly User Admin = new() { Id = "u-1", Code = "U01", Name = "ADMIN", CompanyCode = "CMP", BranchId = "b-1" };
+    private static readonly User Admin = new() { Id = "u-1", Code = "U01", Name = "ADMIN", CompanyCode = "CMP", BranchId = "b-1", EmployeeId = "e-1" };
     private static readonly Company Cmp = new() { Id = "c-1", Type = "C", Code = "CMP", Name = "Cargomar Pvt Ltd" };
     private static readonly Company Kochi = new() { Id = "b-1", Type = "B", ParentId = "c-1", Name = "Kochi" };
     private static readonly Company Mumbai = new() { Id = "b-2", Type = "B", ParentId = "c-1", Name = "Mumbai" };
@@ -66,7 +66,7 @@ public class ChangeBranchServiceTests
     }
 
     [Fact]
-    public async Task Switch_keeps_user_company_and_expiry_and_takes_the_new_branch_and_year()
+    public async Task Switch_keeps_user_employee_company_and_expiry_and_takes_the_new_branch_and_year()
     {
         var (service, _) = ServiceWith();
 
@@ -84,6 +84,8 @@ public class ChangeBranchServiceTests
         Assert.Equal(Expiry.UtcDateTime, token.ValidTo);
         Assert.Equal(("u-1", "b-2", "y-1"),
             (token.GetClaim(SessionClaims.UserId).Value, token.GetClaim(SessionClaims.BranchId).Value, token.GetClaim(SessionClaims.YearId).Value));
+        Assert.Equal("e-1", response.Session.EmployeeId);
+        Assert.Equal("e-1", token.GetClaim(SessionClaims.EmployeeId).Value);
     }
 
     [Fact]

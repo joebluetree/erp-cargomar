@@ -61,7 +61,7 @@ public class ChangeBranchTablesTests
         await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE USERM (
             USER_PKID NVARCHAR2(40) NOT NULL PRIMARY KEY, USER_CODE NVARCHAR2(15), USER_NAME NVARCHAR2(30),
             USER_PASSWORD NVARCHAR2(50), REC_COMPANY_CODE NVARCHAR2(10), USER_BRANCH_ID NVARCHAR2(40),
-            USER_ISLOCKED CHAR(1), REC_DELETED CHAR(1), REC_DELETED_DATE DATE)");
+            USER_ISLOCKED CHAR(1), REC_DELETED CHAR(1), REC_DELETED_DATE DATE, USER_EMP_ID NVARCHAR2(40))");
         await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE USERD (
             USER_ID NVARCHAR2(40), USER_BRANCH_ID NVARCHAR2(40), USER_RIGHTS_TOTAL NUMBER, USER_ICEGATE_PWD NVARCHAR2(100))");
         await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE YEARM (
@@ -78,7 +78,7 @@ public class ChangeBranchTablesTests
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_NAME) VALUES ('b-3', 'B', 'c-2', 'Other branch')",
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_NAME, REC_DELETED_DATE) VALUES ('b-4', 'B', 'c-1', 'Closed', DATE '2025-01-01')",
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_NAME) VALUES ('b-5', 'B', 'c-1', 'Not allotted')",
-                "INSERT INTO USERM (USER_PKID, USER_CODE, USER_NAME, REC_COMPANY_CODE, USER_BRANCH_ID, USER_ISLOCKED) VALUES ('u-1', 'U01', 'Admin', 'CMP', 'b-1', 'N')",
+                "INSERT INTO USERM (USER_PKID, USER_CODE, USER_NAME, REC_COMPANY_CODE, USER_BRANCH_ID, USER_ISLOCKED, USER_EMP_ID) VALUES ('u-1', 'U01', 'Admin', 'CMP', 'b-1', 'N', 'e-1')",
                 "INSERT INTO USERM (USER_PKID, USER_CODE, REC_COMPANY_CODE, USER_ISLOCKED) VALUES ('u-2', 'L01', 'CMP', 'Y')",
                 "INSERT INTO USERD (USER_ID, USER_BRANCH_ID, USER_ICEGATE_PWD) VALUES ('u-1', 'b-1', 'secret')",
                 "INSERT INTO USERD (USER_ID, USER_BRANCH_ID) VALUES ('u-1', 'b-2')",
@@ -105,7 +105,7 @@ public class ChangeBranchTablesTests
             Assert.Null(await repository.FindYearAsync("CMP", "y-1"));
             Assert.Null(await repository.FindYearAsync("CMP", "y-9"));
 
-            Assert.NotNull(await repository.FindActiveUserAsync("u-1"));
+            Assert.Equal("e-1", (await repository.FindActiveUserAsync("u-1"))!.EmployeeId);
             Assert.Null(await repository.FindActiveUserAsync("u-2"));
             Assert.Equal("Company", (await repository.FindCompanyAsync("c-1"))!.Name);
             Assert.Null(await repository.FindCompanyAsync("b-1"));

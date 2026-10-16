@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using iErp.Admin.Login;
 using iErp.Entities;
+using iErp.Shared.Lib;
 
 namespace iErp.Tests.Integration;
 
@@ -18,7 +19,7 @@ public class LoginEndpointTests
     {
         var repository = Substitute.For<ILoginRepository>();
         repository.FindUsersAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(users ??
-            [new User { Id = "u-1", Code = "U01", Name = "ADMIN", Password = Password, CompanyCode = "CMP", BranchId = "b-1" }]);
+            [new User { Id = "u-1", Code = "U01", Name = "ADMIN", Password = Lib.Encrypt(Password), CompanyCode = "CMP", BranchId = "b-1", EmployeeId = "e-1" }]);
         repository.FindCompanyAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(company
             ? new Company { Id = "c-1", Type = "C", Code = "CMP", Name = "Cargomar Pvt Ltd" } : null);
         repository.FindBranchAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(branch
@@ -68,6 +69,7 @@ public class LoginEndpointTests
         Assert.Equal("y-1", session.GetProperty("yearId").GetString());
         Assert.Equal("2025", session.GetProperty("yearCode").GetString());
         Assert.Equal("2025-2026", session.GetProperty("yearName").GetString());
+        Assert.Equal("e-1", session.GetProperty("employeeId").GetString());
     }
 
     [Fact]

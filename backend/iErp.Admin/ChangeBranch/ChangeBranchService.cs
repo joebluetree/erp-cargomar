@@ -58,7 +58,8 @@ public class ChangeBranchService(
             user.Code ?? "", user.Name ?? "",
             company.Id, company.Code ?? "", company.Name ?? "",
             branch.Id, branch.Name ?? "",
-            year.Id, YearCode(year), year.Name ?? "");
+            year.Id, YearCode(year), year.Name ?? "",
+            SessionDto.CleanEmployeeId(user.EmployeeId));
         var token = tokens.Issue(user.Id, session, expiresAt);
         logger.LogInformation("User {UserCode} switched to branch {BranchId}, year {YearId}", user.Code, branch.Id, year.Id);
         return new ChangeBranchResult(ChangeBranchOutcome.Success, new LoginResponse(token, expiresAt, session));

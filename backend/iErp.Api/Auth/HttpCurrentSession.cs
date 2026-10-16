@@ -10,6 +10,7 @@ public class HttpCurrentSession(IHttpContextAccessor accessor) : ICurrentSession
     public bool IsAuthenticated => accessor.HttpContext?.User.Identity?.IsAuthenticated == true;
     public string? UserId => Claim(SessionClaims.UserId);
     public string? UserCode => Claim(SessionClaims.UserCode);
+    public string? EmployeeId => Claim(SessionClaims.EmployeeId);
     public string? CompanyId => Claim(SessionClaims.CompanyId);
     public string? CompanyCode => Claim(SessionClaims.CompanyCode);
     public string? BranchId => Claim(SessionClaims.BranchId);

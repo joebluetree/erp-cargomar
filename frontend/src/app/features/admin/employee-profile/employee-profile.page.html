@@ -1,0 +1,107 @@
+@if (employeeId) {
+  <div class="mb-4 flex items-center gap-2">
+    <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+      <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+    </button>
+    <h1 appPageTitle>Employee Profile</h1>
+  </div>
+} @else {
+  <h1 appPageTitle class="mb-4">Profile</h1>
+}
+
+@if (service.loading()) {
+  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
+    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+    Loading profile…
+  </div>
+} @else if (service.notLinked()) {
+  <p role="status" data-slot="not-linked" class="p-4 text-muted-foreground">
+    {{ employeeId ? 'Employee not found.' : 'No employee profile is linked to your user.' }}
+  </p>
+} @else if (service.error()) {
+  <div role="alert" class="flex flex-wrap items-center gap-4 rounded-md border p-4">
+    <p>The profile could not be loaded.</p>
+    <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
+  </div>
+} @else if (service.profile()) {
+  <!-- As in the reference profile.JPG: tinted rounded boxes directly on the page. The boxes are in stacked order (basic,
+       Address, Contact, Bank, IDs). When they fit the content area at their natural width they are in rows (`fits`), each
+       placed by `placementOf`; boxes on a row stretch to its height. Otherwise they are stacked one below the other. The
+       outer element is measured (its width is the space available); the grid is as wide as its content in rows. -->
+  <div #profileHost data-slot="profile-host" class="w-full min-w-0">
+    <div
+      #profileGrid
+      data-slot="profile-columns"
+      class="grid gap-6"
+      [class]="fits() ? 'w-max grid-cols-[max-content_max-content_max-content]' : 'w-full grid-cols-1'"
+      [attr.data-layout]="fits() ? 'rows' : 'stacked'"
+    >
+      @for (section of sections(); track section.title) {
+        <ng-container *ngTemplateOutlet="box; context: { $implicit: section }" />
+      }
+    </div>
+  </div>
+}
+
+<!-- Label-value rows: the label on the left, the value on its right. -->
+<ng-template #rows let-fields let-labelClass="labelClass" let-slot="slot">
+  <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3" [attr.data-slot]="slot">
+    @for (field of fields; track field.label) {
+      <div class="contents">
+        <!-- Labels stay on one line; a long value such as an email may break anywhere, so it wraps instead of being cut. -->
+        <dt class="whitespace-nowrap" [class]="labelClass">{{ field.label }}</dt>
+        <dd class="max-w-[18rem] whitespace-pre-line font-medium [overflow-wrap:anywhere]">{{ field.value }}</dd>
+      </div>
+    }
+  </dl>
+</ng-template>
+
+<!-- One tinted box, placed in the grid by `placementOf`. -->
+<ng-template #box let-section>
+  <section
+    hlmCard
+    class="w-full rounded-2xl bg-profile-box shadow-md ring-0"
+    [class]="placementOf(section)"
+    data-slot="profile-section"
+    [attr.aria-label]="section.title || name()"
+  >
+    @if (section.title) {
+      <div hlmCardHeader>
+        <h2 hlmCardTitle class="text-profile-heading">{{ section.title }}</h2>
+      </div>
+      <div hlmCardContent>
+        @if (section.parts) {
+          <!-- The Address box: Current on the left, Permanent on the right (below it on phones). -->
+          <div data-slot="address-parts" class="grid gap-8 sm:grid-cols-2">
+            @for (part of section.parts; track part.title) {
+              <div data-slot="address-part" class="min-w-0">
+                <h3 class="mb-3 font-semibold text-profile-heading">{{ part.title }}</h3>
+                <ng-container *ngTemplateOutlet="rows; context: { $implicit: part.fields, labelClass: 'text-profile-label' }" />
+              </div>
+            }
+          </div>
+        } @else {
+          <ng-container *ngTemplateOutlet="rows; context: { $implicit: section.fields, labelClass: 'text-profile-label' }" />
+        }
+      </div>
+    } @else {
+      <!-- The first box has no heading: a big image column (initials until photos are available) on the left, and the
+           name with the basic details as label-value rows on the right; on phones the image is above the rows. -->
+      <div hlmCardContent data-slot="profile-summary" class="grid items-center gap-6 md:grid-cols-[auto_1fr] md:gap-10">
+        <!-- The photo when there is one (from the configured images folder); the initials until it shows, and if it fails. -->
+        <hlm-avatar class="size-32 justify-self-center md:size-48">
+          @if (service.photoUrl(); as photo) {
+            <!-- The whole photo inside the circle (not cropped to fill it), so the full face and head are seen. The space
+                 beside a portrait photo is filled with the photos' own white background colour. -->
+            <img hlmAvatarImage class="bg-profile-photo object-contain" [src]="photo" [alt]="'Photo of ' + name()" />
+          }
+          <span hlmAvatarFallback class="text-4xl font-semibold md:text-5xl" aria-hidden="true">{{ initials() }}</span>
+        </hlm-avatar>
+        <div class="min-w-0">
+          <p data-slot="employee-name" class="mb-4 break-words text-2xl font-semibold text-profile-heading">{{ name() }}</p>
+          <ng-container *ngTemplateOutlet="rows; context: { $implicit: section.fields, labelClass: 'text-profile-label', slot: 'basic-rows' }" />
+        </div>
+      </div>
+    }
+  </section>
+</ng-template>

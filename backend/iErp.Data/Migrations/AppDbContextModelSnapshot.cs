@@ -91,6 +91,206 @@ namespace iErp.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("iErp.Entities.Employee", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("EMP_PKID");
+
+                    b.Property<string>("AadhaarNo")
+                        .HasMaxLength(20)
+                        .HasColumnType("NVARCHAR2(20)")
+                        .HasColumnName("EMP_ADHAR_NO");
+
+                    b.Property<string>("BankAccountNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("EMP_BANK_ACNO");
+
+                    b.Property<string>("BankBranch")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_BANK_BRANCH");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_BANK_NAME");
+
+                    b.Property<string>("BranchCode")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("REC_BRANCH_CODE");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("EMP_NO");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("REC_COMPANY_CODE");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("TIMESTAMP(7)")
+                        .HasColumnName("EMP_DO_BIRTH");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_EMAIL_PERSONAL");
+
+                    b.Property<string>("EsiNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("EMP_ESINO");
+
+                    b.Property<string>("FatherName")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_FATHER_NAME");
+
+                    b.Property<string>("HomeAddress1")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_HOME_ADDRESS1");
+
+                    b.Property<string>("HomeAddress2")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_HOME_ADDRESS2");
+
+                    b.Property<string>("HomeAddress3")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_HOME_ADDRESS3");
+
+                    b.Property<string>("HomeCity")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_HOME_CITY");
+
+                    b.Property<string>("HomeCountryId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("EMP_HOME_COUNTRY_ID");
+
+                    b.Property<string>("HomePin")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("EMP_HOME_PIN");
+
+                    b.Property<string>("HomePoBox")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("EMP_HOME_POBOX");
+
+                    b.Property<string>("HomeStateId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("EMP_HOME_STATE_ID");
+
+                    b.Property<string>("IfscCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("NVARCHAR2(20)")
+                        .HasColumnName("EMP_IFSC_CODE");
+
+                    b.Property<string>("ImageName")
+                        .HasMaxLength(35)
+                        .HasColumnType("NVARCHAR2(35)")
+                        .HasColumnName("EMP_IMAGE_NAME");
+
+                    b.Property<string>("LocalAddress1")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_LOCAL_ADDRESS1");
+
+                    b.Property<string>("LocalAddress2")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_LOCAL_ADDRESS2");
+
+                    b.Property<string>("LocalAddress3")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_LOCAL_ADDRESS3");
+
+                    b.Property<string>("LocalCity")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_LOCAL_CITY");
+
+                    b.Property<string>("LocalCountryId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("EMP_LOCAL_COUNTRY_ID");
+
+                    b.Property<string>("LocalPin")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("EMP_LOCAL_PIN");
+
+                    b.Property<string>("LocalPoBox")
+                        .HasMaxLength(15)
+                        .HasColumnType("NVARCHAR2(15)")
+                        .HasColumnName("EMP_LOCAL_POBOX");
+
+                    b.Property<string>("LocalStateId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("EMP_LOCAL_STATE_ID");
+
+                    b.Property<string>("MaritalStatus")
+                        .HasMaxLength(10)
+                        .HasColumnType("NVARCHAR2(10)")
+                        .HasColumnName("EMP_MARITAL_STATUS");
+
+                    b.Property<string>("Mobile")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("EMP_MOBILE");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("NVARCHAR2(100)")
+                        .HasColumnName("EMP_NAME");
+
+                    b.Property<string>("Pan")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("EMP_PAN");
+
+                    b.Property<string>("PfNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("NVARCHAR2(50)")
+                        .HasColumnName("EMP_PFNO");
+
+                    b.Property<string>("Relieved")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("EMP_IS_RELIEVED")
+                        .IsFixedLength();
+
+                    b.Property<string>("SpouseName")
+                        .HasMaxLength(60)
+                        .HasColumnType("NVARCHAR2(60)")
+                        .HasColumnName("EMP_SPOUSE_NAME");
+
+                    b.Property<string>("UanNo")
+                        .HasMaxLength(20)
+                        .HasColumnType("NVARCHAR2(20)")
+                        .HasColumnName("EMP_UAN_NO");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EMPM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("iErp.Entities.FinancialYear", b =>
                 {
                     b.Property<string>("Id")
@@ -134,6 +334,31 @@ namespace iErp.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("iErp.Entities.Parameter", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("PARAM_PKID");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("PARAM_NAME");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("PARAM_TYPE");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PARAM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("iErp.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -165,6 +390,11 @@ namespace iErp.Data.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("TIMESTAMP(7)")
                         .HasColumnName("REC_DELETED_DATE");
+
+                    b.Property<string>("EmployeeId")
+                        .HasMaxLength(40)
+                        .HasColumnType("NVARCHAR2(40)")
+                        .HasColumnName("USER_EMP_ID");
 
                     b.Property<string>("Locked")
                         .HasMaxLength(1)

@@ -66,7 +66,7 @@ A failed credential check SHALL be answered with 401 problem details carrying on
 - **THEN** no log entry contains the submitted password
 
 ### Requirement: Session details
-A successful login SHALL return: the user's code and name; the company's id, code and name; the user's default branch (`USER_BRANCH_ID`) id and name; and the company's latest financial year (the `YEARM` row of the company with the latest start date) id, code and name. It SHALL also return the token and the time at which the token expires.
+A successful login SHALL return: the user's code and name; the company's id, code and name; the user's default branch (`USER_BRANCH_ID`) id and name; the company's latest financial year (the `YEARM` row of the company with the latest start date) id, code and name; and the user's employee id (`USER_EMP_ID`, without surrounding spaces), or an empty value when the user has none. A user without an employee id SHALL still be able to log in. It SHALL also return the token and the time at which the token expires.
 
 #### Scenario: Default branch
 - **WHEN** a user whose default branch is "Kochi" logs in
@@ -75,6 +75,14 @@ A successful login SHALL return: the user's code and name; the company's id, cod
 #### Scenario: Latest financial year
 - **WHEN** the company has years starting 2024-04-01 and 2025-04-01 and a user logs in
 - **THEN** the response's year is the one starting 2025-04-01
+
+#### Scenario: Employee id
+- **WHEN** a user whose `USER_EMP_ID` is "E-1" logs in
+- **THEN** the response's employee id is "E-1"
+
+#### Scenario: No employee id
+- **WHEN** a user whose `USER_EMP_ID` is empty logs in with valid credentials
+- **THEN** the login succeeds and the response's employee id is empty
 
 ### Requirement: Missing working context
 When the credentials are correct but the user has no default branch that exists, or the company has no financial year, the login SHALL be refused with 403 problem details whose message names what is missing ("No default branch is set for this user." or "No financial year is set up for this company."), and no token SHALL be issued.
@@ -88,7 +96,7 @@ When the credentials are correct but the user has no default branch that exists,
 - **THEN** the response is 403 with "No financial year is set up for this company." and no token
 
 ### Requirement: Access token
-The token SHALL be signed by the backend and SHALL carry the user code, user name, company id and code, branch id and year id. It SHALL expire after a configured lifetime (8 hours by default). The signing key SHALL come from configuration and SHALL NOT be stored in the repository.
+The token SHALL be signed by the backend and SHALL carry the user code, user name, company id and code, branch id and year id, and the employee id when the user has one. It SHALL expire after a configured lifetime (8 hours by default). The signing key SHALL come from configuration and SHALL NOT be stored in the repository.
 
 #### Scenario: Token expires
 - **WHEN** a token older than the configured lifetime is sent to a protected endpoint
@@ -101,6 +109,10 @@ The token SHALL be signed by the backend and SHALL carry the user code, user nam
 #### Scenario: No signing key configured
 - **WHEN** the API starts outside the Testing environment without a signing key
 - **THEN** it fails to start with a message naming the missing setting
+
+#### Scenario: Employee id in the token
+- **WHEN** a user with employee id "E-1" logs in
+- **THEN** the token carries "E-1" as the employee id, and a token of a user without one carries no employee id
 
 ### Requirement: Legacy tables read only
 The login SHALL only read the existing tables `USERM`, `YEARM` and `COMPANYM`. The application SHALL NOT create, alter or write to them, and applying the application's migrations SHALL leave them unchanged. The queries SHALL run on Oracle 10.2.

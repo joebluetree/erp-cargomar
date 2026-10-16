@@ -10,4 +10,6 @@ public static class SessionClaims
     public const string CompanyCode = "ierp:company_code";
     public const string BranchId = "ierp:branch_id";
     public const string YearId = "ierp:year_id";
+    /// <summary>Only present when the user has an employee (<c>USERM.USER_EMP_ID</c>).</summary>
+    public const string EmployeeId = "ierp:employee_id";
 }

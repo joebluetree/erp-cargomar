@@ -15,6 +15,7 @@ export function testSession(overrides: Partial<Session> = {}): Session {
     yearId: 'y-1',
     yearCode: '2025',
     yearName: '2025-2026',
+    employeeId: 'e-1',
     ...overrides,
   };
 }

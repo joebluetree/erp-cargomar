@@ -61,7 +61,7 @@ public class LoginTablesTests
         await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE USERM (
             USER_PKID NVARCHAR2(40) NOT NULL PRIMARY KEY, USER_CODE NVARCHAR2(15), USER_NAME NVARCHAR2(30),
             USER_PASSWORD NVARCHAR2(50), REC_COMPANY_CODE NVARCHAR2(10), USER_BRANCH_ID NVARCHAR2(40),
-            USER_ISLOCKED CHAR(1), REC_DELETED CHAR(1), REC_DELETED_DATE DATE)");
+            USER_ISLOCKED CHAR(1), REC_DELETED CHAR(1), REC_DELETED_DATE DATE, USER_EMP_ID NVARCHAR2(40))");
         await db.Database.ExecuteSqlRawAsync(@"CREATE TABLE YEARM (
             YEAR_PKID NVARCHAR2(40), YEAR_CODE NUMBER, YEAR_NAME NVARCHAR2(25), YEAR_START_DATE DATE,
             YEAR_END_DATE DATE, YEAR_CLOSED CHAR(1), REC_COMPANY_CODE NVARCHAR2(15))");
@@ -72,7 +72,7 @@ public class LoginTablesTests
             await db.Database.ExecuteSqlRawAsync(
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_CODE, COMP_NAME) VALUES ('b-1', 'B', 'c-1', 'KOC', 'Kochi')");
             await db.Database.ExecuteSqlRawAsync(
-                "INSERT INTO USERM (USER_PKID, USER_CODE, USER_NAME, USER_PASSWORD, REC_COMPANY_CODE, USER_BRANCH_ID, USER_ISLOCKED, REC_DELETED) VALUES ('u-1', 'U01', 'Admin', 'secret', 'CMP', 'b-1', 'N', 'N')");
+                "INSERT INTO USERM (USER_PKID, USER_CODE, USER_NAME, USER_PASSWORD, REC_COMPANY_CODE, USER_BRANCH_ID, USER_ISLOCKED, REC_DELETED, USER_EMP_ID) VALUES ('u-1', 'U01', 'Admin', 'secret', 'CMP', 'b-1', 'N', 'N', 'e-1')");
             await db.Database.ExecuteSqlRawAsync(
                 "INSERT INTO USERM (USER_PKID, USER_CODE, USER_NAME, REC_COMPANY_CODE, USER_ISLOCKED) VALUES ('u-2', 'L01', 'Locked', 'CMP', 'Y')");
             await db.Database.ExecuteSqlRawAsync(
@@ -90,6 +90,8 @@ public class LoginTablesTests
             var user = Assert.Single(await repository.FindUsersAsync("  u01 ", "cmp"));
             Assert.Empty(await repository.FindUsersAsync("Admin", "CMP")); // the name does not log in, only the code
             Assert.Equal(("U01", "secret", "b-1", "N", "N"), (user.Code, user.Password, user.BranchId, user.Locked, user.Deleted));
+            Assert.Equal("e-1", user.EmployeeId);
+            Assert.Null(Assert.Single(await repository.FindUsersAsync("N01", "CMP")).EmployeeId); // no employee: still a user
 
             Assert.Equal("c-1", (await repository.FindCompanyAsync(" cmp "))!.Id);
             var branch = await repository.FindBranchAsync(user.BranchId!);
