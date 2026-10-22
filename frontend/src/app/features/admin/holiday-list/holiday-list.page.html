@@ -1,0 +1,57 @@
+@if (branchId) {
+  <div class="mb-4 flex items-center gap-2">
+    <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+      <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+    </button>
+    <h1 appPageTitle>Holiday List</h1>
+  </div>
+} @else {
+  <h1 appPageTitle class="mb-4">Holiday List</h1>
+}
+
+@if (service.loading()) {
+  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
+    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+    Loading holidays…
+  </div>
+} @else if (service.notFound()) {
+  <p role="status" data-slot="not-found" class="p-4 text-muted-foreground">{{ notFoundText }}</p>
+} @else if (service.error()) {
+  <div role="alert" class="flex flex-wrap items-center gap-4 rounded-md border p-4">
+    <p>The holiday list could not be loaded.</p>
+    <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
+  </div>
+} @else if (service.items().length === 0) {
+  <p role="status" data-slot="no-holidays" class="p-4 text-muted-foreground">There are no holidays in the list.</p>
+} @else {
+  <!-- One tinted box like the Profile's: a quarter of the screen wide (wider if its rows need it, the full width on
+       phones) and two thirds of the screen high, scrolling inside when the list is longer. The branch's name heads the
+       box; below it three left-aligned columns, Holiday, Day and Date, under a heading row, one row per holiday in file
+       order, each value exactly as the file writes it. -->
+  <section
+    hlmCard
+    class="h-[66.667vh] w-full max-w-full overflow-auto rounded-2xl bg-profile-box shadow-md ring-0 md:w-[25vw] md:min-w-fit"
+    data-slot="holiday-box"
+    aria-label="Holidays"
+  >
+    <div hlmCardContent>
+      @if (service.branch(); as branch) {
+        <h2 data-slot="holiday-branch" class="mb-4 text-lg font-semibold text-profile-heading md:text-xl">{{ branch.name }}</h2>
+      }
+      <div role="table" aria-label="Holidays" class="grid grid-cols-[auto_auto_auto] gap-x-4 gap-y-4 text-base md:gap-x-10 md:text-lg" data-slot="holiday-rows">
+        <div role="row" class="contents" data-slot="holiday-heading">
+          @for (column of columns; track column) {
+            <span role="columnheader" class="text-left font-semibold">{{ column }}</span>
+          }
+        </div>
+        @for (holiday of service.items(); track $index) {
+          <div role="row" class="contents" data-slot="holiday-row">
+            <span role="cell" class="text-left text-profile-label [overflow-wrap:break-word]">{{ holiday.holiday || empty }}</span>
+            <span role="cell" class="text-left whitespace-nowrap">{{ holiday.day || empty }}</span>
+            <span role="cell" class="text-left font-medium whitespace-nowrap">{{ holiday.date || empty }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+}

@@ -201,6 +201,15 @@ export class EmployeeListPage {
     return this.selection.selectedId() === id;
   }
 
+  /**
+   * Opens the employee's profile from a click anywhere in the Employee No cell. The click stays with the cell (the row
+   * would otherwise toggle its selection), so the selection is unchanged.
+   */
+  protected openProfile(employee: Employee, event: Event): void {
+    event.stopPropagation();
+    void this.router.navigate(['/admin/employees', employee.id]);
+  }
+
   protected toggleRow(id: string): void {
     this.selection.toggle(id);
   }

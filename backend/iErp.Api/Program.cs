@@ -1,6 +1,7 @@
 using System.Text;
 using iErp.Admin;
 using iErp.Admin.EmployeeProfile;
+using iErp.SharedBusiness.Holidays;
 using iErp.Api.Auth;
 using iErp.Api.Middleware;
 using iErp.Data;
@@ -39,6 +40,8 @@ builder.Services.AddOptions<JwtOptions>()
     .ValidateOnStart();
 // Employee photos: the folder is set in appsettings.json (EmployeeImages:Folder) and may be changed without a code change.
 builder.Services.AddOptions<EmployeeImagesOptions>().Bind(builder.Configuration.GetSection(EmployeeImagesOptions.SectionName));
+// Branch holiday files: the folder is set in appsettings.json (HolidayLists:Folder) and may be changed without a code change.
+builder.Services.AddOptions<HolidayListsOptions>().Bind(builder.Configuration.GetSection(HolidayListsOptions.SectionName));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 builder.Services.ConfigureOptions<ConfigureJwtBearer>();
 builder.Services.AddAuthorization();

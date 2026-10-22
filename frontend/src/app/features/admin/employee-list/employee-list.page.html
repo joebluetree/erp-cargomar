@@ -59,8 +59,9 @@
           >
             @for (column of columns; track column.key) {
               @if (column.key === 'code') {
-                <td hlmTd>
-                  <!-- Opens the profile. Clicks and keys stay with the link, so the row selection does not change. -->
+                <!-- A click anywhere in the cell opens the profile, as the link does for the keyboard; neither changes the
+                     row selection. -->
+                <td hlmTd class="cursor-pointer" data-employee-code-cell (click)="openProfile(employee, $event)">
                   <a
                     class="font-medium underline underline-offset-4"
                     data-slot="employee-link"

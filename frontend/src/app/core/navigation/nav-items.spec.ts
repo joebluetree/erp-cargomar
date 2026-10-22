@@ -2,12 +2,14 @@ import { ICON_TONES } from '../../shared/ui/icon-tone/icon-tone';
 import { NAV_ICONS, NAV_ITEMS } from './nav-items';
 
 describe('NAV_ITEMS', () => {
-  it('lists the Dashboard, the Company List, Profile, then the Employee List', () => {
+  it('lists the Dashboard, the Company List, the Branch List, Profile, the Employee List, then the Holiday List', () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.route])).toEqual([
       ['Dashboard', '/'],
       ['Company List', '/reports/companies'],
+      ['Branch List', '/reports/branches'],
       ['Profile', '/admin/profile'],
       ['Employee List', '/admin/employees'],
+      ['Holiday List', '/admin/holidays'],
     ]);
   });
 
@@ -22,12 +24,14 @@ describe('NAV_ITEMS', () => {
     expect(new Set(tones).size).toBe(NAV_ITEMS.length);
   });
 
-  it('colors the Dashboard blue, the Company List green, Profile violet and the Employee List amber', () => {
+  it('colors the Dashboard blue, the Company List green, the Branch List teal, Profile violet, the Employee List amber and the Holiday List rose', () => {
     expect(NAV_ITEMS.map((i) => [i.label, i.tone])).toEqual([
       ['Dashboard', 'blue'],
       ['Company List', 'green'],
+      ['Branch List', 'teal'],
       ['Profile', 'violet'],
       ['Employee List', 'amber'],
+      ['Holiday List', 'rose'],
     ]);
   });
 

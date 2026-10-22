@@ -1,6 +1,9 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using iErp.Reports.BranchList;
 using iErp.Reports.CompanyList;
+using iErp.SharedBusiness.Holidays;
 
 namespace iErp.Reports;
 
@@ -12,6 +15,9 @@ public static class ReportsRegistration
         services.AddValidatorsFromAssemblyContaining(typeof(ReportsRegistration));
         services.AddScoped<ICompanyListRepository, CompanyListRepository>();
         services.AddScoped<ICompanyListService, CompanyListService>();
+        services.AddScoped<IBranchListRepository, BranchListRepository>();
+        services.AddScoped<IBranchListService, BranchListService>();
+        services.TryAddSingleton<IHolidayFileStore, HolidayFileStore>();
         return services;
     }
 }
