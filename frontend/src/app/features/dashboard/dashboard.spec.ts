@@ -53,7 +53,7 @@ describe('Dashboard', () => {
     expect(links).toEqual([['Reports', '/reports']]);
   });
 
-  it('links to the Company List, Profile and the Employee List through the real menu', () => {
+  it('links to the Company List, the Branch List, Profile, the Employee List and the Holiday List through the real menu', () => {
     TestBed.configureTestingModule({
       imports: [Dashboard],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
@@ -64,8 +64,10 @@ describe('Dashboard', () => {
     const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.quick-links a')).map((a) => [a.textContent?.trim(), a.getAttribute('href')]);
     expect(links).toEqual([
       ['Company List', '/reports/companies'],
+      ['Branch List', '/reports/branches'],
       ['Profile', '/admin/profile'],
       ['Employee List', '/admin/employees'],
+      ['Holiday List', '/admin/holidays'],
     ]);
   });
 
@@ -78,7 +80,7 @@ describe('Dashboard', () => {
     fixture.detectChanges();
 
     const icons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.quick-links a ng-icon')) as HTMLElement[];
-    for (const [index, label] of ['Company List', 'Profile', 'Employee List'].entries()) {
+    for (const [index, label] of ['Company List', 'Branch List', 'Profile', 'Employee List', 'Holiday List'].entries()) {
       const entry = NAV_ITEMS.find((i) => i.label === label)!;
       expect(icons[index].getAttribute('data-icon-tone')).toBe(entry.tone);
       expect(icons[index].style.getPropertyValue('--ng-icon__color')).toBe(`var(--icon-${entry.tone})`);

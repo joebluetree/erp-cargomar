@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { lucideCircleUser, lucideFileText, lucideHouse, lucideUsers } from '@ng-icons/lucide';
+import { lucideBuilding2, lucideCalendarDays, lucideCircleUser, lucideFileText, lucideHouse, lucideUsers } from '@ng-icons/lucide';
 import { IconToneName } from '../../shared/ui/icon-tone/icon-tone';
 
 /** One entry in the main navigation menu. */
@@ -14,7 +14,7 @@ export interface NavItem {
 }
 
 /** Icons used by `NAV_ITEMS`. Components that show the items register these with `provideIcons`. */
-export const NAV_ICONS = { lucideCircleUser, lucideFileText, lucideHouse, lucideUsers };
+export const NAV_ICONS = { lucideBuilding2, lucideCalendarDays, lucideCircleUser, lucideFileText, lucideHouse, lucideUsers };
 
 /**
  * The single list that drives the sidebar menu and the Dashboard quick links.
@@ -24,8 +24,10 @@ export const NAV_ICONS = { lucideCircleUser, lucideFileText, lucideHouse, lucide
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Dashboard', icon: 'lucideHouse', route: '/', tone: 'blue' },
   { label: 'Company List', icon: 'lucideFileText', route: '/reports/companies', tone: 'green' },
+  { label: 'Branch List', icon: 'lucideBuilding2', route: '/reports/branches', tone: 'teal' },
   { label: 'Profile', icon: 'lucideCircleUser', route: '/admin/profile', tone: 'violet' },
   { label: 'Employee List', icon: 'lucideUsers', route: '/admin/employees', tone: 'amber' },
+  { label: 'Holiday List', icon: 'lucideCalendarDays', route: '/admin/holidays', tone: 'rose' },
 ];
 
 /** The menu as injected into components. Defaults to `NAV_ITEMS`; tests can provide a different list. */

@@ -1,0 +1,100 @@
+<div class="mb-4 flex items-center gap-2">
+  <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+    <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+  </button>
+  <h1 appPageTitle>Branch List</h1>
+</div>
+
+<app-table-toolbar>
+  <div class="flex items-center gap-2">
+    <label hlmLabel for="filter-code">Code</label>
+    <input hlmInput id="filter-code" class="w-48" type="text" autocomplete="off" [value]="codeInput()" (input)="setCodeInput($event)" />
+  </div>
+  <div class="flex items-center gap-2">
+    <label hlmLabel for="filter-name">Name</label>
+    <input hlmInput id="filter-name" class="w-48" type="text" autocomplete="off" [value]="nameInput()" (input)="setNameInput($event)" />
+  </div>
+  <button hlmBtn type="button" (click)="search()">
+    <ng-icon name="lucideSearch" aria-hidden="true" />
+    Search
+  </button>
+</app-table-toolbar>
+
+@if (service.error()) {
+  <div role="alert" class="flex flex-wrap items-center gap-4 rounded-md border p-4">
+    <p>The branches could not be loaded.</p>
+    <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
+  </div>
+} @else if (service.loading()) {
+  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
+    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+    Loading branches…
+  </div>
+} @else {
+  <div class="mb-2"><app-table-wrap-toggle [(wrap)]="wrap" /></div>
+  <div hlmTableContainer [attr.data-wrap]="wrap() ? 'true' : null">
+    <table hlmTable aria-label="Branches">
+      <thead hlmTHead>
+        <tr hlmTr>
+          @for (column of columns; track column.key) {
+            <th hlmTh [attr.aria-sort]="ariaSort(column.key)">
+              <button type="button" class="inline-flex items-center gap-1 font-medium" (click)="toggleSort(column.key)">
+                {{ column.label }}
+                <ng-icon [name]="sortIcon(column.key)" size="12" aria-hidden="true" />
+              </button>
+            </th>
+          }
+          <th hlmTh class="whitespace-nowrap">Holiday List</th>
+        </tr>
+      </thead>
+      <tbody hlmTBody>
+        @for (branch of rows(); track branch.id) {
+          <tr
+            hlmTr
+            tabindex="0"
+            [attr.data-state]="isSelected(branch.id) ? 'selected' : null"
+            [attr.aria-selected]="isSelected(branch.id)"
+            (click)="toggleRow(branch.id)"
+            (keydown.enter)="toggleRow(branch.id)"
+            (keydown.space)="toggleRow(branch.id); $event.preventDefault()"
+          >
+            @for (column of columns; track column.key) {
+              <td hlmTd>{{ branch[column.key] }}</td>
+            }
+            <td hlmTd class="whitespace-nowrap">
+              <!-- Opens the branch's holiday list; the click and keys stay with the button, so the selection is unchanged. -->
+              <button
+                hlmBtn
+                variant="outline"
+                size="icon"
+                type="button"
+                data-slot="branch-holidays"
+                [attr.aria-label]="'Holidays of ' + branch.name"
+                [attr.title]="'Holidays of ' + branch.name"
+                (click)="openHolidays(branch, $event)"
+                (keydown.enter)="$event.stopPropagation()"
+                (keydown.space)="$event.stopPropagation()"
+              >
+                <ng-icon name="lucideCalendarDays" aria-hidden="true" />
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr hlmTr>
+            <td hlmTd [attr.colspan]="columns.length + 1" class="text-center text-muted-foreground">
+              {{ hasFilters() ? 'No branches match the filters.' : 'There are no branches.' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-table-pager
+    [total]="service.total()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    (pageChange)="goToPage($event)"
+    (pageSizeChange)="changePageSize($event)"
+  />
+}

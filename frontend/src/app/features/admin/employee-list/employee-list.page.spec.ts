@@ -5,6 +5,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { vi } from 'vitest';
 import { AuthSession, SESSION_STORAGE_KEY } from '../../../core/auth/auth-session';
 import { testSession } from '../../../core/auth/auth-session.testing';
 import { Employee } from './employee-list.model';
@@ -320,6 +321,44 @@ describe('EmployeeListPage', () => {
 
       expect(TestBed.inject(Router).url).toBe('/admin/employees/e-01');
       expect(selected()).toEqual(['1003']);
+    });
+
+    it('opens the profile from a click anywhere in the Employee No cell, without changing the selection', async () => {
+      create();
+      answer();
+      rows()[2].click();
+      fixture.detectChanges();
+
+      const cell = rows()[1].querySelector<HTMLElement>('[data-employee-code-cell]')!;
+      expect(cell.classList).toContain('cursor-pointer');
+      cell.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-02');
+      expect(selected()).toEqual(['1003']);
+    });
+
+    it('opens only one profile when the link itself is clicked', async () => {
+      create();
+      answer();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+
+      link(0).click();
+      await fixture.whenStable();
+
+      expect(navigate).not.toHaveBeenCalled(); // the link navigates itself; the cell does not repeat it
+      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-01');
+    });
+
+    it('still selects the row from the other cells', () => {
+      create();
+      answer();
+
+      (rows()[1].querySelectorAll('td')[1] as HTMLElement).click();
+      fixture.detectChanges();
+
+      expect(selected()).toEqual(['1002']);
     });
 
     it('keeps Enter on the link from selecting the row', () => {

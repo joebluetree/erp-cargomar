@@ -26,6 +26,11 @@ export const routes: Routes = [
           import('./features/reports/company-list/company-list.routes').then((m) => m.COMPANY_LIST_ROUTES),
       },
       {
+        path: 'reports/branches',
+        loadChildren: () =>
+          import('./features/reports/branch-list/branch-list.routes').then((m) => m.BRANCH_LIST_ROUTES),
+      },
+      {
         path: 'admin/profile',
         loadChildren: () =>
           import('./features/admin/employee-profile/employee-profile.routes').then((m) => m.EMPLOYEE_PROFILE_ROUTES),
@@ -34,6 +39,11 @@ export const routes: Routes = [
         path: 'admin/employees',
         loadChildren: () =>
           import('./features/admin/employee-list/employee-list.routes').then((m) => m.EMPLOYEE_LIST_ROUTES),
+      },
+      {
+        path: 'admin/holidays',
+        loadChildren: () =>
+          import('./features/admin/holiday-list/holiday-list.routes').then((m) => m.HOLIDAY_LIST_ROUTES),
       },
       // Further feature routes are added here as lazy children.
     ],

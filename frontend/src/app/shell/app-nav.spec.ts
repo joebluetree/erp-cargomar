@@ -142,4 +142,41 @@ describe('AppNav', () => {
     expect(entry.getAttribute('href')).toBe('/admin/employees');
     expect(entry.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('amber');
   });
+
+  it('highlights the real Holiday List entry, with its rose icon, on the Holiday List page', async () => {
+    TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [provideRouter([{ path: '**', component: Blank }])],
+    });
+    await RouterTestingHarness.create('/admin/holidays');
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(active(el)).toEqual(['Holiday List']);
+    const entry = links(el).find((a) => a.textContent?.trim() === 'Holiday List')!;
+    expect(entry.getAttribute('href')).toBe('/admin/holidays');
+    expect(entry.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('rose');
+  });
+
+  it('highlights the real Branch List entry, with its teal icon, on a branch holiday page', async () => {
+    TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [provideRouter([{ path: '**', component: Blank }])],
+    });
+    await RouterTestingHarness.create('/reports/branches/b-2/holidays');
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(active(el)).toEqual(['Branch List']);
+    const entry = links(el).find((a) => a.textContent?.trim() === 'Branch List')!;
+    expect(entry.getAttribute('href')).toBe('/reports/branches');
+    expect(entry.querySelector('ng-icon')!.getAttribute('data-icon-tone')).toBe('teal');
+  });
 });
+
