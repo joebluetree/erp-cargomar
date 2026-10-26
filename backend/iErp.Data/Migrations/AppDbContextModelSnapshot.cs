@@ -22,6 +22,52 @@ namespace iErp.Data.Migrations
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("iErp.Entities.AppDetail", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("USER_APPID");
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("USER_BRANCH_ID");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("NVARCHAR2(20)")
+                        .HasColumnName("USER_COMPANY_CODE");
+
+                    b.Property<string>("LoggedOut")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("USER_LOGGED_OUT")
+                        .IsFixedLength();
+
+                    b.Property<string>("Password")
+                        .HasMaxLength(100)
+                        .HasColumnType("NVARCHAR2(100)")
+                        .HasColumnName("USER_PASSWORD");
+
+                    b.Property<string>("UserCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("USER_CODE");
+
+                    b.Property<string>("YearId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("USER_YEAR_ID");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("APPDETAILS", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("iErp.Entities.Company", b =>
                 {
                     b.Property<string>("Id")

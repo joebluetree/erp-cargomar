@@ -15,4 +15,7 @@ public interface ILoginRepository
 
     /// <summary>The company's financial year with the latest start date.</summary>
     Task<FinancialYear?> FindLatestYearAsync(string companyCode, CancellationToken ct = default);
+
+    /// <summary>The APPDETAILS rows with this app id (the key, so one or none), so several rows are seen as a failure too.</summary>
+    Task<IReadOnlyList<AppDetail>> FindAppDetailsAsync(string appId, CancellationToken ct = default);
 }

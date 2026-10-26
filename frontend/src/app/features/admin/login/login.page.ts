@@ -27,6 +27,9 @@ function notBlank(control: AbstractControl<string>): ValidationErrors | null {
  * the screen. A refused login (401 or 403) is shown as a warning with the backend's message and every field keeps
  * its value; other failures are shown as errors, and backend validation messages go under their fields. With Remember
  * me ticked, a successful login is remembered in the browser and fills the screen the next time it opens.
+ *
+ * The automatic login (`?appid=<id>`) happens before this screen is created, in `autoLoginGuard`; the screen only
+ * opens when it fails.
  */
 @Component({
   selector: 'app-login-page',
