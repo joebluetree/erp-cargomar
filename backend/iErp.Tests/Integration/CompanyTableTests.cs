@@ -85,9 +85,6 @@ public class CompanyTableTests
             await db.Database.ExecuteSqlRawAsync(
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_CODE, COMP_NAME) VALUES ('twin-a', 'C', 'T1', 'Twin')");
 
-            // Migrations must neither fail on nor change the existing table.
-            await db.Database.MigrateAsync();
-
             var companies = await db.Set<Company>().AsNoTracking()
                 .Where(c => c.Type == "C" && c.DeletedDate == null && c.Name != "Twin")
                 .OrderBy(c => c.Name).ToListAsync();

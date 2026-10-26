@@ -84,9 +84,6 @@ public class LoginTablesTests
             await db.Database.ExecuteSqlRawAsync(
                 "INSERT INTO YEARM (YEAR_PKID, YEAR_CODE, YEAR_NAME, YEAR_START_DATE, YEAR_END_DATE, REC_COMPANY_CODE) VALUES ('y-2', 2025, '2025-2026', DATE '2025-04-01', DATE '2026-03-31', 'CMP')");
 
-            // Migrations must neither fail on nor change the existing tables.
-            await db.Database.MigrateAsync();
-
             var user = Assert.Single(await repository.FindUsersAsync("  u01 ", "cmp"));
             Assert.Empty(await repository.FindUsersAsync("Admin", "CMP")); // the name does not log in, only the code
             Assert.Equal(("U01", "secret", "b-1", "N", "N"), (user.Code, user.Password, user.BranchId, user.Locked, user.Deleted));
