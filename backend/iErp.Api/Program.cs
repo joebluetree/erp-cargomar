@@ -85,6 +85,9 @@ if (!app.Environment.IsProduction())
 // The published Angular app lives in wwwroot and is served from the same origin as the API.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+// Routing must come after the static files: the catch-all fallback below matches every URL, and static files
+// are skipped for a request that already matched an endpoint (the default routing runs first otherwise).
+app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
