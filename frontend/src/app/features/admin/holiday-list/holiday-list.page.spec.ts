@@ -63,12 +63,12 @@ describe('HolidayListPage', () => {
 
   afterEach(() => sessionStorage.removeItem(SESSION_STORAGE_KEY));
 
-  it('shows the title Holiday List and a loading message until the holidays arrive', () => {
+  it('shows the title Holiday List, and no box or loading message of its own until the holidays arrive', () => {
     create();
 
     expect(text(el.querySelector('h1'))).toBe('Holiday List');
     expect(el.querySelector('h1')!.getAttribute('data-slot')).toBe('page-title');
-    expect(text(el.querySelector('[role="status"]'))).toContain('Loading holidays');
+    expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
     expect(box()).toBeNull();
     answer();
     expect(el.querySelector('[role="status"]')).toBeNull();
@@ -118,13 +118,17 @@ describe('HolidayListPage', () => {
 
     expect(box()!.getAttribute('data-slot')).toBe('holiday-box');
     expect(Array.from(box()!.classList)).toEqual(expect.arrayContaining(['rounded-2xl', 'bg-profile-box', 'shadow-md']));
-    // A quarter of the screen wide (full width on phones, never narrower than its rows) and two thirds of the screen
-    // high, scrolling inside.
+    // A quarter of the screen wide (full width on phones, never narrower than its rows) and as tall as its list.
     expect(Array.from(box()!.classList)).toEqual(
-      expect.arrayContaining(['md:w-[25vw]', 'md:min-w-fit', 'w-full', 'h-[66.667vh]', 'overflow-auto']),
+      expect.arrayContaining(['md:w-[25vw]', 'md:min-w-fit', 'w-full', 'h-fit']),
     );
+    // The box is as tall as its list: no fixed height and no scroll of its own.
+    expect(box()!.className).not.toMatch(/h-\[|overflow-auto/);
     const list = el.querySelector('[data-slot="holiday-rows"]')!;
-    expect(Array.from(list.classList)).toEqual(expect.arrayContaining(['grid', 'grid-cols-[auto_auto_auto]', 'text-base', 'md:text-lg']));
+    expect(Array.from(list.classList)).toEqual(expect.arrayContaining(['grid', 'grid-cols-[auto_auto_auto]']));
+    // The text size is the Profile's: the card's own size, with none of its own on the list or the branch heading.
+    expect(list.className).not.toMatch(/text-(xs|sm|base|lg|xl)/);
+    expect(el.querySelector('[data-slot="holiday-branch"]')?.className ?? '').not.toMatch(/text-(xs|sm|base|lg|xl)/);
     const [reason, day, date] = Array.from(list.querySelector('[data-slot="holiday-row"]')!.children);
     const headings = Array.from(list.querySelectorAll('[role="columnheader"]'));
     expect([...headings, reason, day, date].every((c) => c.classList.contains('text-left'))).toBe(true);
@@ -133,12 +137,13 @@ describe('HolidayListPage', () => {
     expect(date.classList).toContain('font-medium');
   });
 
-  it('is view only: no inputs and no buttons', () => {
+  it('is view only: no inputs and no buttons but Back', () => {
     create();
     answer();
 
     expect(el.querySelectorAll('input, textarea, select')).toHaveLength(0);
-    expect(el.querySelectorAll('button')).toHaveLength(0);
+    // The only button is Back.
+    expect(Array.from(el.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual(['Back']);
   });
 
   it('says Holiday List Not Found on 404, with no notification and no box', () => {
@@ -222,6 +227,8 @@ describe('HolidayListPage for a listed branch', () => {
           { path: '', component: Stub },
           { path: 'reports/branches', component: Stub },
           { path: 'reports/branches/:id/holidays', providers: [HolidayListService], component: HolidayListPage },
+          { path: 'admin/holidays', providers: [HolidayListService], component: HolidayListPage },
+          { path: 'admin/profile', component: Stub },
         ]),
         provideLocationMocks(),
         provideHttpClient(),
@@ -280,6 +287,45 @@ describe('HolidayListPage for a listed branch', () => {
     expect(router.url).toBe('/reports/branches');
   });
 
+  it('sets the header off from the page with a line, in both modes', async () => {
+    const { harness, http, el } = await open('/reports/branches/b-2/holidays');
+    http.expectOne('reports/branches/b-2/holidays').flush({ branchCode: 'BLRAF', branchName: 'Bangalore', items: [{ holiday: 'A', day: 'B', date: 'C' }] });
+    harness.detectChanges();
+    const rule = el().querySelector('[data-slot="page-rule"]')!;
+    expect(rule.previousElementSibling!.querySelector('h1')).not.toBeNull();
+    expect(rule.querySelector('hr')).not.toBeNull();
+
+    await harness.navigateByUrl('/admin/holidays');
+    http.expectOne('admin/holidays').flush({ branchCode: 'COKSF', branchName: 'Kochi Sea', items: [] });
+    harness.detectChanges();
+    expect(el().querySelector('[data-slot="page-rule"]')).not.toBeNull();
+  });
+
+  it("has a Back button on the user's own list too, which returns to the page the user came from", async () => {
+    const { harness, http, el, router } = await open('/admin/profile', '/admin/holidays');
+    http.expectOne('admin/holidays').flush({ branchCode: 'COKSF', branchName: 'Kochi Sea', items: [] });
+    harness.detectChanges();
+
+    const back = el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!;
+    expect(back.parentElement!.firstElementChild).toBe(back);
+    expect(text(back.parentElement!.querySelector('h1'))).toBe('Holiday List');
+    back.click();
+    await settle(harness.fixture);
+
+    expect(router.url).toBe('/admin/profile');
+  });
+
+  it("goes to the Dashboard from the user's own list when it was opened directly", async () => {
+    const { harness, http, el, router } = await open('/admin/holidays');
+    http.expectOne('admin/holidays').flush({ branchCode: 'COKSF', branchName: 'Kochi Sea', items: [] });
+    harness.detectChanges();
+
+    el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
+    await settle(harness.fixture);
+
+    expect(router.url).toBe('/');
+  });
+
   it('goes to the Branch List when opened directly', async () => {
     const { harness, http, el, router } = await open('/reports/branches/b-2/holidays');
     http.expectOne('reports/branches/b-2/holidays').flush({ branchCode: 'BLRAF', branchName: 'Bangalore', items: [{ holiday: 'A', day: 'B', date: 'C' }] });
@@ -288,7 +334,7 @@ describe('HolidayListPage for a listed branch', () => {
     el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
     await settle(harness.fixture);
 
-    expect(router.url).toBe('/reports/branches');
+    expect(router.url).toBe('/reports/branches?menuId=NS-BRANCHLIST');
   });
 
   it('says Holiday List Not Found on 404, without a notification', async () => {

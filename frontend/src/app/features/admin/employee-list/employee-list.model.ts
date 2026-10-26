@@ -52,15 +52,15 @@ export interface EmployeeListState {
 /** The key under which the Employee List saves its state in `TableStateStore`. */
 export const EMPLOYEE_LIST_STATE_KEY = 'admin/employees';
 
-/** The table columns in display order. */
-export const COLUMNS: readonly { key: SortColumn; label: string }[] = [
-  { key: 'code', label: 'Employee No' },
-  { key: 'name', label: 'Employee Name' },
+/** The table columns in display order; a `nowrap` column stays on one line even with "Wrap text" on. */
+export const COLUMNS: readonly { key: SortColumn; label: string; nowrap?: boolean }[] = [
+  { key: 'code', label: 'Emp. No' },
+  { key: 'name', label: 'Emp. Name' },
   { key: 'fatherName', label: "Father's Name" },
-  { key: 'dateOfBirth', label: 'Date of Birth' },
+  { key: 'dateOfBirth', label: 'DOB', nowrap: true },
   { key: 'address', label: 'Address' },
-  { key: 'mobile', label: 'Mobile No' },
-  { key: 'email', label: 'Personal Email' },
+  { key: 'mobile', label: 'Mobile' },
+  { key: 'email', label: 'Email' },
 ];
 
 /** The backend returns employees by name, so that is the order shown until the user chooses a sort. */

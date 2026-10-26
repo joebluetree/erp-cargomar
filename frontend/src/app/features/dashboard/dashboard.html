@@ -2,16 +2,21 @@
 
 <p class="text-muted-foreground">Welcome to iErp. Use the menu to open a screen.</p>
 
-@if (quickLinks.length > 0) {
+@if (menu.modules().length > 0) {
   <h2 class="mb-2 mt-8 text-lg font-semibold">Quick links</h2>
-  <ul class="quick-links flex flex-wrap gap-4">
-    @for (link of quickLinks; track link.route) {
-      <li>
-        <a hlmBtn variant="outline" [routerLink]="link.route">
-          <ng-icon [name]="link.icon" [appIconTone]="link.tone" aria-hidden="true" />
-          {{ link.label }}
-        </a>
-      </li>
-    }
-  </ul>
+  @for (module of menu.modules(); track module.id) {
+    <h3 data-slot="quick-links-module" class="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      {{ module.name }}
+    </h3>
+    <ul class="quick-links flex flex-wrap gap-4">
+      @for (entry of module.menus; track entry.id) {
+        <li>
+          <a hlmBtn variant="outline" [routerLink]="'/' + entry.route" [queryParams]="{ menuId: entry.code }">
+            <ng-icon [name]="look(entry.route).icon" [appIconTone]="look(entry.route).tone" aria-hidden="true" />
+            {{ entry.name }}
+          </a>
+        </li>
+      }
+    </ul>
+  }
 }

@@ -1,16 +1,15 @@
 import { Location } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
   lucideArrowDown,
   lucideArrowLeft,
   lucideArrowUp,
   lucideArrowUpDown,
-  lucideCalendarDays,
-  lucideLoaderCircle,
   lucideSearch,
 } from '@ng-icons/lucide';
+import { appCalendarColor } from '../../../shared/ui/icons/calendar-color';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
@@ -25,6 +24,8 @@ import { BRANCH_LIST_STATE_KEY, Branch, BranchListState, COLUMNS, DEFAULT_SORT, 
 import { BranchListSelection } from './branch-list.selection';
 import { BranchListService } from './branch-list.service';
 import { sortBranches } from './branch-list.table';
+import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 
 /**
  * The Branch List report. The backend filters and pages: a search or a page change is one request. What the user
@@ -36,9 +37,9 @@ import { sortBranches } from './branch-list.table';
  */
 @Component({
   selector: 'app-branch-list',
-  imports: [NgIcon, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
+  imports: [NgIcon, RouterLink, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
   providers: [
-    provideIcons({ lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideCalendarDays, lucideLoaderCircle, lucideSearch }),
+    provideIcons({ lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, appCalendarColor, lucideSearch }),
   ],
   templateUrl: './branch-list.page.html',
 })
@@ -48,6 +49,10 @@ export class BranchListPage {
   private readonly stateStore = inject(TableStateStore);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
+  private readonly rights = inject(MenuRightsStore);
+
+  /** The Holiday List column shows only with the Holiday List's view right, loaded live with the list (admin-user-rights). */
+  protected readonly canOpenHolidays = computed(() => this.rights.rightsOf(MENU_CODES.holidayList)?.view === true);
   /** True when the user reached this page from another page of the app, so browser history can take them back. */
   private readonly cameFromApp = this.router.currentNavigation()?.previousNavigation != null;
 
@@ -187,9 +192,16 @@ export class BranchListPage {
    * Opens the branch's holiday list. The click and the keys stay with the button (the row would otherwise toggle its
    * selection on the same event), so the selection is unchanged.
    */
+  /** A branch's holidays are on the Holiday List screen, so they open with the Holiday List's menu code. */
+  protected readonly holidayParams = { [MENU_ID_PARAM]: MENU_CODES.holidayList };
+
+  /**
+   * Opens the branch's holiday list from a click anywhere in the Holiday List cell. The click stays with the cell (the
+   * row would otherwise toggle its selection), so the selection is unchanged.
+   */
   protected openHolidays(branch: Branch, event: Event): void {
     event.stopPropagation();
-    void this.router.navigate(['/reports/branches', branch.id, 'holidays']);
+    void this.router.navigate(['/reports/branches', branch.id, 'holidays'], { queryParams: this.holidayParams });
   }
 
   protected toggleRow(id: string): void {

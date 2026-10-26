@@ -334,6 +334,85 @@ namespace iErp.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("iErp.Entities.Menu", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("MENU_PKID");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("MENU_CODE");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("NVARCHAR2(20)")
+                        .HasColumnName("REC_COMPANY_CODE");
+
+                    b.Property<string>("ModuleId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("MENU_MODULE_ID");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(120)
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("MENU_NAME");
+
+                    b.Property<string>("NewSoftware")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("MENU_NEWSOFTWARE")
+                        .IsFixedLength();
+
+                    b.Property<decimal?>("Order")
+                        .HasColumnType("DECIMAL(18, 2)")
+                        .HasColumnName("MENU_ORDER");
+
+                    b.Property<string>("Route")
+                        .HasMaxLength(200)
+                        .HasColumnType("NVARCHAR2(200)")
+                        .HasColumnName("MENU_ROUTE1");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MENUM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("iErp.Entities.MenuModule", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("MODULE_PKID");
+
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("NVARCHAR2(30)")
+                        .HasColumnName("REC_COMPANY_CODE");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(120)
+                        .HasColumnType("NVARCHAR2(120)")
+                        .HasColumnName("MODULE_NAME");
+
+                    b.Property<decimal?>("Order")
+                        .HasColumnType("DECIMAL(18, 2)")
+                        .HasColumnName("MODULE_ORDER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MODULEM", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("iErp.Entities.Parameter", b =>
                 {
                     b.Property<string>("Id")
@@ -435,6 +514,90 @@ namespace iErp.Data.Migrations
                     b.HasKey("UserId", "BranchId");
 
                     b.ToTable("USERD", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("iErp.Entities.UserRight", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("RIGHTS_PKID");
+
+                    b.Property<string>("Add")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_ADD")
+                        .IsFixedLength();
+
+                    b.Property<string>("Admin")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_ADMIN")
+                        .IsFixedLength();
+
+                    b.Property<string>("BranchId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("RIGHTS_BRANCH_ID");
+
+                    b.Property<string>("Delete")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_DELETE")
+                        .IsFixedLength();
+
+                    b.Property<string>("Docs")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_DOCS")
+                        .IsFixedLength();
+
+                    b.Property<string>("DocsUpload")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_DOCS_UPLOAD")
+                        .IsFixedLength();
+
+                    b.Property<string>("Edit")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_EDIT")
+                        .IsFixedLength();
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_EMAIL")
+                        .IsFixedLength();
+
+                    b.Property<string>("MenuId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("RIGHTS_MENU_ID");
+
+                    b.Property<string>("Print")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_PRINT")
+                        .IsFixedLength();
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(80)
+                        .HasColumnType("NVARCHAR2(80)")
+                        .HasColumnName("RIGHTS_USER_ID");
+
+                    b.Property<string>("View")
+                        .HasMaxLength(1)
+                        .HasColumnType("NCHAR(1)")
+                        .HasColumnName("RIGHTS_VIEW")
+                        .IsFixedLength();
+
+                    b.HasKey("Id");
+
+                    b.ToTable("USERRIGHTS", null, t =>
                         {
                             t.ExcludeFromMigrations();
                         });

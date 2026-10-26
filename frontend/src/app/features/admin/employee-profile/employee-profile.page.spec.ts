@@ -46,22 +46,24 @@ describe('EmployeeProfilePage', () => {
 
   const sections = () => Array.from(el.querySelectorAll<HTMLElement>('[data-slot="profile-section"]'));
   const text = (node: Element | null | undefined) => node?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-  const titleOf = (section: Element) => text(section.querySelector('h2'));
+  // The Address box has no heading of its own (its two sides have theirs); it is known by its accessible name.
+  const titleOf = (section: Element) =>
+    section.querySelector('[data-slot="address-parts"]') ? (section.getAttribute('aria-label') ?? '') : text(section.querySelector('h2'));
   /** One box by its heading; the first box, which has none, is `BASIC`. */
   const BASIC = '';
   const box = (title: string) => sections().find((s) => titleOf(s) === title)!;
-  /** One side of the Address box by its sub-heading. */
+  /** One side of the Address box by its title. */
   const part = (title: string) =>
-    Array.from(box('Address').querySelectorAll('[data-slot="address-part"]')).find((p) => text(p.querySelector('h3')) === title)!;
+    Array.from(box('Address').querySelectorAll('[data-slot="address-part"]')).find((p) => text(p.querySelector('h2')) === title)!;
   /** The label-value rows of a box or part, as [label, value] pairs. */
   const rowsOf = (scope: Element) =>
     Array.from(scope.querySelectorAll('dl > div')).map((d) => [text(d.querySelector('dt')), text(d.querySelector('dd'))]);
   const valueOf = (scope: Element, label: string) => rowsOf(scope).find(([l]) => l === label)?.[1];
 
-  it('loads the profile on open and shows a loading message meanwhile, without boxes', () => {
+  it('loads the profile on open, showing no boxes and no loading message of its own meanwhile', () => {
     create();
 
-    expect(text(el.querySelector('[role="status"]'))).toContain('Loading profile');
+    expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
     expect(sections()).toEqual([]);
     answer();
     expect(el.querySelector('[role="status"]')).toBeNull();
@@ -185,23 +187,27 @@ describe('EmployeeProfilePage', () => {
     expect(sections().some((s) => s.classList.contains('sm:w-fit'))).toBe(false);
   });
 
-  it('shows one Address box with Current on the left and Permanent on the right, each with its rows', () => {
+  it('shows one Address box with no title of its own, Current Address on the left and Permanent Address on the right as titles', () => {
     create();
     answer();
 
     const parts = box('Address').querySelector('[data-slot="address-parts"]')!;
     expect(parts.classList.contains('sm:grid-cols-2')).toBe(true);
-    expect(Array.from(parts.querySelectorAll('h3')).map((h) => text(h))).toEqual(['Current', 'Permanent']);
-    expect(rowsOf(part('Current'))).toEqual([
+    expect(Array.from(parts.querySelectorAll('h2')).map((h) => text(h))).toEqual(['Current Address', 'Permanent Address']);
+    // The two titles are box titles, and the box has no other heading.
+    expect(Array.from(box('Address').querySelectorAll('h2, h3')).map((h) => text(h))).toEqual(['Current Address', 'Permanent Address']);
+    expect(Array.from(parts.querySelectorAll('h2')).every((h) => h.getAttribute('data-slot') === 'card-title')).toBe(true);
+    expect(box('Address').getAttribute('aria-label')).toBe('Address');
+    expect(rowsOf(part('Current Address'))).toEqual([
       ['Address', 'House 1 Road 2 Area 3 P.O. PO 1'],
       ['City', 'Kochi'],
       ['State', 'KERALA'],
       ['PIN Code', '682001'],
       ['Country', 'INDIA'],
     ]);
-    expect(rowsOf(part('Permanent')).map(([label]) => label)).toEqual(['Address', 'City', 'State', 'PIN Code', 'Country']);
+    expect(rowsOf(part('Permanent Address')).map(([label]) => label)).toEqual(['Address', 'City', 'State', 'PIN Code', 'Country']);
     // The address lines are under one label, one per line.
-    const address = part('Current').querySelector('dd')!;
+    const address = part('Current Address').querySelector('dd')!;
     expect(address.textContent).toBe('House 1\nRoad 2\nArea 3\nP.O. PO 1');
     expect(address.classList.contains('whitespace-pre-line')).toBe(true);
   });
@@ -260,7 +266,7 @@ describe('EmployeeProfilePage', () => {
     answer();
 
     const headings = Array.from(el.querySelectorAll('h2, h3'));
-    expect(headings).toHaveLength(6); // four boxes and the two Address sides
+    expect(headings).toHaveLength(5); // three boxes and the two Address sides (the Address box has no title of its own)
     expect(headings.every((h) => h.classList.contains('text-profile-heading'))).toBe(true);
     expect(el.querySelector('[data-slot="employee-name"]')!.classList.contains('text-profile-heading')).toBe(true);
     // Every label is blue, the basic box's rows too.
@@ -278,8 +284,8 @@ describe('EmployeeProfilePage', () => {
 
     expect(valueOf(sections()[0], "Father's Name")).toBe('Ravi Nair');
     expect(valueOf(sections()[0], 'Date of Birth')).toBe('05-03-1990');
-    expect([valueOf(part('Current'), 'State'), valueOf(part('Current'), 'Country')]).toEqual(['KERALA', 'INDIA']);
-    expect(valueOf(part('Permanent'), 'City')).toBe('Chennai');
+    expect([valueOf(part('Current Address'), 'State'), valueOf(part('Current Address'), 'Country')]).toEqual(['KERALA', 'INDIA']);
+    expect(valueOf(part('Permanent Address'), 'City')).toBe('Chennai');
     expect(valueOf(box('ID and Documents'), 'PAN')).toBe('ABCDE1234F');
     expect(valueOf(box('ID and Documents'), 'ESI No')).toBe('ESI-1');
   });
@@ -305,8 +311,8 @@ describe('EmployeeProfilePage', () => {
     expect(valueOf(sections()[0], 'Date of Birth')).toBe('—');
     expect(valueOf(box('Contact Details'), 'Mobile')).toBe('—');
     expect(valueOf(box('Contact Details'), 'Email')).toBe('asha@example.com');
-    expect(part('Current').querySelector('dd')!.textContent).toBe('House 1\nRoad 2');
-    expect(valueOf(part('Permanent'), 'Address')).toBe('—');
+    expect(part('Current Address').querySelector('dd')!.textContent).toBe('House 1\nRoad 2');
+    expect(valueOf(part('Permanent Address'), 'Address')).toBe('—');
   });
 
   describe('the photo in the image area', () => {
@@ -377,12 +383,13 @@ describe('EmployeeProfilePage', () => {
     });
   });
 
-  it('is view only: no inputs and no edit, save or delete buttons', () => {
+  it('is view only: no inputs and no buttons but Back', () => {
     create();
     answer();
 
     expect(el.querySelectorAll('input, textarea, select').length).toBe(0);
-    expect(el.querySelectorAll('button').length).toBe(0);
+    // The only button is Back.
+    expect(Array.from(el.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual(['Back']);
   });
 
   it('says no employee profile is linked on 404', () => {
@@ -418,6 +425,7 @@ describe('EmployeeProfilePage for a listed employee', () => {
           { path: '', component: Stub },
           { path: 'admin/employees', component: Stub },
           { path: 'admin/employees/:id', providers: [EmployeeProfileService], component: EmployeeProfilePage },
+          { path: 'admin/profile', providers: [EmployeeProfileService], component: EmployeeProfilePage },
         ]),
         provideLocationMocks(),
         provideHttpClient(),
@@ -475,9 +483,45 @@ describe('EmployeeProfilePage for a listed employee', () => {
     el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
     await settle(harness.fixture);
 
+    expect(router.url).toBe('/admin/employees?menuId=NS-EMPLIST');
+  });
+
+
+  it('sets the header off from the page with a line', async () => {
+    const { harness, http, el } = await open('/admin/employees/e-1');
+    http.expectOne('admin/employees/e-1').flush(PROFILE);
+    harness.detectChanges();
+
+    const rule = el().querySelector('[data-slot="page-rule"]')!;
+    expect(rule.previousElementSibling!.querySelector('h1')).not.toBeNull();
+    expect(rule.querySelector('hr')).not.toBeNull();
+  });
+
+  it("has a Back button on the user's own profile too, which returns to the page the user came from", async () => {
+    const { harness, http, el, router } = await open('/admin/employees', '/admin/profile');
+    http.expectOne('admin/profile').flush(PROFILE);
+    harness.detectChanges();
+
+    const back = el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!;
+    expect(back.parentElement!.firstElementChild).toBe(back);
+    expect(text(back.parentElement!.querySelector('h1'))).toBe('Profile');
+    expect(el().querySelector('[data-slot="page-rule"]')).not.toBeNull();
+    back.click();
+    await settle(harness.fixture);
+
     expect(router.url).toBe('/admin/employees');
   });
 
+  it("goes to the Dashboard from the user's own profile when it was opened directly", async () => {
+    const { harness, http, el, router } = await open('/admin/profile');
+    http.expectOne('admin/profile').flush(PROFILE);
+    harness.detectChanges();
+
+    el().querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
+    await settle(harness.fixture);
+
+    expect(router.url).toBe('/');
+  });
   it('says "Employee not found." on 404, without a notification or an alert', async () => {
     const { harness, http, el } = await open('/admin/employees/e-other');
 
@@ -523,7 +567,7 @@ describe('profile formatting', () => {
     expect(sections.map((s) => s.title)).toEqual(['', 'Address', 'Contact Details', 'Bank Details', 'ID and Documents']);
     const address = sections[1];
     expect(address.fields).toEqual([]);
-    expect(address.parts!.map((p) => p.title)).toEqual(['Current', 'Permanent']);
+    expect(address.parts!.map((p) => p.title)).toEqual(['Current Address', 'Permanent Address']);
     expect(address.parts!.map((p) => p.fields.map((f) => f.label))).toEqual([
       ['Address', 'City', 'State', 'PIN Code', 'Country'],
       ['Address', 'City', 'State', 'PIN Code', 'Country'],

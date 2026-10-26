@@ -1,3 +1,4 @@
+using iErp.Shared.Auth;
 using iErp.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ namespace iErp.Admin.EmployeeProfile;
 /// </summary>
 [ApiController]
 [Route("api/admin/profile")]
+[RequiresMenu(MenuCodes.EmployeeProfile)]
 public class EmployeeProfileController(IEmployeeProfileService service) : ControllerBase
 {
     public const string NotLinkedMessage = "No employee profile is linked to this user.";

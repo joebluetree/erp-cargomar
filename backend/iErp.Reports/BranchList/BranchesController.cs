@@ -1,3 +1,4 @@
+using iErp.Shared.Auth;
 using iErp.Shared;
 using iErp.Shared.Paging;
 using Microsoft.AspNetCore.Http;
@@ -7,7 +8,8 @@ namespace iErp.Reports.BranchList;
 
 /// <summary>
 /// The Branch List report: the logged-in company's branches, and a listed branch's holiday list. The company and the
-/// financial year are always the session's.
+/// financial year are always the session's. The list needs the Branch List right; a branch's holidays open the Holiday
+/// List screen, so they need the Holiday List right (admin-user-rights design D3).
 /// </summary>
 [ApiController]
 [Route("api/reports/branches")]
@@ -17,6 +19,7 @@ public class BranchesController(IBranchListService service) : ControllerBase
 
     /// <summary>One page of the company's branches, filtered by code and name and ordered by name ascending.</summary>
     [HttpGet]
+    [RequiresMenu(MenuCodes.BranchList)]
     [ProducesResponseType<PagedResult<BranchListItemDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<PagedResult<BranchListItemDto>> List([FromQuery] BranchListQuery query, CancellationToken ct)
@@ -27,6 +30,7 @@ public class BranchesController(IBranchListService service) : ControllerBase
     /// listed branches or has no holiday file.
     /// </summary>
     [HttpGet("{id}/holidays")]
+    [RequiresMenu(MenuCodes.HolidayList)]
     [ProducesResponseType<BranchHolidayListDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Holidays(string id, CancellationToken ct)

@@ -15,6 +15,7 @@ import { Dashboard } from '../../features/dashboard/dashboard';
 import { CompanyListPage } from '../../features/reports/company-list/company-list.page';
 import { CompanyListService } from '../../features/reports/company-list/company-list.service';
 import { Shell } from '../../shell/shell';
+import { TEST_MENU, provideTestMenu } from '../../core/navigation/menu.testing';
 import { clickableElements, clickableSelector } from './clickable';
 
 /**
@@ -61,6 +62,7 @@ describe('hand pointer on everything clickable', () => {
           provideRouter([{ path: '', component: Shell, children: [{ path: '', component: Dashboard }] }]),
           provideHttpClient(),
           provideHttpClientTesting(),
+          provideTestMenu(TEST_MENU),
         ],
       });
       const harness = await RouterTestingHarness.create('/');
@@ -72,9 +74,9 @@ describe('hand pointer on everything clickable', () => {
       const el = await render();
 
       const clickable = clickableElements(el);
-      expect(clickable).toHaveLength(15); // the name link, 2 hamburgers, the theme button, 6 menu entries and 5 quick links
+      expect(clickable).toHaveLength(16); // the name link, 2 hamburgers, the theme button, 6 menu entries, the module heading and 5 quick links
       const labels = clickable.map((c) => c.getAttribute('aria-label') ?? c.textContent?.trim());
-      expect(labels).toEqual(expect.arrayContaining(['Cargomar Pvt Ltd', 'Open menu', 'Hide navigation bar', 'Switch to dark theme', 'Dashboard', 'Company List', 'Branch List', 'Profile', 'Employee List', 'Holiday List']));
+      expect(labels).toEqual(expect.arrayContaining(['Cargomar Pvt Ltd', 'Open menu', 'Hide navigation bar', 'Switch to dark theme', 'Dashboard', 'Company List', 'Branch List', 'Profile', 'Employee List', 'Holiday List', 'Hr']));
       const missing = clickable.filter((c) => !covered(c)).map((c) => c.outerHTML.slice(0, 80));
       expect(missing).toEqual([]);
     });

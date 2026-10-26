@@ -99,9 +99,10 @@ export class HlmTr {
 })
 export class HlmTh {
   constructor() {
+    // A heading never wraps, with "Wrap text" on or off: each column is at least as wide as its heading.
     classes(
       () =>
-        'bg-table-header text-table-header-foreground border-table-header-line h-10 border-r px-2 text-start align-middle font-medium whitespace-nowrap last:border-r-0 [&:has([role=checkbox])]:pe-0 group-data-[wrap=true]:whitespace-normal group-data-[wrap=true]:wrap-anywhere',
+        'bg-table-header text-table-header-foreground border-table-header-line h-10 border-r px-2 text-start align-middle font-medium whitespace-nowrap last:border-r-0 [&:has([role=checkbox])]:pe-0',
     );
   }
 }

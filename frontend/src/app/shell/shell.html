@@ -1,5 +1,6 @@
-<div class="flex min-h-screen flex-col">
-  <header class="flex h-14 items-center gap-2 border-b px-4">
+<!-- While a backend request runs the application is inert (no focus or keys) and the freeze layer catches clicks. -->
+<div class="flex min-h-screen flex-col" data-slot="app-content" [attr.inert]="loading.busy() ? '' : null">
+  <header class="relative flex h-14 items-center gap-2 border-b px-4">
     <button
       hlmBtn
       variant="ghost"
@@ -29,10 +30,20 @@
     @if (auth.details(); as details) {
       <!-- The session: user, branch and financial year. Shortened on narrow screens; the full text is in the title
            and read by screen readers. -->
-      <div data-slot="session-details" class="ml-auto flex min-w-0 items-center gap-4 text-sm" [title]="detailsText()">
-        <span class="truncate font-semibold text-header-user" aria-hidden="true">{{ details.user }}</span>
-        <span class="hidden truncate font-semibold text-header-branch sm:inline" aria-hidden="true">{{ details.branch }}</span>
-        <span class="hidden shrink-0 font-semibold text-header-year sm:inline" aria-hidden="true">{{ details.year }}</span>
+      <!-- The user, branch and year as colored chips: a soft tint, a matching icon and strong text of the same hue. -->
+      <div data-slot="session-details" class="ml-auto flex min-w-0 items-center gap-2 text-sm" [title]="detailsText()">
+        <span data-slot="session-chip" class="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-header-user-bg px-2.5 py-0.5 font-semibold text-header-user ring-1 ring-current/25" aria-hidden="true">
+          <!-- <ng-icon name="lucideUser" class="shrink-0" /> -->
+          <span class="truncate">{{ details.user }}</span>
+        </span>
+        <span data-slot="session-chip" class="hidden min-w-0 items-center gap-1.5 rounded-full bg-header-branch-bg px-2.5 py-0.5 font-semibold text-header-branch ring-1 ring-current/25 sm:inline-flex" aria-hidden="true">
+          <!-- <ng-icon name="lucideBuilding2" class="shrink-0" /> -->
+          <span class="truncate">{{ details.branch }}</span>
+        </span>
+        <span data-slot="session-chip" class="hidden shrink-0 items-center gap-1.5 rounded-full bg-header-year-bg px-2.5 py-0.5 font-semibold text-header-year ring-1 ring-current/25 sm:inline-flex" aria-hidden="true">
+          <!-- <ng-icon name="lucideCalendarDays" class="shrink-0" /> -->
+          {{ details.year }}
+        </span>
         <span class="sr-only">Logged in as {{ detailsText() }}</span>
       </div>
       <button
@@ -65,6 +76,8 @@
         <ng-icon name="lucideLogOut" aria-hidden="true" />
       </button>
     }
+    <!-- Shown while the application waits for the backend; it overlays the header's bottom line. -->
+    <app-loading-bar class="absolute inset-x-0 -bottom-px" [active]="loading.busy()" />
   </header>
 
   <div class="flex flex-1">
@@ -86,3 +99,5 @@
     <app-nav (navigated)="menuOpen.set(false)" />
   </hlm-sheet-content>
 </hlm-sheet>
+
+<app-loading-overlay [active]="loading.busy()" />

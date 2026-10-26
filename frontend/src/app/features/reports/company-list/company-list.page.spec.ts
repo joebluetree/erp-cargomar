@@ -107,10 +107,10 @@ describe('CompanyListPage', () => {
       expect(sent).toEqual([{ code: null, name: null, page: '1', pageSize: '10' }]);
     });
 
-    it('shows a loading indicator and no table while waiting', () => {
+    it('shows no table and no loading message of its own while waiting', () => {
       create();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(el.querySelector('table')).toBeNull();
       answer();
       expect(el.querySelector('[role="status"]')).toBeNull();
@@ -467,14 +467,14 @@ describe('CompanyListPage', () => {
       expect(rows()).toHaveLength(10);
     });
 
-    it('shows a loading indicator and no stale rows while a page loads', () => {
+    it('shows no stale rows and no loading message of its own while a page loads', () => {
       create();
       answer();
 
       button('Next page').click();
       fixture.detectChanges();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(rows()).toHaveLength(0);
       answer();
     });
@@ -796,7 +796,7 @@ describe('CompanyListPage', () => {
 
       leaveAndReturn();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(rows()).toHaveLength(0);
       answer();
       http.expectNone(isCompaniesRequest);

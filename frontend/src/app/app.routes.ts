@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { menuAccessGuard } from './core/navigation/menu-access.guard';
 import { Shell } from './shell/shell';
 
 export const routes: Routes = [
@@ -22,30 +23,41 @@ export const routes: Routes = [
       },
       {
         path: 'reports/companies',
+        canActivateChild: [menuAccessGuard],
         loadChildren: () =>
           import('./features/reports/company-list/company-list.routes').then((m) => m.COMPANY_LIST_ROUTES),
       },
       {
         path: 'reports/branches',
+        canActivateChild: [menuAccessGuard],
         loadChildren: () =>
           import('./features/reports/branch-list/branch-list.routes').then((m) => m.BRANCH_LIST_ROUTES),
       },
       {
         path: 'admin/profile',
+        canActivateChild: [menuAccessGuard],
         loadChildren: () =>
           import('./features/admin/employee-profile/employee-profile.routes').then((m) => m.EMPLOYEE_PROFILE_ROUTES),
       },
       {
         path: 'admin/employees',
+        canActivateChild: [menuAccessGuard],
         loadChildren: () =>
           import('./features/admin/employee-list/employee-list.routes').then((m) => m.EMPLOYEE_LIST_ROUTES),
       },
       {
         path: 'admin/holidays',
+        canActivateChild: [menuAccessGuard],
         loadChildren: () =>
           import('./features/admin/holiday-list/holiday-list.routes').then((m) => m.HOLIDAY_LIST_ROUTES),
       },
-      // Further feature routes are added here as lazy children.
+      {
+        // In place of a screen without the view right (the menu access guard keeps the screen's URL).
+        path: 'no-access',
+        loadComponent: () => import('./features/no-access/no-access.page').then((m) => m.NoAccessPage),
+      },
+      // Further feature routes are added here as lazy children; a screen with a menu gets the menu access guard
+      // (canActivateChild), and its own routes name their menu in data.menuCode.
     ],
   },
   { path: '**', redirectTo: '' },

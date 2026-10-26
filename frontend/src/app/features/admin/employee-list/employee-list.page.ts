@@ -2,12 +2,15 @@ import { Location } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideLoaderCircle, lucideSearch } from '@ng-icons/lucide';
+import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch } from '@ng-icons/lucide';
+import { appProfileColor } from '../../../shared/ui/icons/profile-color';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmTableImports } from '@spartan-ng/helm/table';
 import { AuthSession } from '../../../core/auth/auth-session';
+import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 import { DEFAULT_PAGE_SIZE, rangeOf } from '../../../shared/paging/paged';
 import { TablePager } from '../../../shared/paging/table-pager';
 import { TableStateStore } from '../../../shared/paging/table-state';
@@ -38,7 +41,7 @@ import { sortEmployees } from './employee-list.table';
 @Component({
   selector: 'app-employee-list',
   imports: [NgIcon, RouterLink, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
-  providers: [provideIcons({ lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideLoaderCircle, lucideSearch })],
+  providers: [provideIcons({ appProfileColor, lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch })],
   templateUrl: './employee-list.page.html',
 })
 export class EmployeeListPage {
@@ -48,6 +51,12 @@ export class EmployeeListPage {
   private readonly auth = inject(AuthSession);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
+  private readonly rights = inject(MenuRightsStore);
+
+  /** The Profile column shows only with the Profile's view right, loaded live with the list (admin-user-rights). */
+  protected readonly canOpenProfile = computed(() => this.rights.rightsOf(MENU_CODES.profile)?.view === true);
+  /** An employee's profile is on the Profile screen, so it opens with the Profile's menu code. */
+  protected readonly profileParams = { [MENU_ID_PARAM]: MENU_CODES.profile };
   /** True when the user reached this page from another page of the app, so browser history can take them back. */
   private readonly cameFromApp = this.router.currentNavigation()?.previousNavigation != null;
 
@@ -173,7 +182,9 @@ export class EmployeeListPage {
   /** What a cell shows: the date as `dd-MM-yyyy`, any other value as is, and a dash for an empty value. */
   protected cell(employee: Employee, column: SortColumn): string {
     const value = column === 'dateOfBirth' ? formatDate(employee.dateOfBirth) : employee[column];
-    return value?.trim() || EMPTY_VALUE;
+    // Emails show in lower case, as on the Profile screen.
+    const text = column === 'email' ? value?.toLowerCase() : value;
+    return text?.trim() || EMPTY_VALUE;
   }
 
   protected toggleSort(column: SortColumn): void {
@@ -202,12 +213,12 @@ export class EmployeeListPage {
   }
 
   /**
-   * Opens the employee's profile from a click anywhere in the Employee No cell. The click stays with the cell (the row
+   * Opens the employee's profile from a click anywhere in the Profile cell. The click stays with the cell (the row
    * would otherwise toggle its selection), so the selection is unchanged.
    */
   protected openProfile(employee: Employee, event: Event): void {
     event.stopPropagation();
-    void this.router.navigate(['/admin/employees', employee.id]);
+    void this.router.navigate(['/admin/employees', employee.id], { queryParams: this.profileParams });
   }
 
   protected toggleRow(id: string): void {
