@@ -82,11 +82,17 @@ if (!app.Environment.IsProduction())
     app.UseSwaggerUI();
 }
 
+// The published Angular app lives in wwwroot and is served from the same origin as the API.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 // Every controller action requires a valid token unless it is marked [AllowAnonymous] (only the login is).
 // Applied here rather than as a fallback policy, so a wrong HTTP method still answers 405, not 401.
 app.MapControllers().RequireAuthorization();
+// Angular client-side routes load index.html; unknown /api URLs still answer 404 rather than HTML.
+app.MapFallbackToFile("{*path:regex(^(?!api/).*$)}", "index.html");
 app.Run();
 
 public partial class Program;
