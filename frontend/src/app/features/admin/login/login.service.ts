@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
-import { Observable, finalize, map } from 'rxjs';
+import { Injectable, inject, isDevMode, signal } from '@angular/core';
+import { Observable, finalize, map, tap } from 'rxjs';
 import { AuthSession } from '../../../core/auth/auth-session';
 import { LOGIN_REQUEST } from '../../../core/auth/auth.interceptors';
 import { SKIP_ERROR_NOTIFICATION } from '../../../core/errors/http-error.interceptor';
@@ -29,11 +29,30 @@ export class LoginService {
       userCode: credentials.userCode.toUpperCase(),
       password: credentials.password.toUpperCase(),
     };
+    return this.send('admin/login', body);
+  }
+
+  /**
+   * The automatic login (admin-auto-login): sends the app id from the link that the old system opened, and starts the
+   * session when the backend accepts it. The backend reads the login details itself.
+   */
+  autoLogin(appId: string): Observable<void> {
+    this.busyState.set(true);
+    return this.send('admin/login/auto', { appId });
+  }
+
+  private send(url: string, body: object): Observable<void> {
     return this.http
-      .post<LoginResponse>('admin/login', body, {
+      .post<LoginResponse>(url, body, {
         context: new HttpContext().set(LOGIN_REQUEST, true).set(SKIP_ERROR_NOTIFICATION, true),
       })
       .pipe(
+        // Debug aid (dev builds only): what was sent and the session it logged in to. Contains the password.
+        tap((response) => {
+          if (isDevMode()) {
+            console.log(JSON.stringify({ url, request: body, session: response.session }, null, 2));
+          }
+        }),
         map((response) => this.auth.start({ token: response.token, expiresAt: response.expiresAt, ...response.session })),
         finalize(() => this.busyState.set(false)),
       );

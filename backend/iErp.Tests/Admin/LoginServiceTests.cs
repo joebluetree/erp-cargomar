@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NSubstitute;
+using iErp.Admin.ChangeBranch;
 using iErp.Admin.Login;
 using iErp.Admin.Session;
 using iErp.Entities;
@@ -53,7 +54,7 @@ public class LoginServiceTests
         var logger = new CapturingLogger();
         var time = new FixedTime(Now);
         var tokens = new SessionTokenIssuer(options, time);
-        return (new LoginService(repository, tokens, options, time, logger), repository, logger);
+        return (new LoginService(repository, Substitute.For<IChangeBranchRepository>(), tokens, options, time, logger), repository, logger);
     }
 
     private static LoginRequest Request(string userCode = "U01", string password = Password, string companyCode = "CMP") =>

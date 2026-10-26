@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace iErp.Admin.Login;
 
 /// <summary>
-/// Reads the existing USERM, COMPANYM and YEARM tables. They are read-only and keyed by strings, so this does not
+/// Reads the existing USERM, COMPANYM, YEARM and APPDETAILS tables. They are read-only and keyed by strings, so this does not
 /// use the Guid-keyed <c>Repository&lt;T&gt;</c>. The row limits are rewritten for Oracle 10g by
 /// <see cref="Oracle10gCompatibilityInterceptor"/>.
 /// </summary>
@@ -39,4 +39,17 @@ public class LoginRepository(AppDbContext db) : ILoginRepository
             .Where(y => y.CompanyCode == companyCode && y.StartDate != null)
             .OrderByDescending(y => y.StartDate)
             .FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyList<AppDetail>> FindAppDetailsAsync(string appId, CancellationToken ct = default) =>
+        await AppDetailRows(appId).ToListAsync(ct);
+
+    /// <summary>
+    /// The query of <see cref="FindAppDetailsAsync"/>, public so its SQL can be checked for Oracle 10g. It has no row
+    /// limit: the id is the key, and a Take would be sent as a bind that the Oracle 10g rewrite does not handle.
+    /// </summary>
+    public IQueryable<AppDetail> AppDetailRows(string appId)
+    {
+        var id = appId.Trim();
+        return db.Set<AppDetail>().AsNoTracking().Where(a => a.Id == id);
+    }
 }

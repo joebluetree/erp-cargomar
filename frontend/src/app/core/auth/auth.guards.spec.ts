@@ -65,6 +65,19 @@ describe('auth guards', () => {
       expect(TestBed.inject(Router).url).toBe('/');
     });
 
+    it('ends the session for an automatic-login link, so the link decides who is logged in', async () => {
+      TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+      logIn();
+      const harness = await RouterTestingHarness.create();
+      const auth = TestBed.inject(AuthSession);
+
+      // The link's own login runs next (autoLoginGuard); here only the old session must be gone.
+      void harness.navigateByUrl('/login?appid=app-1');
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(auth.isActive()).toBe(false);
+    });
+
     it('shows the login screen once the session has expired', async () => {
       TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
       TestBed.inject(AuthSession).start(testSession({ expiresAt: new Date(Date.now() + 1000).toISOString() }));

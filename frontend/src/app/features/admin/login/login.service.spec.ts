@@ -53,6 +53,35 @@ describe('LoginService', () => {
     req.flush(LOGIN_RESPONSE);
   });
 
+  it('posts the app id to admin/login/auto as a login request the page reports itself, and starts the session', () => {
+    let done = false;
+    service.autoLogin('app-1').subscribe(() => (done = true));
+
+    const req = controller.expectOne('admin/login/auto');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ appId: 'app-1' });
+    expect(req.request.context.get(LOGIN_REQUEST)).toBe(true);
+    expect(req.request.context.get(SKIP_ERROR_NOTIFICATION)).toBe(true);
+    expect(service.busy()).toBe(true);
+
+    req.flush(LOGIN_RESPONSE);
+
+    expect(done).toBe(true);
+    expect(service.busy()).toBe(false);
+    expect(auth.session()).toEqual({ token: 'token-1', expiresAt: '2099-01-01T00:00:00Z', ...LOGIN_RESPONSE.session });
+  });
+
+  it('starts no session and clears busy when the automatic login is refused', () => {
+    let failed = false;
+    service.autoLogin('app-1').subscribe({ error: () => (failed = true) });
+
+    controller.expectOne('admin/login/auto').flush({ title: 'Automatic login failed. Please log in.' }, { status: 401, statusText: 'Unauthorized' });
+
+    expect(failed).toBe(true);
+    expect(service.busy()).toBe(false);
+    expect(auth.isLoggedIn()).toBe(false);
+  });
+
   it('starts no session and clears busy when the login is refused', () => {
     let failed = false;
     service.login({ userCode: 'admin', password: 'x', companyCode: 'CMP' }).subscribe({ error: () => (failed = true) });
