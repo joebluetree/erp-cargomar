@@ -8,7 +8,7 @@
 | **Current Version** | 1.0 |
 | **Status** | Approved |
 | **Owner** | Sourav V |
-| **Last Updated** | 2026-10-19 |
+| **Last Updated** | 2026-10-22 |
 
 ## Document Use
 
@@ -43,7 +43,7 @@ Based on loged in user' rights for each menu (userrights table)
 ### v1.0 — Initial Menu and Userrights   [Status: Draft]
 
 - **Date:** 2026-10-22
-- **Change Ref:** `admin-userrights-menu`
+- **Change Ref:** `admin-user-rights`
 - **Affects:** BR-001, BR-002
 
 **Changes:**
@@ -58,6 +58,7 @@ Based on loged in user' rights for each menu (userrights table)
 - Based on rights assigned for a user, view, admin etc.. options will be available.
 - Module is displayed only when minimum one menu is is displayed.
 - When a menu is clicked pass menu id with URL parameters.
+- Check user rights for that menu id passed to backend and display menu options based on rights
 
 ---
 
@@ -111,7 +112,7 @@ Based on loged in user' rights for each menu (userrights table)
 WHEN a menu's new software column is Y
 THEN Show the menu on navbasr of new software.
 
-- **BR-002.S1 [v1.0]** 
+- **BR-001.S2 [v1.0]** 
 WHEN a menu have new software true
 THEN Show that menu under the assigned module
 

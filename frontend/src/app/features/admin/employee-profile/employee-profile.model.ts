@@ -124,8 +124,8 @@ export function profileSections(profile: EmployeeProfile): ProfileSection[] {
       title: 'Address',
       fields: [],
       parts: [
-        { title: 'Current', fields: addressFields(profile.currentAddress) },
-        { title: 'Permanent', fields: addressFields(profile.permanentAddress) },
+        { title: 'Current Address', fields: addressFields(profile.currentAddress) },
+        { title: 'Permanent Address', fields: addressFields(profile.permanentAddress) },
       ],
     },
     // The email is shown in lower case (the stored value is often upper case).

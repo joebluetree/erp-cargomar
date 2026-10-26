@@ -1,4 +1,6 @@
 import { HttpRequest, provideHttpClient } from '@angular/common/http';
+import { MenuRights } from '../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { provideLocationMocks } from '@angular/common/testing';
@@ -41,7 +43,8 @@ describe('EmployeeListPage', () => {
   let el: HTMLElement;
   let sent: Sent[];
 
-  function create() {
+  /** `profileView`: the Profile's view right, as the screen guard loads it with the list. */
+  function create(profileView = true) {
     TestBed.configureTestingModule({
       imports: [EmployeeListPage],
       providers: [
@@ -51,6 +54,8 @@ describe('EmployeeListPage', () => {
         provideHttpClientTesting(),
       ],
     });
+    const rights: MenuRights = { view: profileView, add: false, edit: false, delete: false, print: false, email: false, docs: false, docsUpload: false, admin: false };
+    TestBed.inject(MenuRightsStore).set('NS-EMPPROFILE', rights);
     fixture = TestBed.createComponent(EmployeeListPage);
     http = TestBed.inject(HttpTestingController);
     el = fixture.nativeElement as HTMLElement;
@@ -74,14 +79,16 @@ describe('EmployeeListPage', () => {
 
   const rows = () => Array.from(el.querySelectorAll<HTMLElement>('tbody tr'));
   const cells = (row: Element) => Array.from(row.querySelectorAll('td')).map((td) => td.textContent?.trim());
-  const firstCells = () => rows().map((r) => r.querySelector('td')?.textContent?.trim());
+  /** The Emp. No of each row (the first cell after the Profile column). */
+  const firstCells = () => rows().map((r) => codeCell(r).textContent?.trim());
   const input = (id: string) => el.querySelector<HTMLInputElement>(`#${id}`)!;
   const header = (label: string) => Array.from(el.querySelectorAll<HTMLTableCellElement>('th')).find((th) => th.textContent?.trim() === label)!;
   const button = (name: string) => el.querySelector<HTMLButtonElement>(`button[aria-label="${name}"]`)!;
   const searchButton = () => Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Search')!;
   const range = () => el.querySelector('[aria-live]')?.textContent?.replace(/\s+/g, ' ').trim();
-  const selected = () => rows().filter((r) => r.getAttribute('aria-selected') === 'true').map((r) => r.querySelector('td')?.textContent?.trim());
-  const link = (n: number) => rows()[n].querySelector<HTMLAnchorElement>('a[data-slot="employee-link"]')!;
+  /** The Emp. No cell of a row: the first cell after the Profile column. */
+  const codeCell = (row: Element) => row.querySelector<HTMLElement>('td:not([data-employee-profile-cell])')!;
+  const selected = () => rows().filter((r) => r.getAttribute('aria-selected') === 'true').map((r) => codeCell(r).textContent?.trim());
 
   function type(id: string, value: string) {
     const field = input(id);
@@ -145,20 +152,36 @@ describe('EmployeeListPage', () => {
       expect(range()).toBe('Showing 1–10 of 23');
     });
 
-    it('shows the seven columns in order and each row with its values, the date as dd-MM-yyyy', () => {
+    it('shows the Profile column first, then the seven columns in order, and each row with its values, the date as dd-MM-yyyy', () => {
       create();
       answer([employee(1)]);
 
       const heads = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
-      expect(heads).toEqual(['Employee No', 'Employee Name', "Father's Name", 'Date of Birth', 'Address', 'Mobile No', 'Personal Email']);
-      expect(cells(rows()[0])).toEqual(['1001', 'Name 01', 'Father 01', '05-03-1990', 'House 1, Road', '9847000001', 'e01@mail.com']);
+      expect(heads).toEqual(['Profile', 'Emp. No', 'Emp. Name', "Father's Name", 'DOB', 'Address', 'Mobile', 'Email']);
+      // The Profile cell holds only the icon, so it has no text.
+      expect(cells(rows()[0])).toEqual(['', '1001', 'Name 01', 'Father 01', '05-03-1990', 'House 1, Road', '9847000001', 'e01@mail.com']);
+    });
+
+    it('keeps the DOB on one line with wrap text on, and lets the other columns wrap', () => {
+      create();
+      answer([employee(1)]);
+
+      const nowrap = Array.from(rows()[0].querySelectorAll('td')).map((td) => td.classList.contains('group-data-[wrap=true]:whitespace-nowrap'));
+      expect(nowrap).toEqual([false, false, false, false, true, false, false, false]);
+    });
+
+    it('shows the Email in lower case', () => {
+      create();
+      answer([{ ...employee(1), email: ' VSPradeep1973@GMAIL.COM ' }]);
+
+      expect(cells(rows()[0]).at(-1)).toBe('vspradeep1973@gmail.com');
     });
 
     it('shows a dash for every empty value', () => {
       create();
       answer([{ id: 'e-x', code: null, name: null, fatherName: null, dateOfBirth: null, address: null, mobile: '  ', email: null }]);
 
-      expect(cells(rows()[0])).toEqual(['—', '—', '—', '—', '—', '—', '—']);
+      expect(cells(rows()[0]).slice(1)).toEqual(['—', '—', '—', '—', '—', '—', '—']);
     });
 
     it('has no create, edit, save or delete control', () => {
@@ -219,12 +242,12 @@ describe('EmployeeListPage', () => {
       create();
       answer();
 
-      header('Employee No').querySelector('button')!.click();
-      header('Employee No').querySelector('button')!.click();
+      header('Emp. No').querySelector('button')!.click();
+      header('Emp. No').querySelector('button')!.click();
       fixture.detectChanges();
 
       http.expectNone(isEmployeesRequest);
-      expect(header('Employee No').getAttribute('aria-sort')).toBe('descending');
+      expect(header('Emp. No').getAttribute('aria-sort')).toBe('descending');
       expect(firstCells()).toEqual(['1010', '1009', '1008', '1007', '1006', '1005', '1004', '1003', '1002', '1001']);
     });
 
@@ -243,10 +266,10 @@ describe('EmployeeListPage', () => {
   });
 
   describe('empty, loading and error states', () => {
-    it('shows a loading message and no table while waiting', () => {
+    it('shows no table and no loading message of its own while waiting', () => {
       create();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading employees');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(el.querySelector('table')).toBeNull();
       answer();
       expect(el.querySelector('[role="status"]')).toBeNull();
@@ -279,7 +302,7 @@ describe('EmployeeListPage', () => {
     });
   });
 
-  describe('row selection and the code link', () => {
+  describe('row selection and the Profile column', () => {
     it('selects a clicked row, clears it on a second click, and selects with Enter and Space', () => {
       create();
       answer();
@@ -300,74 +323,101 @@ describe('EmployeeListPage', () => {
       expect(space.defaultPrevented).toBe(true);
     });
 
-    it('makes each code a link to that employee\'s profile', () => {
+    it('shows the Emp. No as plain text, not a link; a click on it selects the row and opens nothing', async () => {
       create();
       answer();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
 
-      expect(link(0).getAttribute('href')).toBe('/admin/employees/e-01');
-      expect(link(0).textContent?.trim()).toBe('1001');
-      expect(rows().every((r) => r.querySelectorAll('a').length === 1)).toBe(true);
-    });
-
-    it('opens the profile on a click without changing the selection', async () => {
-      create();
-      answer();
-      rows()[2].click();
+      expect(el.querySelectorAll('a[data-slot="employee-link"]')).toHaveLength(0);
+      const code = codeCell(rows()[1]);
+      expect(code.textContent?.trim()).toBe('1002');
+      expect(code.querySelector('a')).toBeNull();
+      expect(code.classList).not.toContain('cursor-pointer');
+      code.click();
       fixture.detectChanges();
-
-      link(0).click();
       await fixture.whenStable();
-      fixture.detectChanges();
 
-      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-01');
-      expect(selected()).toEqual(['1003']);
+      expect(navigate).not.toHaveBeenCalled();
+      expect(TestBed.inject(Router).url).toBe('/');
+      expect(selected()).toEqual(['1002']);
     });
 
-    it('opens the profile from a click anywhere in the Employee No cell, without changing the selection', async () => {
+    it("opens the profile with the Profile's menu code, whatever the list's code is", async () => {
+      create();
+      await TestBed.inject(Router).navigateByUrl('/admin/employees/x?menuId=NS-EMPLIST');
+      answer();
+
+      const icon = rows()[0].querySelector<HTMLAnchorElement>('a[data-slot="employee-profile"]')!;
+      expect(icon.getAttribute('href')).toBe('/admin/employees/e-01?menuId=NS-EMPPROFILE');
+      rows()[1].querySelector<HTMLElement>('[data-employee-profile-cell]')!.click();
+      await fixture.whenStable();
+
+      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-02?menuId=NS-EMPPROFILE');
+    });
+
+    it('has a Profile column with a colourful icon link per row, named after the employee, not a button', () => {
+      create();
+      answer();
+
+      const icons = Array.from(el.querySelectorAll<HTMLAnchorElement>('a[data-slot="employee-profile"]'));
+      expect(icons).toHaveLength(rows().length);
+      expect(icons[0].getAttribute('href')).toBe('/admin/employees/e-01?menuId=NS-EMPPROFILE');
+      expect(icons[0].getAttribute('aria-label')).toBe('Profile of Name 01');
+      expect(icons[0].getAttribute('title')).toBe('Profile of Name 01');
+      expect(icons[0].querySelector('ng-icon')!.getAttribute('name')).toBe('appProfileColor');
+      expect(icons[0].hasAttribute('hlmBtn')).toBe(false);
+      expect(rows()[0].firstElementChild!.contains(icons[0])).toBe(true);
+    });
+
+    it('opens the profile from a click anywhere in the Profile cell, without changing the selection', async () => {
       create();
       answer();
       rows()[2].click();
       fixture.detectChanges();
 
-      const cell = rows()[1].querySelector<HTMLElement>('[data-employee-code-cell]')!;
+      const cell = rows()[1].querySelector<HTMLElement>('[data-employee-profile-cell]')!;
       expect(cell.classList).toContain('cursor-pointer');
       cell.click();
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-02');
+      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-02?menuId=NS-EMPPROFILE');
       expect(selected()).toEqual(['1003']);
     });
 
-    it('opens only one profile when the link itself is clicked', async () => {
+    it('opens only one profile when the Profile icon itself is clicked, and keeps Enter on it from selecting the row', async () => {
       create();
       answer();
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+      const icon = rows()[0].querySelector<HTMLAnchorElement>('a[data-slot="employee-profile"]')!;
 
-      link(0).click();
+      press(icon, 'Enter');
+      expect(selected()).toEqual([]);
+      icon.click();
       await fixture.whenStable();
 
       expect(navigate).not.toHaveBeenCalled(); // the link navigates itself; the cell does not repeat it
-      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-01');
+      expect(TestBed.inject(Router).url).toBe('/admin/employees/e-01?menuId=NS-EMPPROFILE');
+    });
+
+    it("has no Profile column without the Profile's view right", () => {
+      create(false);
+      answer();
+
+      const heads = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
+      expect(heads).not.toContain('Profile');
+      expect(el.querySelectorAll('[data-employee-profile-cell], a[data-slot="employee-profile"]')).toHaveLength(0);
+      expect(rows()[0].querySelectorAll('td')).toHaveLength(7);
     });
 
     it('still selects the row from the other cells', () => {
       create();
       answer();
 
-      (rows()[1].querySelectorAll('td')[1] as HTMLElement).click();
+      (rows()[1].querySelectorAll('td')[2] as HTMLElement).click();
       fixture.detectChanges();
 
       expect(selected()).toEqual(['1002']);
-    });
-
-    it('keeps Enter on the link from selecting the row', () => {
-      create();
-      answer();
-
-      press(link(0), 'Enter');
-
-      expect(selected()).toEqual([]);
     });
   });
 
@@ -386,8 +436,8 @@ describe('EmployeeListPage', () => {
       button('Next page').click();
       fixture.detectChanges();
       answer();
-      header('Employee No').querySelector('button')!.click();
-      header('Employee No').querySelector('button')!.click();
+      header('Emp. No').querySelector('button')!.click();
+      header('Emp. No').querySelector('button')!.click();
       fixture.detectChanges();
       rows()[0].click();
       Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Wrap text'))!.click();
@@ -399,7 +449,7 @@ describe('EmployeeListPage', () => {
       expect(sent).toEqual([{ code: null, name: 'name', page: '2', pageSize: '5' }]);
       expect(input('filter-name').value).toBe('name');
       expect(range()).toBe('Showing 6–10 of 23');
-      expect(header('Employee No').getAttribute('aria-sort')).toBe('descending');
+      expect(header('Emp. No').getAttribute('aria-sort')).toBe('descending');
       expect(firstCells()).toEqual(['1010', '1009', '1008', '1007', '1006']);
       expect(selected()).toEqual(['1010']);
       expect(Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Wrap text'))!.textContent?.trim()).toBe('Wrap text: off');

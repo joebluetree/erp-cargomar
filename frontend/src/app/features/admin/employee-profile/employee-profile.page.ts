@@ -2,13 +2,15 @@ import { Location, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectorRef, Component, DestroyRef, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideLoaderCircle } from '@ng-icons/lucide';
+import { lucideArrowLeft } from '@ng-icons/lucide';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { PageTitle } from '../../../shared/ui/page-title/page-title';
+import { PageRule } from '../../../shared/ui/page-rule/page-rule';
 import { EMPTY_VALUE, ProfileSection, initialsOf, profileSections } from './employee-profile.model';
 import { EmployeeProfileService } from './employee-profile.service';
+import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
 
 /**
  * Where each box sits when the boxes are in rows (`fits`), by its title (the basic box has none): the basic box, Contact
@@ -36,8 +38,8 @@ const PLACEMENT: Record<string, string> = {
  */
 @Component({
   selector: 'app-employee-profile',
-  imports: [NgTemplateOutlet, NgIcon, HlmAvatarImports, HlmButtonImports, HlmCardImports, PageTitle],
-  providers: [provideIcons({ lucideArrowLeft, lucideLoaderCircle })],
+  imports: [NgTemplateOutlet, NgIcon, HlmAvatarImports, HlmButtonImports, HlmCardImports, PageTitle, PageRule],
+  providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './employee-profile.page.html',
 })
 export class EmployeeProfilePage {
@@ -103,12 +105,17 @@ export class EmployeeProfilePage {
     this.service.load(this.employeeId ?? undefined);
   }
 
-  /** Back to the page the user came from (the Employee List as it was left), or the list when opened directly. */
+  /**
+   * Back to the page the user came from (for an employee, the Employee List as it was left). Opened directly, an
+   * employee's profile goes to the Employee List and the user's own profile to the Dashboard.
+   */
   protected back(): void {
     if (this.cameFromApp) {
       this.location.back();
+    } else if (this.employeeId) {
+      void this.router?.navigate(['/admin/employees'], { queryParams: { [MENU_ID_PARAM]: MENU_CODES.employeeList } });
     } else {
-      void this.router?.navigateByUrl('/admin/employees');
+      void this.router?.navigateByUrl('/');
     }
   }
 

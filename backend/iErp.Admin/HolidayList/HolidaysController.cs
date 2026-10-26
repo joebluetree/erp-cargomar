@@ -1,3 +1,4 @@
+using iErp.Shared.Auth;
 using iErp.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ namespace iErp.Admin.HolidayList;
 /// </summary>
 [ApiController]
 [Route("api/admin/holidays")]
+[RequiresMenu(MenuCodes.HolidayList)]
 public class HolidaysController(IHolidayListService service) : ControllerBase
 {
     public const string NotFoundMessage = "Holiday list not found.";

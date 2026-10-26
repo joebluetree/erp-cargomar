@@ -47,7 +47,7 @@ Users can view only their own profile. When the **Profile** menu is selected (cl
 
 - **Date:** 2026-10-15
 - **Change Ref:** `admin-emp-profile`
-- **Affects:** BR-001, BR-002, EMPM, PARAM, Profile screen, main menu
+- **Affects:** BR-001, BR-002, Profile screen, main menu
 
 **Changes:**
 

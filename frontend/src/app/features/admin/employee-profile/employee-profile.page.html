@@ -1,19 +1,13 @@
-@if (employeeId) {
-  <div class="mb-4 flex items-center gap-2">
-    <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
-      <ng-icon name="lucideArrowLeft" aria-hidden="true" />
-    </button>
-    <h1 appPageTitle>Employee Profile</h1>
-  </div>
-} @else {
-  <h1 appPageTitle class="mb-4">Profile</h1>
-}
+<div class="mb-4 flex items-center gap-2">
+  <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+    <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+  </button>
+  <h1 appPageTitle>{{ employeeId ? 'Employee Profile' : 'Profile' }}</h1>
+</div>
+<app-page-rule />
 
 @if (service.loading()) {
-  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
-    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
-    Loading profile…
-  </div>
+  <!-- While it loads, the screen shows nothing of its own: the shell freezes it and shows the spinner. -->
 } @else if (service.notLinked()) {
   <p role="status" data-slot="not-linked" class="p-4 text-muted-foreground">
     {{ employeeId ? 'Employee not found.' : 'No employee profile is linked to your user.' }}
@@ -65,24 +59,27 @@
     data-slot="profile-section"
     [attr.aria-label]="section.title || name()"
   >
-    @if (section.title) {
+    @if (section.parts) {
+      <!-- The Address box: no title of its own; Current Address on the left and Permanent Address on the right (below it
+           on phones), each titled like a box. -->
+      <div data-slot="address-parts" class="grid gap-y-(--card-spacing) sm:grid-cols-2">
+        @for (part of section.parts; track part.title) {
+          <div data-slot="address-part" class="flex min-w-0 flex-col gap-(--card-spacing)">
+            <div hlmCardHeader>
+              <h2 hlmCardTitle class="text-profile-heading">{{ part.title }}</h2>
+            </div>
+            <div hlmCardContent>
+              <ng-container *ngTemplateOutlet="rows; context: { $implicit: part.fields, labelClass: 'text-profile-label' }" />
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (section.title) {
       <div hlmCardHeader>
         <h2 hlmCardTitle class="text-profile-heading">{{ section.title }}</h2>
       </div>
       <div hlmCardContent>
-        @if (section.parts) {
-          <!-- The Address box: Current on the left, Permanent on the right (below it on phones). -->
-          <div data-slot="address-parts" class="grid gap-8 sm:grid-cols-2">
-            @for (part of section.parts; track part.title) {
-              <div data-slot="address-part" class="min-w-0">
-                <h3 class="mb-3 font-semibold text-profile-heading">{{ part.title }}</h3>
-                <ng-container *ngTemplateOutlet="rows; context: { $implicit: part.fields, labelClass: 'text-profile-label' }" />
-              </div>
-            }
-          </div>
-        } @else {
-          <ng-container *ngTemplateOutlet="rows; context: { $implicit: section.fields, labelClass: 'text-profile-label' }" />
-        }
+        <ng-container *ngTemplateOutlet="rows; context: { $implicit: section.fields, labelClass: 'text-profile-label' }" />
       </div>
     } @else {
       <!-- The first box has no heading: a big image column (initials until photos are available) on the left, and the

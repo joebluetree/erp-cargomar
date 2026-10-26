@@ -26,10 +26,7 @@
     <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
   </div>
 } @else if (service.loading()) {
-  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
-    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
-    Loading branches…
-  </div>
+  <!-- While it loads, the screen shows nothing of its own: the shell freezes it and shows the spinner. -->
 } @else {
   <div class="mb-2"><app-table-wrap-toggle [(wrap)]="wrap" /></div>
   <div hlmTableContainer [attr.data-wrap]="wrap() ? 'true' : null">
@@ -44,7 +41,9 @@
               </button>
             </th>
           }
-          <th hlmTh class="whitespace-nowrap">Holiday List</th>
+          @if (canOpenHolidays()) {
+            <th hlmTh class="whitespace-nowrap">Holiday List</th>
+          }
         </tr>
       </thead>
       <tbody hlmTBody>
@@ -61,27 +60,29 @@
             @for (column of columns; track column.key) {
               <td hlmTd>{{ branch[column.key] }}</td>
             }
-            <td hlmTd class="whitespace-nowrap">
-              <!-- Opens the branch's holiday list; the click and keys stay with the button, so the selection is unchanged. -->
-              <button
-                hlmBtn
-                variant="outline"
-                size="icon"
-                type="button"
-                data-slot="branch-holidays"
-                [attr.aria-label]="'Holidays of ' + branch.name"
-                [attr.title]="'Holidays of ' + branch.name"
-                (click)="openHolidays(branch, $event)"
-                (keydown.enter)="$event.stopPropagation()"
-                (keydown.space)="$event.stopPropagation()"
-              >
-                <ng-icon name="lucideCalendarDays" aria-hidden="true" />
-              </button>
-            </td>
+            @if (canOpenHolidays()) {
+              <!-- A click anywhere in the cell opens the branch's holiday list, as the icon link does for the keyboard;
+                   neither changes the row selection. -->
+              <td hlmTd class="cursor-pointer whitespace-nowrap" data-branch-holidays-cell (click)="openHolidays(branch, $event)">
+                <a
+                  class="inline-flex align-middle"
+                  data-slot="branch-holidays"
+                  [routerLink]="['/reports/branches', branch.id, 'holidays']"
+                  [queryParams]="holidayParams"
+                  [attr.aria-label]="'Holidays of ' + branch.name"
+                  [attr.title]="'Holidays of ' + branch.name"
+                  (click)="$event.stopPropagation()"
+                  (keydown.enter)="$event.stopPropagation()"
+                  (keydown.space)="$event.stopPropagation()"
+                >
+                  <ng-icon name="appCalendarColor" class="text-2xl" aria-hidden="true" />
+                </a>
+              </td>
+            }
           </tr>
         } @empty {
           <tr hlmTr>
-            <td hlmTd [attr.colspan]="columns.length + 1" class="text-center text-muted-foreground">
+            <td hlmTd [attr.colspan]="columns.length + (canOpenHolidays() ? 1 : 0)" class="text-center text-muted-foreground">
               {{ hasFilters() ? 'No branches match the filters.' : 'There are no branches.' }}
             </td>
           </tr>

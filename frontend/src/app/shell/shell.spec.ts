@@ -1,3 +1,5 @@
+import { LoadingService } from '../core/loading/loading.service';
+import { LOADING_BAR_DELAY_MS } from '../shared/ui/loading-bar/loading-bar';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, Component } from '@angular/core';
@@ -7,7 +9,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { AuthSession, SESSION_STORAGE_KEY } from '../core/auth/auth-session';
 import { testSession } from '../core/auth/auth-session.testing';
 import { authGuard } from '../core/auth/auth.guards';
-import { NAV_ITEMS, NAV_MENU } from '../core/navigation/nav-items';
+import { provideTestMenu } from '../core/navigation/menu.testing';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { vi } from 'vitest';
@@ -28,7 +30,7 @@ describe('Shell', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: NAV_MENU, useValue: [NAV_ITEMS[0], { label: 'Reports', icon: 'lucideHouse', route: '/reports' }] },
+        provideTestMenu([{ id: 'mod', name: 'HR', menus: [{ id: 'm-r', code: 'R', name: 'Reports', route: 'reports' }] }]),
         provideRouter([
           {
             path: '',
@@ -56,6 +58,31 @@ describe('Shell', () => {
     await harness.fixture.whenStable();
     harness.detectChanges();
   }
+
+  it('while a backend request runs, shows the loading bar and freezes the screen until it ends', async () => {
+    const { harness, el } = await render();
+    const header = el.querySelector('header')!;
+    const content = el.querySelector<HTMLElement>('[data-slot="app-content"]')!;
+    const freeze = () => el.querySelector('[data-slot="loading-freeze"]');
+    expect(header.querySelector('app-loading-bar')).not.toBeNull();
+    expect([content.hasAttribute('inert'), freeze()]).toEqual([false, null]);
+    const loading = TestBed.inject(LoadingService);
+
+    loading.begin();
+    harness.detectChanges();
+    // Frozen at once: the content takes no focus or keys, and the layer catches clicks.
+    expect(content.hasAttribute('inert')).toBe(true);
+    expect(freeze()).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, LOADING_BAR_DELAY_MS + 20));
+    harness.detectChanges();
+    expect(header.querySelector('[role="progressbar"]')).not.toBeNull();
+    expect(freeze()!.hasAttribute('data-waiting')).toBe(true);
+
+    loading.end();
+    harness.detectChanges();
+    expect(header.querySelector('[role="progressbar"]')).toBeNull();
+    expect([content.hasAttribute('inert'), freeze()]).toEqual([false, null]);
+  });
 
   it('shows the header with the app name, the sidebar menu and the routed page', async () => {
     const { el } = await render();
@@ -284,7 +311,7 @@ describe('Shell', () => {
     menuButton(el).click();
     await settle(harness);
 
-    expect(sidebar).toEqual(['blue', null]); // the test menu's second entry has no tone
+    expect(sidebar).toEqual(['blue', 'brand']); // the test menu's route has no look of its own, so it gets the default
     expect(tones(drawerNav()!)).toEqual(sidebar);
   });
 
@@ -293,12 +320,12 @@ describe('Shell', () => {
     menuButton(el).click();
     await settle(harness);
 
-    (drawerNav()?.querySelector('a[href="/reports"]') as HTMLAnchorElement).click();
+    (drawerNav()?.querySelector('a[href="/reports?menuId=R"]') as HTMLAnchorElement).click();
     await settle(harness);
     await new Promise((resolve) => setTimeout(resolve, 400));
     harness.detectChanges();
 
-    expect(TestBed.inject(Router).url).toBe('/reports');
+    expect(TestBed.inject(Router).url).toBe('/reports?menuId=R');
     expect(drawerNav()).toBeNull();
   });
 
@@ -401,19 +428,32 @@ describe('Shell', () => {
       expect(details(el)!.querySelectorAll('.text-muted-foreground')).toHaveLength(0);
     });
 
-    it('takes the title color from the page titles and gives the branch a pink, in both themes', () => {
+    it('shows the user, the branch and the year as colored chips, text only', async () => {
+      const { el } = await renderLoggedIn();
+
+      const chips = Array.from(details(el)!.querySelectorAll('[data-slot="session-chip"]'));
+      expect(chips.map((c) => c.textContent?.trim())).toEqual(['ADMIN', 'Kochi', '2025-2026']);
+      expect(chips.every((c) => c.querySelector('ng-icon') === null)).toBe(true);
+      const tones = ['user', 'branch', 'year'];
+      chips.forEach((chip, n) => {
+        expect(Array.from(chip.classList)).toEqual(
+          expect.arrayContaining(['rounded-full', `bg-header-${tones[n]}-bg`, `text-header-${tones[n]}`, 'ring-1']),
+        );
+      });
+    });
+
+    it('takes the title color from the page titles and gives each chip a text and a background color in both themes', () => {
       const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-      const values = (token: string) => Array.from(css.matchAll(new RegExp(`^\\s*--${token}:\\s*([^;]+);`, 'gm'))).map((m) => m[1].trim());
+      // Only live declarations count: values kept in comments for reference are left out.
+      const live = css.replace(/\/\*[\s\S]*?\*\//g, '');
+      const values = (token: string) => Array.from(live.matchAll(new RegExp(`^\\s*--${token}:\\s*([^;]+);`, 'gm'))).map((m) => m[1].trim());
 
       // The page titles are text-primary, so the company title follows --primary in both themes (no dark override).
       expect(values('header-company')).toEqual(['var(--primary)']);
-      // Pink: a light and a dark value, both with a pink hue (oklch hue 330 to 355). Lightness may be a number or a percentage.
-      const branch = values('header-branch');
-      expect(branch).toHaveLength(2);
-      for (const value of branch) {
-        const hue = Number(/oklch\([\d.]+%? [\d.]+ ([\d.]+)\)/.exec(value)?.[1]);
-        expect(hue).toBeGreaterThanOrEqual(330);
-        expect(hue).toBeLessThanOrEqual(355);
+      // Each chip: a light and a dark value for its text and its background.
+      for (const tone of ['user', 'branch', 'year']) {
+        expect(values(`header-${tone}`)).toHaveLength(2);
+        expect(values(`header-${tone}-bg`)).toHaveLength(2);
       }
     });
 
@@ -427,11 +467,14 @@ describe('Shell', () => {
     it('shortens the details on narrow screens and never pushes the buttons out of view', async () => {
       const { el } = await renderLoggedIn();
 
-      const [user, company, year] = Array.from(details(el)!.querySelectorAll('span[aria-hidden="true"]'));
+      const [user, company, year] = Array.from(details(el)!.querySelectorAll('[data-slot="session-chip"]'));
       expect(Array.from(details(el)!.classList)).toEqual(expect.arrayContaining(['min-w-0', 'ml-auto']));
-      expect(user.classList).toContain('truncate');
-      expect(Array.from(company.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline', 'truncate']));
-      expect(Array.from(year.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline']));
+      // The user and branch chips may shrink, and their text is cut with an ellipsis; branch and year hide on phones.
+      expect(user.classList).toContain('min-w-0');
+      expect(user.querySelector('.truncate')).not.toBeNull();
+      expect(Array.from(company.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline-flex', 'min-w-0']));
+      expect(company.querySelector('.truncate')).not.toBeNull();
+      expect(Array.from(year.classList)).toEqual(expect.arrayContaining(['hidden', 'sm:inline-flex', 'shrink-0']));
       expect(themeButton(el).classList).toContain('shrink-0');
       expect(logoutButton(el).classList).toContain('shrink-0');
     });

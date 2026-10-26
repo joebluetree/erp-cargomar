@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeftRight, lucideLogOut, lucideMenu, lucideMoon, lucideSun } from '@ng-icons/lucide';
+import { lucideArrowLeftRight, lucideBuilding2, lucideCalendarDays, lucideLogOut, lucideMenu, lucideMoon, lucideSun, lucideUser } from '@ng-icons/lucide';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -9,6 +9,9 @@ import { AuthSession } from '../core/auth/auth-session';
 import { ThemeService } from '../core/theme/theme.service';
 import { AppIconTone } from '../shared/ui/icon-tone/icon-tone';
 import { AppNav } from './app-nav';
+import { LoadingService } from '../core/loading/loading.service';
+import { LoadingBar } from '../shared/ui/loading-bar/loading-bar';
+import { LoadingOverlay } from '../shared/ui/loading-overlay/loading-overlay';
 
 /**
  * The frame around every page: header, sidebar and content area.
@@ -20,8 +23,8 @@ import { AppNav } from './app-nav';
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, NgIcon, HlmButtonImports, HlmSheetImports, AppNav, AppIconTone],
-  providers: [provideIcons({ lucideArrowLeftRight, lucideLogOut, lucideMenu, lucideMoon, lucideSun })],
+  imports: [RouterOutlet, RouterLink, NgIcon, HlmButtonImports, HlmSheetImports, AppNav, AppIconTone, LoadingBar, LoadingOverlay],
+  providers: [provideIcons({ lucideArrowLeftRight, lucideBuilding2, lucideCalendarDays, lucideLogOut, lucideMenu, lucideMoon, lucideSun, lucideUser })],
   templateUrl: './shell.html',
 })
 export class Shell {
@@ -29,6 +32,7 @@ export class Shell {
   private readonly router = inject(Router);
   private readonly dialogs = inject(HlmDialogService);
   protected readonly auth = inject(AuthSession);
+  protected readonly loading = inject(LoadingService);
 
   /** The header's main title: the logged-in company, or the fixed name when there is no session. */
   protected readonly title = computed(() => this.auth.details()?.company || 'Cargomar Pvt Ltd');

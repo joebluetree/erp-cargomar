@@ -26,10 +26,7 @@
     <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
   </div>
 } @else if (service.loading()) {
-  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
-    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
-    Loading companies…
-  </div>
+  <!-- While it loads, the screen shows nothing of its own: the shell freezes it and shows the spinner. -->
 } @else {
   <div class="mb-2"><app-table-wrap-toggle [(wrap)]="wrap" /></div>
   <div hlmTableContainer [attr.data-wrap]="wrap() ? 'true' : null">

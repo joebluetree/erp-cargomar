@@ -12,6 +12,15 @@
 
 /* The solid green behind primary buttons and table headers ("surface"). Separate from --primary (titles, tints) so the dark theme can dim the fills without dimming the title. */
 @theme inline {
+  --animate-loading-bar: loading-bar 1.1s ease-in-out infinite;
+  @keyframes loading-bar {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
   --color-primary-surface: var(--primary-surface);
   --color-table-header: var(--table-header-bg);
   --color-table-header-foreground: var(--table-header-fg);
@@ -23,6 +32,9 @@
   --color-header-user: var(--header-user);
   --color-header-branch: var(--header-branch);
   --color-header-year: var(--header-year);
+  --color-header-user-bg: var(--header-user-bg);
+  --color-header-branch-bg: var(--header-branch-bg);
+  --color-header-year-bg: var(--header-year-bg);
   --color-profile-heading: var(--profile-heading);
   --color-profile-label: var(--profile-label);
   --color-profile-box: var(--profile-box);
@@ -74,12 +86,20 @@
   /* The brand green for icons that should match the page titles: it follows --primary, so it is not repeated in the dark block. */
   --icon-brand: var(--primary);
   /* Header: the company title in the brand green of the page titles (6.2:1 on white; it follows --primary, so it is not
-     repeated in the dark block, where it is 3.2:1, enough for large text), the user in blue (6.3:1), the branch in dark
-     yellow (4.9:1), the year in the text color. */
+     repeated in the dark block, where it is 3.2:1, enough for large text). The user, branch and year are colored chips:
+     each a soft tint with strong text of the same hue (blue, green, amber), all above 6:1. */
   --header-company: var(--primary);
-  --header-user: oklch(0.5 0.2 262);  /*oklch(0.5 0.2 262);*/
-  --header-branch: oklch(67.042% 0.2853 343.298);
-  --header-year: var(--foreground);
+  --header-user: oklch(0.42 0.2 265);
+  /* before the chips: --header-user: oklch(51.837% 0.25449 269.342); */
+  --header-branch: oklch(0.4 0.12 150);
+  /* before the chips: --header-branch: oklch(66.131% 0.21157 143.762); */
+
+    /* --header-user: oklch(43.763% 0.22269 271.888);
+  --header-branch: oklch(66.662% 0.21089 144.524); */
+  --header-year: oklch(0.45 0.12 55);
+  --header-user-bg: oklch(0.93 0.045 265);
+  --header-branch-bg: oklch(0.93 0.06 150);
+  --header-year-bg: oklch(0.94 0.06 75);
   /* Profile screen, the colors of its reference UI template. The page keeps its white background and the boxes are
      tinted pale blue-grey (--profile-box). On that tint: box headings in dark slate (11.4:1), field labels in blue (5.0:1;
      the template's lighter blue is only 2.9:1 on white; it is used for every label, including the basic rows). */
@@ -116,7 +136,7 @@
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-5: oklch(0.645 0.246 16.439); 
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.87 0 0);
   --card: oklch(0.205 0 0);
@@ -135,10 +155,17 @@
   --icon-violet: oklch(0.72 0.14 295);
   --icon-rose: oklch(0.74 0.14 15);
   --icon-teal: oklch(0.74 0.1 195);
-  /* Lighter header colors on the dark background (user 8.6:1, branch 11.3:1); the company and the year follow
-     --primary and --foreground. */
-  --header-user: oklch(0.74 0.13 255);
-  --header-branch: oklch(67.042% 0.2853 343.298);
+  /* The header chips on the dark background: a deep tint with light text of the same hue; the company follows --primary. */
+  --header-user: oklch(0.88 0.08 265);
+  --header-branch: oklch(0.9 0.13 150);
+  --header-year: oklch(0.91 0.11 85);
+  --header-user-bg: oklch(0.32 0.09 265);
+  --header-branch-bg: oklch(0.32 0.07 150);
+  --header-year-bg: oklch(0.34 0.07 70);
+  /* before the chips: --header-user: oklch(77.54% 0.17271 65.397); --header-branch: oklch(86.738% 0.28702 143.363); */
+  
+    /* --header-user: oklch(71.181% 0.15682 249.571);
+  --header-branch: oklch(87.577% 0.23158 151.633); */
   /* --header-branch: oklch(0.82 0.15 88); */
   /* Profile boxes, a dark tint a little lighter than the page; on it the heading is 10.8:1 and the label 7.1:1. */
   --profile-heading: oklch(0.87 0.02 257);

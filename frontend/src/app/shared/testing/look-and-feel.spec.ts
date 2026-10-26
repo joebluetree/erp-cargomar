@@ -88,16 +88,19 @@ describe('common look and feel: the shared pieces', () => {
     expect(classes('td')).toEqual(expect.arrayContaining(['p-2', 'border-r', 'border-table-line', 'last:border-r-0']));
   });
 
-  it('wrap mode: the container is a group that scrolls sideways, and header and body cells wrap when it says data-wrap="true"', () => {
+  it('wrap mode: the container is a group that scrolls sideways, and body cells wrap when it says data-wrap="true"', () => {
     const container = el.querySelector('[data-slot="table-container"]')!;
 
     expect(Array.from(container.classList)).toEqual(expect.arrayContaining(['group', 'overflow-x-auto']));
     expect(container.getAttribute('data-wrap')).toBe('true');
-    for (const cell of ['th', 'td']) {
-      expect(classes(cell)).toEqual(
-        expect.arrayContaining(['whitespace-nowrap', 'group-data-[wrap=true]:whitespace-normal', 'group-data-[wrap=true]:wrap-anywhere']),
-      );
-    }
+    expect(classes('td')).toEqual(
+      expect.arrayContaining(['whitespace-nowrap', 'group-data-[wrap=true]:whitespace-normal', 'group-data-[wrap=true]:wrap-anywhere']),
+    );
+  });
+
+  it('headings never wrap, with wrap text on or off, so each column is at least as wide as its heading', () => {
+    expect(classes('th')).toContain('whitespace-nowrap');
+    expect(classes('th').filter((c) => c.includes('wrap=true'))).toEqual([]);
   });
 
   it('wrap toggle: one button above the table, on by default', () => {

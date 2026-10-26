@@ -5,9 +5,11 @@ using iErp.Admin.ChangeBranch;
 using iErp.Admin.EmployeeList;
 using iErp.Admin.EmployeeProfile;
 using iErp.Admin.HolidayList;
+using iErp.Shared.Auth;
 using iErp.SharedBusiness.Holidays;
 using iErp.Admin.Login;
 using iErp.Admin.Session;
+using iErp.Admin.UserRights;
 
 namespace iErp.Admin;
 
@@ -32,6 +34,9 @@ public static class AdminRegistration
         services.AddScoped<IHolidayListRepository, HolidayListRepository>();
         services.AddScoped<IHolidayListService, HolidayListService>();
         services.TryAddSingleton<IHolidayFileStore, HolidayFileStore>();
+        services.AddScoped<IMenuRepository, MenuRepository>();
+        services.AddScoped<IUserMenuService, UserMenuService>();
+        services.AddScoped<IMenuAccess, MenuAccess>();
         return services;
     }
 }

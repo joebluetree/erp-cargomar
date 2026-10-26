@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using iErp.Shared.Auth;
 using iErp.Tests.TestSupport;
 
 namespace iErp.Tests.Integration;
@@ -39,6 +40,8 @@ public class ApiFactory : WebApplicationFactory<Program>
         {
             services.AddControllers().AddApplicationPart(typeof(TestEndpointsController).Assembly);
             services.AddScoped<IValidator<EchoRequest>, EchoRequestValidator>();
+            // Every menu is allowed unless a test replaces this (admin-user-rights design D3).
+            services.AddScoped<IMenuAccess>(_ => new FakeMenuAccess());
         });
     }
 }

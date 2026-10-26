@@ -2,13 +2,15 @@ import { Location } from '@angular/common';
 import { Component, computed, effect, inject, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideLoaderCircle } from '@ng-icons/lucide';
+import { lucideArrowLeft } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { AuthSession } from '../../../core/auth/auth-session';
 import { PageTitle } from '../../../shared/ui/page-title/page-title';
+import { PageRule } from '../../../shared/ui/page-rule/page-rule';
 import { EMPTY_VALUE, HOLIDAY_COLUMNS, NOT_FOUND_TEXT } from './holiday-list.model';
 import { HolidayListService } from './holiday-list.service';
+import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
 
 /**
  * The Holiday List screen: the holidays of the logged-in user's own branch for the session's financial year, view
@@ -21,8 +23,8 @@ import { HolidayListService } from './holiday-list.service';
  */
 @Component({
   selector: 'app-holiday-list',
-  imports: [NgIcon, HlmButtonImports, HlmCardImports, PageTitle],
-  providers: [provideIcons({ lucideArrowLeft, lucideLoaderCircle })],
+  imports: [NgIcon, HlmButtonImports, HlmCardImports, PageTitle, PageRule],
+  providers: [provideIcons({ lucideArrowLeft })],
   templateUrl: './holiday-list.page.html',
 })
 export class HolidayListPage {
@@ -69,12 +71,17 @@ export class HolidayListPage {
     this.load();
   }
 
-  /** Back to the page the user came from (the Branch List as it was left), or the Branch List when opened directly. */
+  /**
+   * Back to the page the user came from (for a branch, the Branch List as it was left). Opened directly, a branch's
+   * list goes to the Branch List and the user's own list to the Dashboard.
+   */
   protected back(): void {
     if (this.cameFromApp) {
       this.location.back();
+    } else if (this.branchId) {
+      void this.router?.navigate(['/reports/branches'], { queryParams: { [MENU_ID_PARAM]: MENU_CODES.branchList } });
     } else {
-      void this.router?.navigateByUrl('/reports/branches');
+      void this.router?.navigateByUrl('/');
     }
   }
 

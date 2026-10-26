@@ -1,19 +1,13 @@
-@if (branchId) {
-  <div class="mb-4 flex items-center gap-2">
-    <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
-      <ng-icon name="lucideArrowLeft" aria-hidden="true" />
-    </button>
-    <h1 appPageTitle>Holiday List</h1>
-  </div>
-} @else {
-  <h1 appPageTitle class="mb-4">Holiday List</h1>
-}
+<div class="mb-4 flex items-center gap-2">
+  <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+    <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+  </button>
+  <h1 appPageTitle>Holiday List</h1>
+</div>
+<app-page-rule />
 
 @if (service.loading()) {
-  <div role="status" class="flex items-center gap-2 p-4 text-muted-foreground">
-    <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
-    Loading holidays…
-  </div>
+  <!-- While it loads, the screen shows nothing of its own: the shell freezes it and shows the spinner. -->
 } @else if (service.notFound()) {
   <p role="status" data-slot="not-found" class="p-4 text-muted-foreground">{{ notFoundText }}</p>
 } @else if (service.error()) {
@@ -30,15 +24,15 @@
        order, each value exactly as the file writes it. -->
   <section
     hlmCard
-    class="h-[66.667vh] w-full max-w-full overflow-auto rounded-2xl bg-profile-box shadow-md ring-0 md:w-[25vw] md:min-w-fit"
+    class="h-fit w-full max-w-full rounded-2xl bg-profile-box shadow-md ring-0 md:w-[25vw] md:min-w-fit"
     data-slot="holiday-box"
     aria-label="Holidays"
   >
     <div hlmCardContent>
       @if (service.branch(); as branch) {
-        <h2 data-slot="holiday-branch" class="mb-4 text-lg font-semibold text-profile-heading md:text-xl">{{ branch.name }}</h2>
+        <h2 data-slot="holiday-branch" class="mb-4 font-semibold text-profile-heading">{{ branch.name }}</h2>
       }
-      <div role="table" aria-label="Holidays" class="grid grid-cols-[auto_auto_auto] gap-x-4 gap-y-4 text-base md:gap-x-10 md:text-lg" data-slot="holiday-rows">
+      <div role="table" aria-label="Holidays" class="grid grid-cols-[auto_auto_auto] gap-x-4 gap-y-4 md:gap-x-10" data-slot="holiday-rows">
         <div role="row" class="contents" data-slot="holiday-heading">
           @for (column of columns; track column) {
             <span role="columnheader" class="text-left font-semibold">{{ column }}</span>

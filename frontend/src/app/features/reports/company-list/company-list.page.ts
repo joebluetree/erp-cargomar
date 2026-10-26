@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideLoaderCircle, lucideSearch } from '@ng-icons/lucide';
+import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
@@ -27,7 +27,7 @@ import { sortCompanies } from './company-list.table';
 @Component({
   selector: 'app-company-list',
   imports: [NgIcon, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
-  providers: [provideIcons({ lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideLoaderCircle, lucideSearch })],
+  providers: [provideIcons({ lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch })],
   templateUrl: './company-list.page.html',
 })
 export class CompanyListPage {

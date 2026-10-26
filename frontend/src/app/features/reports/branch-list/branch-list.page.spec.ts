@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { HttpRequest, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
@@ -5,6 +6,8 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { MenuRights } from '../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 import { TableStateStore } from '../../../shared/paging/table-state';
 import { BRANCH_LIST_STATE_KEY, Branch, BranchListState } from './branch-list.model';
 import { BranchListPage } from './branch-list.page';
@@ -29,6 +32,13 @@ interface Sent {
   pageSize: string | null;
 }
 
+
+/** Stores the Holiday List's view right as the screen guard does when the Branch List opens. */
+function giveHolidayListRight(view: boolean): void {
+  const rights: MenuRights = { view, add: false, edit: false, delete: false, print: false, email: false, docs: false, docsUpload: false, admin: false };
+  TestBed.inject(MenuRightsStore).set('NS-HOLIDAYLIST', rights);
+}
+
 describe('BranchListPage', () => {
   let fixture: ComponentFixture<BranchListPage>;
   let http: HttpTestingController;
@@ -38,8 +48,10 @@ describe('BranchListPage', () => {
   function create() {
     TestBed.configureTestingModule({
       imports: [BranchListPage],
-      providers: [BranchListService, provideHttpClient(), provideHttpClientTesting()],
+      // The Holiday List icon is a router link.
+      providers: [BranchListService, provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
+    giveHolidayListRight(true);
     fixture = TestBed.createComponent(BranchListPage);
     http = TestBed.inject(HttpTestingController);
     el = fixture.nativeElement as HTMLElement;
@@ -108,10 +120,10 @@ describe('BranchListPage', () => {
       expect(sent).toEqual([{ code: null, name: null, page: '1', pageSize: '10' }]);
     });
 
-    it('shows a loading indicator and no table while waiting', () => {
+    it('shows no table and no loading message of its own while waiting', () => {
       create();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(el.querySelector('table')).toBeNull();
       answer();
       expect(el.querySelector('[role="status"]')).toBeNull();
@@ -134,9 +146,9 @@ describe('BranchListPage', () => {
       create();
       answer();
 
-      // The sort buttons in the header are not actions, and the Holiday buttons only open a view, so the other buttons
-      // are checked.
-      const actions = Array.from(el.querySelectorAll('button:not(th button):not([data-slot="branch-holidays"])')).map(
+      // The sort buttons in the header are not actions, so the other buttons are checked; the Holiday List icons are
+      // links that only open a view.
+      const actions = Array.from(el.querySelectorAll('button:not(th button)')).map(
         (b) => b.getAttribute('aria-label') ?? b.textContent?.trim(),
       );
       expect(actions).toEqual(['Back', 'Search', 'Wrap text: on', 'First page', 'Previous page', 'Next page', 'Last page']);
@@ -473,14 +485,14 @@ describe('BranchListPage', () => {
       expect(rows()).toHaveLength(10);
     });
 
-    it('shows a loading indicator and no stale rows while a page loads', () => {
+    it('shows no stale rows and no loading message of its own while a page loads', () => {
       create();
       answer();
 
       button('Next page').click();
       fixture.detectChanges();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(rows()).toHaveLength(0);
       answer();
     });
@@ -802,7 +814,7 @@ describe('BranchListPage', () => {
 
       leaveAndReturn();
 
-      expect(el.querySelector('[role="status"]')?.textContent).toContain('Loading');
+      expect(el.querySelector('[role="status"]')).toBeNull(); // no message of its own: the shell shows the spinner
       expect(rows()).toHaveLength(0);
       answer();
       http.expectNone(isBranchesRequest);
@@ -1062,7 +1074,8 @@ describe('BranchListPage back button', () => {
 });
 
 describe('BranchListPage Holiday column', () => {
-  async function open() {
+  /** `holidayView`: the Holiday List's view right, as the screen guard loads it with the list. */
+  async function open(url = '/branches', holidayView = true) {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
@@ -1074,43 +1087,80 @@ describe('BranchListPage Holiday column', () => {
         provideHttpClientTesting(),
       ],
     });
-    const harness = await RouterTestingHarness.create('/branches');
+    giveHolidayListRight(holidayView);
+    const harness = await RouterTestingHarness.create(url);
     const http = TestBed.inject(HttpTestingController);
     http.expectOne(isBranchesRequest).flush({ items: many.slice(0, 3), total: 3, page: 1, pageSize: 10 });
     harness.detectChanges();
     const el = harness.routeNativeElement as HTMLElement;
     const rows = Array.from(el.querySelectorAll<HTMLElement>('tbody tr'));
-    const buttons = Array.from(el.querySelectorAll<HTMLButtonElement>('button[data-slot="branch-holidays"]'));
-    return { harness, el, rows, buttons, router: TestBed.inject(Router) };
+    const links = Array.from(el.querySelectorAll<HTMLAnchorElement>('a[data-slot="branch-holidays"]'));
+    const cells = Array.from(el.querySelectorAll<HTMLElement>('[data-branch-holidays-cell]'));
+    return { harness, el, rows, links, cells, router: TestBed.inject(Router) };
   }
 
-  it('has one Holiday button per row, named after the branch, as a real button', async () => {
-    const { rows, buttons } = await open();
+  it('shows the calendar as an icon link per row, not a button, named after the branch', async () => {
+    const { el, rows, links } = await open();
 
-    expect(buttons).toHaveLength(rows.length);
-    expect(buttons[0].getAttribute('aria-label')).toBe('Holidays of Name 01');
-    expect(buttons[0].getAttribute('title')).toBe('Holidays of Name 01');
-    expect([buttons[0].type, buttons[0].tabIndex]).toEqual(['button', 0]);
-    expect(rows[0].lastElementChild!.contains(buttons[0])).toBe(true);
+    expect(links).toHaveLength(rows.length);
+    expect(el.querySelectorAll('button[data-slot="branch-holidays"]')).toHaveLength(0);
+    expect(links[0].getAttribute('aria-label')).toBe('Holidays of Name 01');
+    expect(links[0].getAttribute('title')).toBe('Holidays of Name 01');
+    expect(links[0].getAttribute('href')).toBe('/reports/branches/C01/holidays?menuId=NS-HOLIDAYLIST');
+    expect(links[0].querySelector('ng-icon')!.getAttribute('name')).toBe('appCalendarColor');
+    expect(links[0].hasAttribute('hlmBtn')).toBe(false);
+    expect(rows[0].lastElementChild!.contains(links[0])).toBe(true);
   });
 
-  it('opens the branch holiday page on a click, without changing the selection', async () => {
-    const { harness, rows, buttons, router } = await open();
+  it('opens the branch holiday page from the icon, without changing the selection', async () => {
+    const { harness, rows, links, router } = await open();
     rows[2].click();
     harness.detectChanges();
 
-    buttons[0].click();
+    links[0].click();
     await harness.fixture.whenStable();
 
-    expect(router.url).toBe('/reports/branches/C01/holidays');
+    expect(router.url).toBe('/reports/branches/C01/holidays?menuId=NS-HOLIDAYLIST');
     expect(TestBed.inject(BranchListSelection).selectedId()).toBe('C03');
   });
 
-  it('keeps Enter and Space on the button from selecting the row', async () => {
-    const { harness, rows, buttons } = await open();
+  it('opens the branch holiday page from a click anywhere in the Holiday List cell, without changing the selection', async () => {
+    const { harness, rows, cells, router } = await open();
+    rows[2].click();
+    harness.detectChanges();
+
+    expect(cells[1].classList).toContain('cursor-pointer');
+    cells[1].click();
+    await harness.fixture.whenStable();
+
+    expect(router.url).toBe('/reports/branches/C02/holidays?menuId=NS-HOLIDAYLIST');
+    expect(TestBed.inject(BranchListSelection).selectedId()).toBe('C03');
+  });
+
+  it('opens only one holiday page when the icon itself is clicked', async () => {
+    const { harness, links } = await open();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+
+    links[0].click();
+    await harness.fixture.whenStable();
+
+    expect(navigate).not.toHaveBeenCalled(); // the link navigates itself; the cell does not repeat it
+  });
+
+  it("has no Holiday List column without the Holiday List's view right", async () => {
+    const { el, rows, links, cells } = await open('/branches', false);
+
+    expect(links).toHaveLength(0);
+    expect(cells).toHaveLength(0);
+    expect(Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim())).not.toContain('Holiday List');
+    expect(rows[0].querySelectorAll('td')).toHaveLength(8);
+  });
+
+  it('keeps Enter and Space on the icon from selecting the row', async () => {
+    const { harness, rows, links } = await open();
 
     for (const key of ['Enter', ' ']) {
-      buttons[1].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      links[1].dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
       harness.detectChanges();
     }
 
