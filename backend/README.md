@@ -4,7 +4,7 @@ ASP.NET Core (.NET 9) modular monolith with Oracle and EF Core. Architecture: `k
 
 ## Setup
 
-Requires the .NET 9 SDK, an Oracle database (10.2 or later; 10g is handled by a built-in compatibility interceptor), and `dotnet-ef` (`dotnet tool install -g dotnet-ef`).
+Requires the .NET 9 SDK, an Oracle database (10.2 or later; 10g is handled by a built-in compatibility interceptor), and `dotnet-ef` (`dotnet tool install -g dotnet-ef`) for scaffolding.
 
 ```powershell
 # Connection string: never commit it. Easiest locally: copy
@@ -20,9 +20,6 @@ $env:ConnectionStrings__Default = "User Id=app;Password=...;Data Source=localhos
 # The API does not start without it.
 dotnet user-secrets set "Jwt:SigningKey" "<random secret>" --project iErp.Api
 
-# Apply migrations
-dotnet ef database update -p iErp.Data -s iErp.Api
-
 # Run (Swagger at /swagger in Development)
 dotnet run --project iErp.Api
 
@@ -30,8 +27,12 @@ dotnet run --project iErp.Api
 dotnet test iErp.sln
 ```
 
-## Adding a migration
+## Table first
+
+The Oracle tables are the source of truth. The application never creates or alters tables, and there are no EF Core migrations. When a table is added or changed in the database, update the entity and its configuration in `iErp.Entities` / `iErp.Data/Configurations` to match. To generate the classes from a table:
 
 ```powershell
-dotnet ef migrations add <Name> -p iErp.Data -s iErp.Api -o Migrations
+dotnet ef dbcontext scaffold "<connection string>" Oracle.EntityFrameworkCore -p iErp.Data -s iErp.Api --table <TABLE> --output-dir <temp folder>
 ```
+
+Copy what you need from the generated output into the project's own conventions.
