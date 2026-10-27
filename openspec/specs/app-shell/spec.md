@@ -45,11 +45,19 @@ Every page except the login screen SHALL be displayed inside a layout with a hea
 - **THEN** the page content starts at the left edge of the content area, next to the sidebar, and is not centered
 
 ### Requirement: Navigation menu
-The sidebar SHALL list navigation entries, each with a label, an icon and a destination, taken from one static list. The initial entry SHALL be Dashboard, and each future module adds its own entry. The entry matching the current page SHALL be visibly highlighted, and choosing an entry SHALL navigate to its destination. The menu SHALL NOT vary by permissions.
+The sidebar SHALL list Dashboard first, then the user's menu from the backend (`user-menu-api`). Each module SHALL appear as a heading with its name, followed by its menu entries. Each entry SHALL have a label (the menu name), an icon and a destination (the menu's route with its `menuId`). The menu SHALL vary by the user's rights in the session branch, and SHALL be loaded again after login and after a branch switch. The entry matching the current page SHALL be visibly highlighted, and choosing an entry SHALL navigate to its destination. While the menu loads, or when it cannot be loaded, only Dashboard SHALL be listed.
 
 #### Scenario: Initial entries
 - **WHEN** the menu is displayed
-- **THEN** it lists Dashboard with an icon
+- **THEN** it lists Dashboard with an icon first
+
+#### Scenario: Modules and entries
+- **WHEN** the user's menu is module "Hr" with "Company List" and "Profile"
+- **THEN** the sidebar shows Dashboard, the heading "Hr", then "Company List" and "Profile", each with an icon
+
+#### Scenario: No rights
+- **WHEN** the user's menu is empty
+- **THEN** the sidebar lists only Dashboard
 
 #### Scenario: Navigate
 - **WHEN** the user chooses an entry
@@ -63,9 +71,13 @@ The sidebar SHALL list navigation entries, each with a label, an icon and a dest
 - **WHEN** the user is on any page other than the application root
 - **THEN** the Dashboard entry is not highlighted
 
+#### Scenario: Branch switched
+- **WHEN** the user switches the branch
+- **THEN** the sidebar shows the menu of the new branch
+
 #### Scenario: Adding an entry
-- **WHEN** a developer adds one item to the list and a route for a new module
-- **THEN** the entry appears in the menu without changes to the shell layout
+- **WHEN** a menu is marked for the new software in `MENUM` with a route of the application, and a user is given rights on it
+- **THEN** the entry appears in that user's menu without changes to the shell
 
 ### Requirement: Responsive sidebar
 At a width of 768 pixels or more the sidebar SHALL be visible beside the content, and the header hamburger button SHALL hide it and show it again; while it is hidden the content SHALL use the full width, and the choice SHALL be kept while the application stays open, including when the user moves between screens, and SHALL start as shown after a browser reload. Below 768 pixels the sidebar SHALL be hidden and the header hamburger button SHALL open it as an overlay over the content. Choosing an entry in the overlay SHALL close it, and the overlay SHALL also be closable without choosing an entry.

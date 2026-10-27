@@ -62,7 +62,7 @@ A logged-in user without an employee id, or whose employee id names no employee,
 - **THEN** the response is 404 problem details, not 401
 
 ### Requirement: Own photo
-The system SHALL expose `GET /api/admin/profile/photo`, returning the logged-in user's own employee photo: the file named by `EMP_IMAGE_NAME` in the folder set in configuration (`EmployeeImages:Folder`, `D:\erp-cargomar\images\` by default). It SHALL accept no id or file name from the request, use only the bare file name (never leaving the folder), and serve only `.jpg`, `.jpeg` and `.png` files with their image type. In every other case it SHALL answer 404.
+The system SHALL expose `GET /api/admin/profile/photo`, returning the logged-in user's own employee photo: the file named by `EMP_IMAGE_NAME` in the folder set in configuration (`EmployeeImages:Folder`, `D:\erp-cargomar\resources\images\` by default). It SHALL accept no id or file name from the request, use only the bare file name (never leaving the folder), and serve only `.jpg`, `.jpeg` and `.png` files with their image type. In every other case it SHALL answer 404.
 
 #### Scenario: Photo
 - **WHEN** the user's employee has the image name "1590.jpg" and that file is in the configured folder
@@ -87,6 +87,10 @@ The system SHALL expose `GET /api/admin/profile/photo`, returning the logged-in 
 #### Scenario: Folder changed in configuration
 - **WHEN** `EmployeeImages:Folder` is changed to another folder
 - **THEN** photos are read from that folder, with no code change
+
+#### Scenario: Default folder
+- **WHEN** no other folder is configured
+- **THEN** photos are read from `D:\erp-cargomar\resources\images\`
 
 #### Scenario: No token
 - **WHEN** a client requests the photo without a token
