@@ -16,6 +16,9 @@ export const NO_ACCESS_URL = '/no-access';
  * opening it loads the user's rights on all of them live, in one request, and keeps them in `MenuRightsStore`. The
  * screen opens only when `menuId` is absent or its code and the view right on its menu is true. Otherwise it shows the
  * "no access" page in place of the screen, so the screen sends none of its own requests.
+ *
+ * The screen routes set `runGuardsAndResolvers: 'always'`, so that the branch switch, which opens the same URL again,
+ * runs this check for the new branch and refills the rights the switch cleared.
  */
 export const menuAccessGuard: CanActivateChildFn = async (route, state) => {
   const http = inject(HttpClient);

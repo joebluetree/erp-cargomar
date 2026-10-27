@@ -1,6 +1,8 @@
+import { Location } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideLoaderCircle } from '@ng-icons/lucide';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
@@ -19,7 +21,7 @@ type Field = 'branch' | 'year';
 
 /**
  * The Change Branch dialog (BR-001): Branch and Year are required dropdown lists (pick a row; no typing, no clearing)
- * that start at the session's current values; Year offers open years only. Select switches the session quietly (the header shows the change) and keeps the current page; Cancel, Escape and the close button leave it as it
+ * that start at the session's current values; Year offers open years only. Select switches the session quietly (the header shows the change) and keeps the current page, checking it again for the new branch; Cancel, Escape and the close button leave it as it
  * is. A refused switch (403) is shown as a warning and the dialog stays open with its values.
  */
 @Component({
@@ -35,6 +37,8 @@ export class ChangeBranchDialog {
   private readonly auth = inject(AuthSession);
   private readonly notifications = inject(NotificationService);
   private readonly ref = inject<BrnDialogRef<boolean>>(BrnDialogRef);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   protected readonly form = new FormGroup({
     branch: new FormControl<BranchOption | null>(null, Validators.required),
@@ -95,9 +99,21 @@ export class ChangeBranchDialog {
     }
     this.service.change({ branchId: branch.id, yearId: year.id }).subscribe({
       // No notification: the header showing the new branch and year is the confirmation.
-      next: () => this.ref.close(true),
+      next: () => {
+        this.ref.close(true);
+        this.recheckScreen();
+      },
       error: (error: unknown) => this.reportFailure(error),
     });
+  }
+
+  /**
+   * Opens the current screen again, so the screen guard checks it and reloads its rights for the new branch: the
+   * rights store is cleared on a switch, and the screen stays. The address bar's URL is used, as it is the screen's
+   * also while the no-access page is shown, so a screen allowed in the new branch comes back.
+   */
+  private recheckScreen(): void {
+    void this.router.navigateByUrl(this.location.path(), { onSameUrlNavigation: 'reload', replaceUrl: true });
   }
 
   protected cancel(): void {

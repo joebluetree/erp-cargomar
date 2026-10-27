@@ -6,6 +6,7 @@ export const COMPANY_LIST_ROUTES: Routes = [
   {
     path: '',
     data: { [MENU_CODE_DATA]: MENU_CODES.companyList },
+    runGuardsAndResolvers: 'always',
     providers: [CompanyListService],
     loadComponent: () => import('./company-list.page').then((m) => m.CompanyListPage),
   },

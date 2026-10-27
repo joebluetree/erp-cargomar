@@ -33,7 +33,12 @@ describe('menuAccessGuard', () => {
             path: 'admin/employees',
             canActivateChild: [menuAccessGuard],
             children: [
-              { path: '', data: { [MENU_CODE_DATA]: MENU_CODES.employeeList, [RELATED_MENU_CODES_DATA]: [MENU_CODES.profile] }, component: Screen },
+              {
+                path: '',
+                runGuardsAndResolvers: 'always',
+                data: { [MENU_CODE_DATA]: MENU_CODES.employeeList, [RELATED_MENU_CODES_DATA]: [MENU_CODES.profile] },
+                component: Screen,
+              },
               { path: ':id', data: { [MENU_CODE_DATA]: MENU_CODES.profile }, component: Screen },
             ],
           },
@@ -201,5 +206,44 @@ describe('menuAccessGuard', () => {
 
     http.expectNone(() => true);
     expect(text(harness)).toBe('dashboard');
+  });
+
+  describe('opened again at the same URL (after a branch switch)', () => {
+    async function openScreen() {
+      const opened = await open('/admin/employees?menuId=NS-EMPLIST');
+      await settle(opened.harness);
+      rightsRequest(opened.http).flush([entry('NS-EMPLIST', RIGHTS), entry('NS-EMPPROFILE', NONE)]);
+      await opened.navigation;
+      return opened;
+    }
+
+    const reopen = (router: Router) =>
+      router.navigateByUrl('/admin/employees?menuId=NS-EMPLIST', { onSameUrlNavigation: 'reload', replaceUrl: true });
+
+    it('loads the rights again and refills them', async () => {
+      const { harness, http, router } = await openScreen();
+
+      const again = reopen(router);
+      await settle(harness);
+      rightsRequest(http).flush([entry('NS-EMPLIST', RIGHTS), entry('NS-EMPPROFILE', RIGHTS)]);
+      await again;
+      harness.detectChanges();
+
+      expect(text(harness)).toBe('the screen');
+      expect(TestBed.inject(MenuRightsStore).rightsOf('NS-EMPPROFILE')).toEqual(RIGHTS);
+    });
+
+    it('shows no access, keeping the URL, when the view right is gone', async () => {
+      const { harness, http, router } = await openScreen();
+
+      const again = reopen(router);
+      await settle(harness);
+      rightsRequest(http).flush([entry('NS-EMPLIST', NONE), entry('NS-EMPPROFILE', NONE)]);
+      await again;
+      harness.detectChanges();
+
+      expect(text(harness)).toContain('You do not have access to this screen.');
+      expect(TestBed.inject(Location).path()).toBe('/admin/employees?menuId=NS-EMPLIST');
+    });
   });
 });
