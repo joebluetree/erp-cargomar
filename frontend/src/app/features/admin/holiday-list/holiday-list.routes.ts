@@ -6,6 +6,7 @@ export const HOLIDAY_LIST_ROUTES: Routes = [
   {
     path: '',
     data: { [MENU_CODE_DATA]: MENU_CODES.holidayList },
+    runGuardsAndResolvers: 'always',
     providers: [HolidayListService],
     loadComponent: () => import('./holiday-list.page').then((m) => m.HolidayListPage),
   },

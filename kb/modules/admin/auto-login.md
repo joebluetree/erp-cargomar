@@ -5,10 +5,10 @@
 |---|---|
 | **Domain** | Admin |
 | **Capability** | Auto Login |
-| **Current Version** | 1.0 |
+| **Current Version** | 1.1 |
 | **Status** | Approved |
 | **Owner** | Sourav |
-| **Last Updated** | 2026-10-26 |
+| **Last Updated** | 2026-10-27 |
 
 ## Document Use
 
@@ -40,11 +40,23 @@ Login credentials is checked based on data fetched from appdetails table and Aut
 
 ## Change History
 
+### v1.1 — Open with menuid   [Status: Implemented]
+
+- **Date:** 2026-10-27
+- **Change Ref:** `admin-login-menuid`
+- **Affects:** BR-002
+
+**Changes:**
+
+- ADDED Auto Login function (BR-002):
+
+---
+
 ### v1.0 — Initial User Auto Login   [Status: Implemented]
 
 - **Date:** 2026-10-26
 - **Change Ref:** `admin-auto-login`
-- **Affects:** BR-001, BR-002
+- **Affects:** BR-001
 
 **Changes:**
 
@@ -58,10 +70,13 @@ Login credentials is checked based on data fetched from appdetails table and Aut
 A new Login service which receive a id (from appdetails table) which fetch all details like login user's Id, code, password, Company Code, Branch Code,
 year, and based on these datas fetched Authentication is done automatically. The Authentication only works if user_logged_out is N.
 Dashborad with login details will be shown after auto-login.
+When a MenuId is passed from frontend (URL) then based on menuid fetch route from menum and call that menu
+when login.
 
 ## Scope
 
 - Automatically login using login detail from appdetails table
+- If Menuid present then login and open that menu in software
 
 ---
 ## Data Model
@@ -120,10 +135,24 @@ Dashborad with login details will be shown after auto-login.
 | 1.0 | COMP_NAME | dashboard display this name |
 | 1.0 | COMP_TYPE | TYPE='C' for company TYPE='B' for branch  |
 
+### Table : menum
+
+**Purpose:** Stores the details of all available menu and fetch route of corresponding menuid passed.
+
+| Ver | Column | Type | Description |
+|---|---|---|---|
+| 1.1 | MENU_PKID | PK | Internal  ID |
+| 1.1 | REC_COMPANY_CODE | VARCHAR(20) | Company code |
+| 1.1 | MENU_MODULE_ID | VARCHAR(40) | Module Id, under which menu added |
+| 1.1 | MENU_CODE | VARCHAR(40) | Menu Code |
+| 1.1 | MENU_NAME | VARCHAR(60) | Menu Name |
+| 1.1 | MENU_ROUTE1 | VARCHAR(100) | Route or path of menu |
+| 1.1 | MENU_ROUTE2 | VARCHAR(100) | Route or path of menu optional |
 
 ### Relationships
 
 - use these tables in db to check login credentials and to retrive back data as mention in requirment.
+- Use menum table for checking menuid, routes and other data if URL have menuId in it.
 ---
 
 ## Business Rules
@@ -139,14 +168,29 @@ Dashborad with login details will be shown after auto-login.
 WHEN URL have id parameter while loging in
 THEN Login Automatically to dashboard without login screen.
 
+### BR-002 — Menuid parameter
+
+- **BR-002.1 [v1.1]** if Menuid Parameter present in URL, open corresponding menu screen. 
+- **BR-002.2 [v1.1]** if No menuid parameter, open default Dashboard while logging in.
+
+**Scenarios**
+
+- **BR-002.S1 [v1.1]**
+WHEN menuid 'NS-EMPPROFILE' is passed through URL (appid&menuid)
+THEN after auto-login open Profile menu
+
+- **BR-002.S2 [v1.1]**
+WHEN URL doesnt have menuid (appid)
+THEN after auto-login open dashboard
+
 ---
 
 ## User Interface
 
 ### Login screen
 
-a URL parameter is passed (appid) which fetch login details as per BR-001.1 from appdetails table, and directly logged into 
-Dashboard after checking login credentials.
+a URL parameter is passed (appid) which fetch login details as per BR-001.1 from appdetails table, and directly logged into Dashboard after checking login credentials.
+if menuid present in url login open the corresponding menuid screen else dashboad
 
 ## References and notes
 

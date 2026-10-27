@@ -6,6 +6,7 @@ export const EMPLOYEE_PROFILE_ROUTES: Routes = [
   {
     path: '',
     data: { [MENU_CODE_DATA]: MENU_CODES.profile },
+    runGuardsAndResolvers: 'always',
     providers: [EmployeeProfileService],
     loadComponent: () => import('./employee-profile.page').then((m) => m.EmployeeProfilePage),
   },

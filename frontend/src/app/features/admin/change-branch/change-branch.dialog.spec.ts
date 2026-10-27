@@ -1,3 +1,5 @@
+import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -174,6 +176,37 @@ describe('ChangeBranchDialog', () => {
       expect(auth.details()).toEqual({ company: 'Cargomar Pvt Ltd', user: 'ADMIN', branch: 'Mumbai', year: '2024-2025' });
       expect(closed).toEqual([true]);
       expect(dialog()).toBeNull();
+    });
+
+    it('opens the current screen again after the switch, so its rights load for the new branch', async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+      vi.spyOn(TestBed.inject(Location), 'path').mockReturnValue('/admin/employees?menuId=NS-EMPLIST');
+      await open();
+      await choose(branch(), 'Mumbai');
+
+      button('Select').click();
+      await settle();
+      expect(navigate).not.toHaveBeenCalled();
+      controller.expectOne('admin/session/change').flush(CHANGE_RESPONSE);
+      await settle();
+
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/admin/employees?menuId=NS-EMPLIST', {
+        onSameUrlNavigation: 'reload',
+        replaceUrl: true,
+      });
+    });
+
+    it('does not open the screen again when the switch is refused', async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+      await open();
+      await choose(branch(), 'Mumbai');
+
+      button('Select').click();
+      await settle();
+      controller.expectOne('admin/session/change').flush({ title: 'Refused' }, { status: 403, statusText: 'Forbidden' });
+      await settle();
+
+      expect(navigate).not.toHaveBeenCalled();
     });
 
     it('starts with Year empty when the session year has been closed, and asks for a year without sending', async () => {
