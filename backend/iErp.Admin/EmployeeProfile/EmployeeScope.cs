@@ -4,17 +4,15 @@ using iErp.Shared.Auth;
 namespace iErp.Admin.EmployeeProfile;
 
 /// <summary>
-/// The employees a session may list and open: those of its company and branch who are not relieved (admin-emp-list
-/// design D1). <c>EMPM</c> holds the branch's code (<c>COMPANYM.COMP_CODE</c>), not its id.
+/// The employees a session may list and open: those of its company and branch, relieved or not (admin-emp-list design
+/// D1, admin-emp-status design D1). <c>EMPM</c> holds the branch's code (<c>COMPANYM.COMP_CODE</c>), not its id. The
+/// Employee List narrows it further by status (<see cref="EmployeeList.EmployeeStatus"/>).
 /// </summary>
 public record EmployeeScope(string CompanyCode, string BranchCode)
 {
-    /// <summary>The value of <c>EMP_IS_RELIEVED</c> for an employee who has not left.</summary>
-    public const string NotRelieved = "N";
-
     /// <summary>Restricts <paramref name="employees"/> to this scope. Plain string comparisons, so it works on Oracle 10g.</summary>
     public IQueryable<Employee> Apply(IQueryable<Employee> employees) =>
-        employees.Where(e => e.CompanyCode == CompanyCode && e.BranchCode == BranchCode && e.Relieved == NotRelieved);
+        employees.Where(e => e.CompanyCode == CompanyCode && e.BranchCode == BranchCode);
 }
 
 /// <summary>Builds the session's <see cref="EmployeeScope"/>.</summary>

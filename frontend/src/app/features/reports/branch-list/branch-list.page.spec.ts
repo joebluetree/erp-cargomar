@@ -332,6 +332,23 @@ describe('BranchListPage', () => {
       http.expectNone(isBranchesRequest);
     });
 
+    it('sorts from a click anywhere in the header cell, and once from a click on its button', () => {
+      create();
+      answer([branch(2, { code: 'B' }), branch(1, { code: 'C' }), branch(3, { code: 'A' })]);
+
+      header('Code').click();
+      fixture.detectChanges();
+      expect(firstCells()).toEqual(['A', 'B', 'C']);
+      expect(header('Code').getAttribute('aria-sort')).toBe('ascending');
+      expect(header('Code').classList).toContain('cursor-pointer');
+
+      header('Code').querySelector('button')!.click();
+      fixture.detectChanges();
+      expect(header('Code').getAttribute('aria-sort')).toBe('descending');
+      expect(firstCells()).toEqual(['C', 'B', 'A']);
+      http.expectNone(isBranchesRequest);
+    });
+
     it('does not reorder other pages: each page is sorted within itself', () => {
       create();
       answer();

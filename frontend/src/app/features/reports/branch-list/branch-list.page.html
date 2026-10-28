@@ -34,8 +34,10 @@
       <thead hlmTHead>
         <tr hlmTr>
           @for (column of columns; track column.key) {
-            <th hlmTh [attr.aria-sort]="ariaSort(column.key)">
-              <button type="button" class="inline-flex items-center gap-1 font-medium" (click)="toggleSort(column.key)">
+            <!-- A click anywhere in the header cell sorts; the button inside gives the keyboard the same, and its click reaches
+                 the cell, so there is one handler. -->
+            <th hlmTh class="cursor-pointer select-none" [attr.aria-sort]="ariaSort(column.key)" (click)="toggleSort(column.key)">
+              <button type="button" class="inline-flex items-center gap-1 font-medium">
                 {{ column.label }}
                 <ng-icon [name]="sortIcon(column.key)" size="12" aria-hidden="true" />
               </button>

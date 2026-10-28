@@ -22,11 +22,19 @@ public class EmployeeListRepository(AppDbContext db) : IEmployeeListRepository
         Employees(query, scope).ToPageAsync(query.Page, query.PageSize, ct);
 
     /// <summary>
-    /// The scope, the filters and the order. Public so tests can check the SQL it produces for Oracle 10g.
+    /// The scope, the status, the filters and the order. Public so tests can check the SQL it produces for Oracle 10g.
     /// </summary>
     public IQueryable<Employee> Employees(EmployeeListQuery query, EmployeeScope scope)
     {
         var employees = scope.Apply(db.Set<Employee>().AsNoTracking());
+
+        // The status narrows the scope; "all" leaves EMP_IS_RELIEVED unchecked (admin-emp-status design D1).
+        employees = EmployeeStatus.Normalize(query.Status) switch
+        {
+            EmployeeStatus.Relieved => employees.Where(e => e.Relieved == EmployeeStatus.RelievedFlag),
+            EmployeeStatus.All => employees,
+            _ => employees.Where(e => e.Relieved == EmployeeStatus.NotRelievedFlag),
+        };
 
         // Case-insensitive "contains". string.Contains on Oracle becomes INSTR, so % and _ are ordinary characters.
         var code = query.Code?.Trim().ToUpperInvariant();

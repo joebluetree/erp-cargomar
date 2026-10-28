@@ -34,6 +34,10 @@ interface Sent {
   pageSize: string | null;
 }
 
+/** Five employees, of whom the last two (ids r-04, r-05) are relieved, for the status filter. */
+const relievedIds = new Set(['r-04', 'r-05']);
+const mixed = [employee(1), employee(2), employee(3), employee(4, { id: 'r-04' }), employee(5, { id: 'r-05' })];
+
 @Component({ template: 'stub' })
 class Stub {}
 
@@ -42,6 +46,8 @@ describe('EmployeeListPage', () => {
   let http: HttpTestingController;
   let el: HTMLElement;
   let sent: Sent[];
+  /** The `status` of each request answered, in order. */
+  let statuses: (string | null)[];
 
   /** `profileView`: the Profile's view right, as the screen guard loads it with the list. */
   function create(profileView = true) {
@@ -60,6 +66,7 @@ describe('EmployeeListPage', () => {
     http = TestBed.inject(HttpTestingController);
     el = fixture.nativeElement as HTMLElement;
     sent = [];
+    statuses = [];
     fixture.detectChanges();
   }
 
@@ -68,11 +75,18 @@ describe('EmployeeListPage', () => {
     const req = http.expectOne(isEmployeesRequest);
     const p = req.request.params;
     sent.push({ code: p.get('code'), name: p.get('name'), page: p.get('page'), pageSize: p.get('pageSize') });
+    statuses.push(p.get('status'));
     const code = (p.get('code') ?? '').toLowerCase();
     const name = (p.get('name') ?? '').toLowerCase();
+    const status = p.get('status');
     const page = Number(p.get('page'));
     const size = Number(p.get('pageSize'));
-    const matching = all.filter((e) => (e.code ?? '').toLowerCase().includes(code) && (e.name ?? '').toLowerCase().includes(name));
+    const matching = all.filter(
+      (e) =>
+        (e.code ?? '').toLowerCase().includes(code) &&
+        (e.name ?? '').toLowerCase().includes(name) &&
+        (status === 'all' || (status === 'relieved') === relievedIds.has(e.id)),
+    );
     req.flush({ items: matching.slice((page - 1) * size, page * size), total: matching.length, page, pageSize: size });
     fixture.detectChanges();
   }
@@ -109,8 +123,26 @@ describe('EmployeeListPage', () => {
     return event;
   }
 
+  const statusTrigger = () => el.querySelector<HTMLButtonElement>('#filter-status')!;
+
+  async function settle() {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise((r) => setTimeout(r));
+    fixture.detectChanges();
+  }
+
+  /** Opens the Status dropdown and picks the option with this label. */
+  async function chooseStatus(label: string) {
+    statusTrigger().click();
+    await settle();
+    Array.from(document.querySelectorAll<HTMLElement>('hlm-select-item')).find((i) => i.textContent?.trim() === label)!.click();
+    await settle();
+  }
+
   function leaveAndReturn() {
     sent = [];
+    statuses = [];
     fixture.destroy();
     fixture = TestBed.createComponent(EmployeeListPage);
     el = fixture.nativeElement as HTMLElement;
@@ -129,6 +161,7 @@ describe('EmployeeListPage', () => {
         el.querySelector('h1')!,
         input('filter-code'),
         input('filter-name'),
+        statusTrigger(),
         searchButton(),
         el.querySelector('app-table-wrap-toggle')!,
         el.querySelector('table')!,
@@ -140,8 +173,9 @@ describe('EmployeeListPage', () => {
       expect(el.querySelector('h1')!.textContent?.trim()).toBe('Employee List');
       expect(el.querySelector('h1')!.getAttribute('data-slot')).toBe('page-title');
       expect(el.querySelector('app-table-toolbar')).not.toBeNull();
-      expect(el.querySelector('label[for="filter-code"]')?.textContent?.trim()).toBe('Code');
+      expect(el.querySelector('label[for="filter-code"]')?.textContent?.trim()).toBe('Emp. No');
       expect(el.querySelector('label[for="filter-name"]')?.textContent?.trim()).toBe('Name');
+      expect(el.querySelector('label[for="filter-status"]')?.textContent?.trim()).toBe('Status');
     });
 
     it('asks for page 1 of 10 with no filters', () => {
@@ -189,7 +223,8 @@ describe('EmployeeListPage', () => {
       answer();
 
       const actions = Array.from(el.querySelectorAll('button:not(th button)')).map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim());
-      expect(actions).toEqual(['Back', 'Search', 'Wrap text: on', 'First page', 'Previous page', 'Next page', 'Last page']);
+      // The Status dropdown's trigger is a button showing the chosen status.
+      expect(actions).toEqual(['Back', 'Active', 'Search', 'Wrap text: on', 'First page', 'Previous page', 'Next page', 'Last page']);
     });
 
     it('is built from the shared table pieces and sets no colors of its own', () => {
@@ -251,6 +286,22 @@ describe('EmployeeListPage', () => {
       expect(firstCells()).toEqual(['1010', '1009', '1008', '1007', '1006', '1005', '1004', '1003', '1002', '1001']);
     });
 
+    it('sorts from a click anywhere in the header cell, and once from a click on its button', () => {
+      create();
+      answer();
+
+      header('Emp. No').click();
+      fixture.detectChanges();
+      expect(header('Emp. No').getAttribute('aria-sort')).toBe('ascending');
+      expect(header('Emp. No').classList).toContain('cursor-pointer');
+
+      header('Emp. No').querySelector('button')!.click();
+      fixture.detectChanges();
+      expect(header('Emp. No').getAttribute('aria-sort')).toBe('descending');
+      expect(firstCells()).toEqual(['1010', '1009', '1008', '1007', '1006', '1005', '1004', '1003', '1002', '1001']);
+      http.expectNone(isEmployeesRequest);
+    });
+
     it('asks for page 1 with the new size when the page size changes', () => {
       create();
       answer();
@@ -262,6 +313,100 @@ describe('EmployeeListPage', () => {
 
       expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '5' });
       expect(rows()).toHaveLength(5);
+    });
+  });
+
+  describe('status filter', () => {
+    it('starts with Active and asks for the current employees', () => {
+      create();
+      answer(mixed);
+
+      expect(statusTrigger().tagName).toBe('BUTTON');
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(statuses).toEqual(['active']);
+      expect(firstCells()).toEqual(['1001', '1002', '1003']);
+    });
+
+    it('offers Active, Relieved and All, in that order', async () => {
+      create();
+      answer(mixed);
+
+      statusTrigger().click();
+      await settle();
+
+      expect(Array.from(document.querySelectorAll('hlm-select-item')).map((i) => i.textContent?.trim())).toEqual(['Active', 'Relieved', 'All']);
+    });
+
+    it('asks for nothing when a status is chosen, and for page 1 with it on Search', async () => {
+      create();
+      answer(many);
+      button('Next page').click();
+      fixture.detectChanges();
+      answer(many);
+
+      await chooseStatus('Relieved');
+      http.expectNone(isEmployeesRequest);
+      search();
+      answer(mixed);
+
+      expect(statuses.at(-1)).toBe('relieved');
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '10' });
+      expect(firstCells()).toEqual(['1004', '1005']);
+    });
+
+    it('lists current and relieved employees with All', async () => {
+      create();
+      answer(mixed);
+
+      await chooseStatus('All');
+      search();
+      answer(mixed);
+
+      expect(statuses.at(-1)).toBe('all');
+      expect(firstCells()).toEqual(['1001', '1002', '1003', '1004', '1005']);
+    });
+
+    it('keeps the searched status when paging, ignoring a status chosen since', async () => {
+      create();
+      answer(many);
+      await chooseStatus('All');
+      search();
+      answer(many);
+      await chooseStatus('Relieved');
+
+      button('Next page').click();
+      fixture.detectChanges();
+      answer(many);
+
+      expect(statuses.at(-1)).toBe('all');
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '2', pageSize: '10' });
+    });
+
+    it('says none match when a status other than Active was searched with no rows', async () => {
+      create();
+      answer(mixed);
+
+      await chooseStatus('Relieved');
+      search();
+      answer([employee(1)]);
+
+      expect(rows()[0].textContent?.trim()).toBe('No employees match the filters.');
+    });
+
+    it('brings back the chosen and the searched status after leaving and returning', async () => {
+      create();
+      answer(mixed);
+      await chooseStatus('Relieved');
+      search();
+      answer(mixed);
+      await chooseStatus('All');
+
+      leaveAndReturn();
+      answer(mixed);
+
+      expect(statuses).toEqual(['relieved']);
+      expect(statusTrigger().textContent?.trim()).toBe('All');
+      expect(firstCells()).toEqual(['1004', '1005']);
     });
   });
 

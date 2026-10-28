@@ -19,7 +19,7 @@ public class EmployeeListQueryTests
     private static readonly EmployeeScope Scope = new("CMP", "KOC");
 
     [Fact]
-    public void The_list_filters_by_company_branch_and_not_relieved_with_an_escaped_LIKE_and_orders_by_name_then_id()
+    public void The_default_list_filters_by_company_branch_and_not_relieved_with_an_escaped_LIKE_and_orders_by_name_then_id()
     {
         var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Code = "10", Name = "kum" }, Scope).ToQueryString();
 
@@ -36,12 +36,48 @@ public class EmployeeListQueryTests
     }
 
     [Fact]
-    public void Without_filters_only_the_scope_restricts()
+    public void Without_filters_only_the_scope_and_the_active_status_restrict()
     {
         var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery(), Scope).ToQueryString();
 
         Assert.DoesNotContain(" LIKE ", sql);
         Assert.Contains("\"REC_BRANCH_CODE\"", sql);
+        Assert.Matches("\"EMP_IS_RELIEVED\" = N?'+N'+", sql);
+    }
+
+    [Theory]
+    [InlineData("active", "N")]
+    [InlineData(" Active ", "N")]
+    [InlineData("relieved", "Y")]
+    [InlineData("RELIEVED", "Y")]
+    public void The_status_compares_the_relieved_flag_as_text(string status, string flag)
+    {
+        var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Status = status }, Scope).ToQueryString();
+
+        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.Matches($"\"EMP_IS_RELIEVED\" = N?'+{flag}'+", sql);
+        Assert.Matches("ORDER BY \"e\".\"EMP_NAME\", \"e\".\"EMP_PKID\"", sql);
+    }
+
+    [Fact]
+    public void The_all_status_leaves_the_relieved_flag_unchecked()
+    {
+        var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Status = "all" }, Scope).ToQueryString();
+
+        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.Contains("\"REC_BRANCH_CODE\"", sql);
+        Assert.DoesNotContain("\"EMP_IS_RELIEVED\" =", sql);
+    }
+
+    [Fact]
+    public void The_profile_scope_does_not_check_the_relieved_flag()
+    {
+        var sql = Scope.Apply(new EmployeeProfileRepository(Db()).Employee("e-1")).ToQueryString();
+
+        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.Contains("\"REC_COMPANY_CODE\"", sql);
+        Assert.Contains("\"REC_BRANCH_CODE\"", sql);
+        Assert.DoesNotContain("\"EMP_IS_RELIEVED\" =", sql);
     }
 
     [Fact]

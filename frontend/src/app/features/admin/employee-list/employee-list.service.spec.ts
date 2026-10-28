@@ -7,7 +7,7 @@ import { EmployeeListService } from './employee-list.service';
 const asha: Employee = {
   id: 'e-1', code: '1001', name: 'Asha Nair', fatherName: null, dateOfBirth: '1990-03-05', address: null, mobile: null, email: null,
 };
-const query = (extra: Partial<EmployeeListQuery> = {}): EmployeeListQuery => ({ code: '', name: '', page: 1, pageSize: 10, ...extra });
+const query = (extra: Partial<EmployeeListQuery> = {}): EmployeeListQuery => ({ code: '', name: '', status: 'active', page: 1, pageSize: 10, ...extra });
 const paged = (items: Employee[], total = items.length, page = 1, pageSize = 10) => ({ items, total, page, pageSize });
 
 describe('EmployeeListService', () => {
@@ -35,6 +35,14 @@ describe('EmployeeListService', () => {
     expect(req.request.method).toBe('GET');
     expect([req.request.params.get('page'), req.request.params.get('pageSize')]).toEqual(['3', '25']);
     expect(service.loading()).toBe(true);
+  });
+
+  it.each(['active', 'relieved', 'all'] as const)('sends the status %s', (status) => {
+    const { service, expectRequest } = setup();
+
+    service.load(query({ status }));
+
+    expect(expectRequest().request.params.get('status')).toBe(status);
   });
 
   it('sends the filters, trimmed, and leaves out blank ones', () => {

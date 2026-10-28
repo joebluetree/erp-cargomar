@@ -9,8 +9,8 @@ namespace iErp.Tests.Integration;
 
 /// <summary>
 /// Needs IERP_TEST_ORACLE. EMPM and COMPANYM are existing, externally owned tables. If the test schema has both, the
-/// test only reads them; if it has neither, it creates shaped tables, checks the Employee List queries (scope, filters,
-/// order and paging) and drops them again. A schema with only one of them is left untouched. Never point
+/// test only reads them; if it has neither, it creates shaped tables, checks the Employee List queries (scope, status,
+/// filters, order and paging) and drops them again. A schema with only one of them is left untouched. Never point
 /// IERP_TEST_ORACLE at the dev database.
 /// </summary>
 public class EmployeeListTablesTests
@@ -30,7 +30,7 @@ public class EmployeeListTablesTests
         var existing = (await db.Database.SqlQueryRaw<decimal>(TableCountSql).ToListAsync()).Single();
         if (existing == 2)
         {
-            // Real tables: read only. Every listed employee of a branch is in that branch's scope and not relieved.
+            // Real tables: read only. Every listed employee of a branch is in that branch's scope, with the status asked for.
             var any = await db.Set<Employee>().AsNoTracking()
                 .Where(e => e.Relieved == "N" && e.CompanyCode != null && e.BranchCode != null).OrderBy(e => e.Id).FirstAsync();
             var scope = new EmployeeScope(any.CompanyCode!, any.BranchCode!);
@@ -38,6 +38,20 @@ public class EmployeeListTablesTests
             Assert.True(total >= 1);
             Assert.All(items, e => Assert.Equal((scope.CompanyCode, scope.BranchCode, "N"), (e.CompanyCode, e.BranchCode, e.Relieved)));
             Assert.NotNull(await profiles.FindInScopeAsync(any.Id, scope));
+
+            // Each status's total is the plain count of the branch's EMPM rows with that flag (any flag for "all").
+            var (company, branch) = (scope.CompanyCode, scope.BranchCode);
+            var active = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch} AND EMP_IS_RELIEVED = 'N'");
+            var relieved = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch} AND EMP_IS_RELIEVED = 'Y'");
+            var everyone = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch}");
+            Assert.Equal(active, total);
+            Assert.Equal(relieved, (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.Relieved }, scope)).Total);
+            Assert.Equal(everyone, (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.All }, scope)).Total);
+
+            var gone = await db.Set<Employee>().AsNoTracking()
+                .Where(e => e.Relieved == "Y" && e.CompanyCode == company && e.BranchCode == branch).OrderBy(e => e.Id).FirstOrDefaultAsync();
+            if (gone is not null)
+                Assert.NotNull(await profiles.FindInScopeAsync(gone.Id, scope));
             return;
         }
 
@@ -84,10 +98,19 @@ public class EmployeeListTablesTests
             Assert.Null(await profiles.FindBranchCodeAsync("c-1")); // a company, not a branch
             var scope = new EmployeeScope("CMP", "KOC");
 
-            // In scope only (not relieved, not another branch or company), by name then id.
+            // By default current employees in scope only (not relieved, not another branch or company), by name then id.
             var (all, total) = await list.ListAsync(new EmployeeListQuery(), scope);
             Assert.Equal(["e-2", "e-3", "e-1", "e-7"], all.Select(e => e.Id));
             Assert.Equal(4, total);
+
+            // The status: relieved only, or everyone in scope, still by name then id.
+            var (relieved, relievedTotal) = await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.Relieved }, scope);
+            Assert.Equal(["e-4"], relieved.Select(e => e.Id));
+            Assert.Equal(1, relievedTotal);
+            var (everyone, everyoneTotal) = await list.ListAsync(new EmployeeListQuery { Status = "ALL" }, scope);
+            Assert.Equal(["e-2", "e-3", "e-1", "e-7", "e-4"], everyone.Select(e => e.Id));
+            Assert.Equal(5, everyoneTotal);
+            Assert.Empty((await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.Relieved, Name = "anu" }, scope)).Items);
 
             // Paging: two pages of two, no overlap.
             var (page2, _) = await list.ListAsync(new EmployeeListQuery { Page = 2, PageSize = 2 }, scope);
@@ -100,7 +123,7 @@ public class EmployeeListTablesTests
             Assert.Equal(["e-7"], (await list.ListAsync(new EmployeeListQuery { Name = "100%" }, scope)).Items.Select(e => e.Id));
 
             Assert.NotNull(await profiles.FindInScopeAsync("e-1", scope));
-            Assert.Null(await profiles.FindInScopeAsync("e-4", scope));
+            Assert.NotNull(await profiles.FindInScopeAsync("e-4", scope)); // relieved, but of this branch
             Assert.Null(await profiles.FindInScopeAsync("e-5", scope));
             Assert.Null(await profiles.FindInScopeAsync("e-6", scope));
         }
@@ -110,4 +133,7 @@ public class EmployeeListTablesTests
             await db.Database.ExecuteSqlRawAsync("DROP TABLE COMPANYM");
         }
     }
+
+    private static async Task<decimal> Count(AppDbContext db, FormattableString sql) =>
+        (await db.Database.SqlQuery<decimal>(sql).ToListAsync()).Single();
 }
