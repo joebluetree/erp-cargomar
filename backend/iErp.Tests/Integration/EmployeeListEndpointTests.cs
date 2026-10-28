@@ -62,8 +62,24 @@ public sealed class EmployeeListEndpointTests : IDisposable
     }
 
     [Theory]
+    [InlineData("", null)]
+    [InlineData("?status=relieved", "relieved")]
+    [InlineData("?status=all", "all")]
+    [InlineData("?status=RELIEVED&name=pra", "RELIEVED")]
+    public async Task The_status_is_passed_to_the_list(string queryString, string? status)
+    {
+        var (client, list, _) = ClientWith();
+
+        var response = await client.GetAsync($"/api/admin/employees{queryString}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await list.Received(1).ListAsync(Arg.Is<EmployeeListQuery>(q => q!.Status == status), Scope, Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
     [InlineData("page=0", "Page")]
     [InlineData("pageSize=7", "PageSize")]
+    [InlineData("status=left", "Status")]
     public async Task Invalid_paging_values_answer_400_naming_the_field(string queryString, string field)
     {
         var (client, list, _) = ClientWith();

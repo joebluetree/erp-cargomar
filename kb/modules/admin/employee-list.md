@@ -5,10 +5,10 @@
 |---|---|
 | **Domain** | Admin |
 | **Capability** | Employee List |
-| **Current Version** | 1.0 |
+| **Current Version** | 1.1 |
 | **Status** | Approved |
 | **Owner** | Sourav V |
-| **Last Updated** | 2026-10-16 |
+| **Last Updated** | 2026-10-28 |
 
 ## Document Use
 
@@ -40,11 +40,21 @@ User with its rights can only
 
 ## Change History
 
+### v1.1 —  Employee Status List   [Status: Proposed]
+
+- **Date:** 2026-10-28
+- **Change Ref:** `admin-emp-status`
+- **Affects:** BR-003
+
+**Changes:**
+
+- ADDED Employee status Search filter.
+
 ### v1.0 — Initial Employee List   [Status: Proposed]
 
 - **Date:** 2026-10-16
 - **Change Ref:** `admin-emp-list`
-- **Affects:** BR-001, BR-002, EMPM, PARAM, Profile screen, main menu
+- **Affects:** BR-001, BR-002
 
 **Changes:**
 
@@ -59,6 +69,8 @@ User with its rights can only
 ## Scope
 
 - View all employee's list and can open each employee pofile separately.
+- View Active, Relieved, or All Employees.
+- by default active user.
 
 ---
 
@@ -74,14 +86,28 @@ User with its rights can only
 - **BR-001.S1 [v1.0]** WHEN user have rights
   THEN Show employee list with profile view option.
 
-  ### BR-001 — Employee Search
+### BR-002 — Employee Search
 
-- **BR-001.1 [v1.0]** User can search and filter List by Name and Code.
+- **BR-002.1 [v1.0]** User can search and filter List by Name and Code.
 
 **Scenarios**
 
-- **BR-001.S1 [v1.0]** WHEN user search with employee name or code
+- **BR-002.S1 [v1.0]** WHEN user search with employee name or code
   THEN Show only filtered employee list.
+
+### BR-003 — Active/Relieved Employee Search
+
+- **BR-003.1 [v1.1]** User can search Active and Relieved employee.
+- **BR-003.2 [v1.1]** User can also search all employee, using dropdown list.
+
+**Scenarios**
+
+- **BR-003.S1 [v1.1]** WHEN user search active employee
+  THEN Show only relieved = N employee list.
+- **BR-003.S2 [v1.1]** WHEN user search Relieved employee
+  THEN Show only relieved = Y employee list.
+- **BR-003.S3 [v1.1]** WHEN user search all(status type) employee
+  THEN Show only employee list without checking relieved column.
 
 ---
 
@@ -102,6 +128,7 @@ User with its rights can only
 | 1.0 | EMP_SPOUSE_NAME | Spouse Name |
 | 1.0 | EMP_MARITAL_STATUS | Marital Status |
 | 1.0 | EMP_DO_BIRTH | Date of Birth (shown as dd-MM-yyyy) |
+| 1.1 | EMP_IS_RELIEVED | Relieved status |
 
 **Bank Details**
 
@@ -196,7 +223,8 @@ customer records. refere [list-screen](../../platform/list-screen.md)
 
 #### Search
 
-As defined in BR-002.
+As defined in BR-002 and BR-003.
+- for status show a dropdown list with value Active, Relieved and All.
 
 ### Employee List
 

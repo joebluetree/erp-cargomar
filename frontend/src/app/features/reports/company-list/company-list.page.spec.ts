@@ -314,6 +314,23 @@ describe('CompanyListPage', () => {
       http.expectNone(isCompaniesRequest);
     });
 
+    it('sorts from a click anywhere in the header cell, and once from a click on its button', () => {
+      create();
+      answer([company(2, { code: 'B' }), company(1, { code: 'C' }), company(3, { code: 'A' })]);
+
+      header('Code').click();
+      fixture.detectChanges();
+      expect(firstCells()).toEqual(['A', 'B', 'C']);
+      expect(header('Code').getAttribute('aria-sort')).toBe('ascending');
+      expect(header('Code').classList).toContain('cursor-pointer');
+
+      header('Code').querySelector('button')!.click();
+      fixture.detectChanges();
+      expect(header('Code').getAttribute('aria-sort')).toBe('descending');
+      expect(firstCells()).toEqual(['C', 'B', 'A']);
+      http.expectNone(isCompaniesRequest);
+    });
+
     it('does not reorder other pages: each page is sorted within itself', () => {
       create();
       answer();

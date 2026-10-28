@@ -51,6 +51,19 @@ public class EmployeeListServiceTests
     }
 
     [Fact]
+    public async Task The_status_reaches_the_repository_with_the_same_scope()
+    {
+        var (service, repository) = ServiceWith(Scope, new Employee { Id = "e-4", Name = "Relieved" });
+        var query = new EmployeeListQuery { Status = "relieved", Name = "rel" };
+
+        var result = await service.ListAsync(query);
+
+        Assert.Equal("e-4", Assert.Single(result.Items).Id);
+        await repository.Received(1).ListAsync(
+            Arg.Is<EmployeeListQuery>(q => q!.Status == "relieved" && q.Name == "rel"), Scope, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Without_a_scope_the_page_is_empty_and_nothing_is_read()
     {
         var (service, repository) = ServiceWith(scope: null);

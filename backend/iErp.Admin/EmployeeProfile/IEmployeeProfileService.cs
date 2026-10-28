@@ -13,7 +13,7 @@ public interface IEmployeeProfileService
     Task<EmployeePhoto?> GetOwnPhotoAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// The profile of the employee with this id when they are in the session's scope (company, branch, not relieved);
+    /// The profile of the employee with this id when they are in the session's scope (company and branch, relieved or not);
     /// null otherwise, as if there were no such employee.
     /// </summary>
     Task<EmployeeProfileDto?> GetAsync(string employeeId, CancellationToken ct = default);

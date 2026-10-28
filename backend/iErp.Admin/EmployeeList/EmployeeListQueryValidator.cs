@@ -19,5 +19,8 @@ public class EmployeeListQueryValidator : AbstractValidator<EmployeeListQuery>
 
         RuleFor(q => q.Name).MaximumLength(EmployeeListQuery.MaxFilterLength)
             .WithMessage($"Name must be at most {EmployeeListQuery.MaxFilterLength} characters.");
+
+        RuleFor(q => q.Status).Must(EmployeeStatus.IsKnown)
+            .WithMessage($"Status must be {EmployeeStatus.Active}, {EmployeeStatus.Relieved} or {EmployeeStatus.All}.");
     }
 }

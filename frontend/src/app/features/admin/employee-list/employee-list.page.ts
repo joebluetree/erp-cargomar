@@ -1,5 +1,7 @@
 import { Location } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch } from '@ng-icons/lucide';
@@ -7,6 +9,7 @@ import { appProfileColor } from '../../../shared/ui/icons/profile-color';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
+import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmTableImports } from '@spartan-ng/helm/table';
 import { AuthSession } from '../../../core/auth/auth-session';
 import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
@@ -21,26 +24,30 @@ import { formatDate } from '../employee-profile/employee-profile.model';
 import {
   COLUMNS,
   DEFAULT_SORT,
+  DEFAULT_STATUS,
   EMPLOYEE_LIST_STATE_KEY,
   EMPTY_VALUE,
   Employee,
   EmployeeListState,
+  STATUS_OPTIONS,
   SortColumn,
   SortState,
+  StatusOption,
 } from './employee-list.model';
 import { EmployeeListSelection } from './employee-list.selection';
 import { EmployeeListService } from './employee-list.service';
 import { sortEmployees } from './employee-list.table';
 
 /**
- * The Employee List: the current employees of the session's company and branch, read-only. It works like the Company
+ * The Employee List: the employees of the session's company and branch, current, relieved or both (admin-emp-status),
+ * read-only. It works like the Company
  * List: the backend filters and pages, what the user types is kept apart from the filters last searched, sorting
  * reorders only the rows on screen, and the state is kept while the user is elsewhere. The employee code opens that
  * employee's profile without changing the row selection. A branch switch reloads the list for the new branch.
  */
 @Component({
   selector: 'app-employee-list',
-  imports: [NgIcon, RouterLink, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
+  imports: [NgIcon, ReactiveFormsModule, RouterLink, HlmButtonImports, HlmInputImports, HlmLabelImports, HlmSelectImports, HlmTableImports, TablePager, PageTitle, TableToolbar, TableWrapToggle],
   providers: [provideIcons({ appProfileColor, lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch })],
   templateUrl: './employee-list.page.html',
 })
@@ -61,6 +68,9 @@ export class EmployeeListPage {
   private readonly cameFromApp = this.router.currentNavigation()?.previousNavigation != null;
 
   protected readonly columns = COLUMNS;
+  protected readonly statusOptions = STATUS_OPTIONS;
+  protected readonly statusLabel = (option: StatusOption) => option.label;
+  protected readonly sameStatus = (option: StatusOption, value: StatusOption | null | undefined) => option.value === value?.value;
 
   /** What the user left behind last time (undefined on the first visit and after a browser reload). */
   private readonly saved = this.stateStore.get<EmployeeListState>(EMPLOYEE_LIST_STATE_KEY);
@@ -68,8 +78,15 @@ export class EmployeeListPage {
   /** What is typed in the filter boxes. It has no effect until the user presses Search. */
   protected readonly codeInput = signal(this.saved?.codeInput ?? '');
   protected readonly nameInput = signal(this.saved?.nameInput ?? '');
+  /** The Status dropdown (an LOV field, so a form control). Like the boxes, it has no effect until Search. */
+  protected readonly statusInput = new FormControl<StatusOption>(statusOption(this.saved?.statusInput), { nonNullable: true });
+  private readonly statusChosen = toSignal(this.statusInput.valueChanges, { initialValue: this.statusInput.value });
   /** The filters that were last searched. Paging uses these. */
-  private readonly applied = signal(this.saved?.applied ?? { code: '', name: '' });
+  private readonly applied = signal({
+    code: this.saved?.applied.code ?? '',
+    name: this.saved?.applied.name ?? '',
+    status: this.saved?.applied.status ?? DEFAULT_STATUS,
+  });
 
   protected readonly page = signal(this.saved?.page ?? 1);
   protected readonly pageSize = signal(this.saved?.pageSize ?? DEFAULT_PAGE_SIZE);
@@ -85,7 +102,10 @@ export class EmployeeListPage {
   );
 
   /** Whether the shown result comes from a search with filters, to tell "no employees" from "no match". */
-  protected readonly hasFilters = computed(() => this.applied().code !== '' || this.applied().name !== '');
+  protected readonly hasFilters = computed(() => {
+    const { code, name, status } = this.applied();
+    return code !== '' || name !== '' || status !== DEFAULT_STATUS;
+  });
 
   /** The session's branch; the list holds that branch's employees. */
   private readonly branchId = computed(() => this.auth.session()?.branchId ?? null);
@@ -125,6 +145,7 @@ export class EmployeeListPage {
     this.stateStore.set<EmployeeListState>(EMPLOYEE_LIST_STATE_KEY, {
       codeInput: this.codeInput(),
       nameInput: this.nameInput(),
+      statusInput: this.statusChosen().value,
       applied: this.applied(),
       page: this.page(),
       pageSize: this.pageSize(),
@@ -135,8 +156,8 @@ export class EmployeeListPage {
   }
 
   private fetch(): void {
-    const { code, name } = this.applied();
-    this.service.load({ code, name, page: this.page(), pageSize: this.pageSize() });
+    const { code, name, status } = this.applied();
+    this.service.load({ code, name, status, page: this.page(), pageSize: this.pageSize() });
   }
 
   /** Back to the page the user came from, or the Dashboard when this page was opened directly. */
@@ -158,7 +179,7 @@ export class EmployeeListPage {
 
   /** Applies the typed filters: one request for page 1. */
   protected search(): void {
-    this.applied.set({ code: this.codeInput().trim(), name: this.nameInput().trim() });
+    this.applied.set({ code: this.codeInput().trim(), name: this.nameInput().trim(), status: this.statusInput.value.value });
     this.page.set(1);
     this.fetch();
   }
@@ -224,4 +245,9 @@ export class EmployeeListPage {
   protected toggleRow(id: string): void {
     this.selection.toggle(id);
   }
+}
+
+/** The dropdown option of a saved status; Active when nothing was saved. */
+function statusOption(status: string | undefined): StatusOption {
+  return STATUS_OPTIONS.find((option) => option.value === status) ?? STATUS_OPTIONS.find((option) => option.value === DEFAULT_STATUS)!;
 }

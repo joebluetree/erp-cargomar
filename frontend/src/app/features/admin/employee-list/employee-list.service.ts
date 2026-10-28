@@ -30,7 +30,8 @@ export class EmployeeListService {
     this._error.set(false);
     this._items.set([]);
 
-    let params = new HttpParams().set('page', query.page).set('pageSize', query.pageSize);
+    // The status is always sent: the backend's default is the same, so the request says what it asks for.
+    let params = new HttpParams().set('status', query.status).set('page', query.page).set('pageSize', query.pageSize);
     const code = query.code.trim();
     const name = query.name.trim();
     if (code) params = params.set('code', code);

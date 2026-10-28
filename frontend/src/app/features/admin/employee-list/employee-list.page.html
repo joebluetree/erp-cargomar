@@ -7,12 +7,25 @@
 
 <app-table-toolbar>
   <div class="flex items-center gap-2">
-    <label hlmLabel for="filter-code">Code</label>
+    <label hlmLabel for="filter-code">Emp. No</label>
     <input hlmInput id="filter-code" class="w-48" type="text" autocomplete="off" [value]="codeInput()" (input)="setCodeInput($event)" />
   </div>
   <div class="flex items-center gap-2">
     <label hlmLabel for="filter-name">Name</label>
     <input hlmInput id="filter-name" class="w-48" type="text" autocomplete="off" [value]="nameInput()" (input)="setNameInput($event)" />
+  </div>
+  <div class="flex items-center gap-2">
+    <label hlmLabel for="filter-status">Status</label>
+    <hlm-select class="w-48" [formControl]="statusInput" [itemToString]="statusLabel" [isItemEqualToValue]="sameStatus">
+      <hlm-select-trigger buttonId="filter-status" class="w-full">
+        <hlm-select-value />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (option of statusOptions; track option.value) {
+          <hlm-select-item [value]="option">{{ option.label }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
   </div>
   <button hlmBtn type="button" (click)="search()">
     <ng-icon name="lucideSearch" aria-hidden="true" />
@@ -37,8 +50,10 @@
             <th hlmTh class="whitespace-nowrap">Profile</th>
           }
           @for (column of columns; track column.key) {
-            <th hlmTh [attr.aria-sort]="ariaSort(column.key)">
-              <button type="button" class="inline-flex items-center gap-1 font-medium" (click)="toggleSort(column.key)">
+            <!-- A click anywhere in the header cell sorts; the button inside gives the keyboard the same, and its click reaches
+                 the cell, so there is one handler. -->
+            <th hlmTh class="cursor-pointer select-none" [attr.aria-sort]="ariaSort(column.key)" (click)="toggleSort(column.key)">
+              <button type="button" class="inline-flex items-center gap-1 font-medium">
                 {{ column.label }}
                 <ng-icon [name]="sortIcon(column.key)" size="12" aria-hidden="true" />
               </button>

@@ -12,10 +12,30 @@ export interface Employee {
   email: string | null;
 }
 
+/** The status filter (admin-emp-status): current employees, relieved ones, or both. */
+export type EmployeeStatus = 'active' | 'relieved' | 'all';
+
+/** One option of the Status dropdown. */
+export interface StatusOption {
+  value: EmployeeStatus;
+  label: string;
+}
+
+/** The Status dropdown's options, in display order. */
+export const STATUS_OPTIONS: readonly StatusOption[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'relieved', label: 'Relieved' },
+  { value: 'all', label: 'All' },
+];
+
+/** The status until the user searches another: current employees only. */
+export const DEFAULT_STATUS: EmployeeStatus = 'active';
+
 /** What the page asks the backend for: the searched filters and one page. */
 export interface EmployeeListQuery {
   code: string;
   name: string;
+  status: EmployeeStatus;
   /** One-based page number. */
   page: number;
   pageSize: number;
@@ -34,11 +54,12 @@ export interface SortState {
  * `EmployeeListSelection`). Rows are not part of it: they are requested again when the page is shown.
  */
 export interface EmployeeListState {
-  /** The text in the filter boxes, searched or not. */
+  /** The text in the filter boxes and the status chosen, searched or not. */
   codeInput: string;
   nameInput: string;
+  statusInput: EmployeeStatus;
   /** The filters last searched; paging and the request on return use these. */
-  applied: { code: string; name: string };
+  applied: { code: string; name: string; status: EmployeeStatus };
   /** One-based page number. */
   page: number;
   pageSize: number;

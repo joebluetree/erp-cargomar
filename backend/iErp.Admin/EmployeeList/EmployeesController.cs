@@ -9,7 +9,7 @@ namespace iErp.Admin.EmployeeList;
 
 /// <summary>
 /// The Employee List and the profile and photo of a listed employee. All need a valid token (the default policy) and
-/// see only the employees of the session's company and branch who are not relieved; any other id answers 404.
+/// see only the employees of the session's company and branch, relieved or not; any other id answers 404.
 /// The list needs the Employee List right; an employee's profile and photo open the Profile screen, so they need the
 /// Profile right (admin-user-rights design D3).
 /// </summary>
@@ -19,7 +19,7 @@ public class EmployeesController(IEmployeeListService list, IEmployeeProfileServ
 {
     public const string NotFoundMessage = "Employee not found.";
 
-    /// <summary>One page of employees, filtered by code and name and ordered by name.</summary>
+    /// <summary>One page of employees, filtered by code, name and status and ordered by name.</summary>
     [HttpGet]
     [RequiresMenu(MenuCodes.EmployeeList)]
     [ProducesResponseType<PagedResult<EmployeeListItemDto>>(StatusCodes.Status200OK)]

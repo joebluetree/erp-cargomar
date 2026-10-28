@@ -11,8 +11,8 @@ public interface IEmployeeListService
 }
 
 /// <summary>
-/// Lists the employees of the session's company and branch who are not relieved (admin-emp-list design D1, D2). The
-/// scope always comes from the token, never from the request.
+/// Lists the employees of the session's company and branch with the status asked for (admin-emp-list design D1, D2,
+/// admin-emp-status design D1). The scope always comes from the token, never from the request.
 /// </summary>
 public class EmployeeListService(IEmployeeListRepository repository, IEmployeeScopeResolver scopes) : IEmployeeListService
 {
