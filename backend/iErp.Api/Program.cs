@@ -85,17 +85,30 @@ if (!app.Environment.IsProduction())
 // The published Angular app lives in wwwroot and is served from the same origin as the API.
 app.UseDefaultFiles();
 app.UseStaticFiles();
-// Routing must come after the static files: the catch-all fallback below matches every URL, and static files
-// are skipped for a request that already matched an endpoint (the default routing runs first otherwise).
+// Routing is added explicitly, after the static files, so the endpoints can be placed before the Angular fallback below.
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 // Every controller action requires a valid token unless it is marked [AllowAnonymous] (only the login is).
 // Applied here rather than as a fallback policy, so a wrong HTTP method still answers 405, not 401.
-app.MapControllers().RequireAuthorization();
-// Angular client-side routes load index.html; unknown /api URLs still answer 404 rather than HTML.
-app.MapFallbackToFile("{*path:regex(^(?!api/).*$)}", "index.html");
+// UseEndpoints is explicit on purpose: top-level MapControllers would run last, after the Angular fallback below.
+#pragma warning disable ASP0014
+app.UseEndpoints(endpoints => endpoints.MapControllers().RequireAuthorization());
+#pragma warning restore ASP0014
+
+// Angular client-side routes load index.html. This runs only for requests no endpoint handled, and only for GET/HEAD
+// outside /api without a file extension, so a wrong method on an API route still answers 405 and a missing .js or .css
+// file answers 404 instead of HTML.
+app.Use((context, next) =>
+{
+    var path = context.Request.Path;
+    if ((HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method))
+        && !path.StartsWithSegments("/api") && !Path.HasExtension(path.Value))
+        context.Request.Path = "/index.html";
+    return next();
+});
+app.UseStaticFiles();
 app.Run();
 
 public partial class Program;
