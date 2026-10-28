@@ -13,7 +13,7 @@ public class MenuConfiguration : IEntityTypeConfiguration<Menu>
 {
     public void Configure(EntityTypeBuilder<Menu> builder)
     {
-        builder.ToTable("MENUM", t => t.ExcludeFromMigrations());
+        builder.ToTable("MENUM");
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Id).HasColumnName("MENU_PKID").HasMaxLength(80).ValueGeneratedNever();
@@ -31,7 +31,7 @@ public class MenuModuleConfiguration : IEntityTypeConfiguration<MenuModule>
 {
     public void Configure(EntityTypeBuilder<MenuModule> builder)
     {
-        builder.ToTable("MODULEM", t => t.ExcludeFromMigrations());
+        builder.ToTable("MODULEM");
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Id).HasColumnName("MODULE_PKID").HasMaxLength(80).ValueGeneratedNever();
@@ -45,7 +45,7 @@ public class UserRightConfiguration : IEntityTypeConfiguration<UserRight>
 {
     public void Configure(EntityTypeBuilder<UserRight> builder)
     {
-        builder.ToTable("USERRIGHTS", t => t.ExcludeFromMigrations());
+        builder.ToTable("USERRIGHTS");
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.Id).HasColumnName("RIGHTS_PKID").HasMaxLength(80).ValueGeneratedNever();

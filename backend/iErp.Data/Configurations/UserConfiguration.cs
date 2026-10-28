@@ -12,7 +12,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.ToTable("USERM", t => t.ExcludeFromMigrations());
+        builder.ToTable("USERM");
         builder.HasKey(u => u.Id);
 
         builder.Property(u => u.Id).HasColumnName("USER_PKID").HasMaxLength(40).ValueGeneratedNever();

@@ -12,7 +12,7 @@ public class FinancialYearConfiguration : IEntityTypeConfiguration<FinancialYear
 {
     public void Configure(EntityTypeBuilder<FinancialYear> builder)
     {
-        builder.ToTable("YEARM", t => t.ExcludeFromMigrations());
+        builder.ToTable("YEARM");
         builder.HasKey(y => y.Id);
 
         builder.Property(y => y.Id).HasColumnName("YEAR_PKID").HasMaxLength(40).ValueGeneratedNever();

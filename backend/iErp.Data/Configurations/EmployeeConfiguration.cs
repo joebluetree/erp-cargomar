@@ -12,7 +12,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 {
     public void Configure(EntityTypeBuilder<Employee> builder)
     {
-        builder.ToTable("EMPM", t => t.ExcludeFromMigrations());
+        builder.ToTable("EMPM");
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id).HasColumnName("EMP_PKID").HasMaxLength(40).ValueGeneratedNever();

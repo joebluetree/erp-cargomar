@@ -13,7 +13,7 @@ public class UserBranchConfiguration : IEntityTypeConfiguration<UserBranch>
 {
     public void Configure(EntityTypeBuilder<UserBranch> builder)
     {
-        builder.ToTable("USERD", t => t.ExcludeFromMigrations());
+        builder.ToTable("USERD");
         builder.HasKey(b => new { b.UserId, b.BranchId });
 
         builder.Property(b => b.UserId).HasColumnName("USER_ID").HasMaxLength(40).ValueGeneratedNever();

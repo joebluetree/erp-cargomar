@@ -12,7 +12,7 @@ public class ParameterConfiguration : IEntityTypeConfiguration<Parameter>
 {
     public void Configure(EntityTypeBuilder<Parameter> builder)
     {
-        builder.ToTable("PARAM", t => t.ExcludeFromMigrations());
+        builder.ToTable("PARAM");
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.Id).HasColumnName("PARAM_PKID").HasMaxLength(40).ValueGeneratedNever();
