@@ -12,7 +12,7 @@ public class AppDetailConfiguration : IEntityTypeConfiguration<AppDetail>
 {
     public void Configure(EntityTypeBuilder<AppDetail> builder)
     {
-        builder.ToTable("APPDETAILS", t => t.ExcludeFromMigrations());
+        builder.ToTable("APPDETAILS");
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Id).HasColumnName("USER_APPID").HasMaxLength(80).ValueGeneratedNever();

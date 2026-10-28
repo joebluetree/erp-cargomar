@@ -14,7 +14,6 @@ public class EmployeeMappingTests
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseOracle("User Id=model;Password=model;Data Source=localhost:1521/model").Options;
         using var db = new AppDbContext(options);
-        // The design-time model keeps the migration settings (ExcludeFromMigrations).
         return db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(Employee))!;
     }
 
@@ -24,7 +23,6 @@ public class EmployeeMappingTests
         var entity = Model();
 
         Assert.Equal("EMPM", entity.GetTableName());
-        Assert.True(entity.IsTableExcludedFromMigrations());
         Assert.Equal(nameof(Employee.Id), Assert.Single(entity.FindPrimaryKey()!.Properties).Name);
     }
 

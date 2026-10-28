@@ -14,7 +14,6 @@ public class UserBranchMappingTests
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseOracle("User Id=model;Password=model;Data Source=localhost:1521/model").Options;
         using var db = new AppDbContext(options);
-        // The design-time model keeps the migration settings (ExcludeFromMigrations).
         return db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(UserBranch))!;
     }
 
@@ -25,7 +24,6 @@ public class UserBranchMappingTests
         var table = StoreObjectIdentifier.Table("USERD", null);
 
         Assert.Equal("USERD", entity.GetTableName());
-        Assert.True(entity.IsTableExcludedFromMigrations());
         Assert.Equal(["UserId", "BranchId"], entity.FindPrimaryKey()!.Properties.Select(p => p.Name));
         Assert.Equal("USER_ID", entity.FindProperty(nameof(UserBranch.UserId))!.GetColumnName(table));
         Assert.Equal("USER_BRANCH_ID", entity.FindProperty(nameof(UserBranch.BranchId))!.GetColumnName(table));

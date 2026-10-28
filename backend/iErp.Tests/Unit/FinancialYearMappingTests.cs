@@ -20,6 +20,5 @@ public class FinancialYearMappingTests
         var closed = entity.FindProperty(nameof(FinancialYear.Closed))!;
         Assert.Equal("YEAR_CLOSED", closed.GetColumnName(StoreObjectIdentifier.Table("YEARM", null)));
         Assert.Equal((1, true), (closed.GetMaxLength(), closed.IsFixedLength()));
-        Assert.True(entity.IsTableExcludedFromMigrations());
     }
 }

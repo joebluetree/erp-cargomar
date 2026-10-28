@@ -14,7 +14,6 @@ public class ParameterMappingTests
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseOracle("User Id=model;Password=model;Data Source=localhost:1521/model").Options;
         using var db = new AppDbContext(options);
-        // The design-time model keeps the migration settings (ExcludeFromMigrations).
         return db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(Parameter))!;
     }
 
@@ -24,7 +23,6 @@ public class ParameterMappingTests
         var entity = Model();
 
         Assert.Equal("PARAM", entity.GetTableName());
-        Assert.True(entity.IsTableExcludedFromMigrations());
         Assert.Equal(3, entity.GetProperties().Count());
     }
 

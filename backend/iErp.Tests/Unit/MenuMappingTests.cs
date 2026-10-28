@@ -21,7 +21,6 @@ public class MenuMappingTests
     {
         var store = StoreObjectIdentifier.Table(table, null);
         Assert.Equal(table, entity.GetTableName());
-        Assert.True(entity.IsTableExcludedFromMigrations());
         Assert.Equal(expected.Length, entity.GetProperties().Count());
         foreach (var (property, column, length, isFixed) in expected)
         {

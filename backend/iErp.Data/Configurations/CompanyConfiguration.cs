@@ -12,7 +12,7 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 {
     public void Configure(EntityTypeBuilder<Company> builder)
     {
-        builder.ToTable("COMPANYM", t => t.ExcludeFromMigrations());
+        builder.ToTable("COMPANYM");
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.Id).HasColumnName("COMP_PKID").HasMaxLength(40).ValueGeneratedNever();
