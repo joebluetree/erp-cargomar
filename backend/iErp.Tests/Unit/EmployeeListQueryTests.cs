@@ -54,7 +54,7 @@ public class EmployeeListQueryTests
     {
         var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Status = status }, Scope).ToQueryString();
 
-        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
         Assert.Matches($"\"EMP_IS_RELIEVED\" = N?'+{flag}'+", sql);
         Assert.Matches("ORDER BY \"e\".\"EMP_NAME\", \"e\".\"EMP_PKID\"", sql);
     }
@@ -64,7 +64,7 @@ public class EmployeeListQueryTests
     {
         var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Status = "all" }, Scope).ToQueryString();
 
-        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
         Assert.Contains("\"REC_BRANCH_CODE\"", sql);
         Assert.DoesNotContain("\"EMP_IS_RELIEVED\" =", sql);
     }
@@ -74,10 +74,22 @@ public class EmployeeListQueryTests
     {
         var sql = Scope.Apply(new EmployeeProfileRepository(Db()).Employee("e-1")).ToQueryString();
 
-        Assert.DoesNotMatch(@"(TRUE|FALSE)", sql);
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
         Assert.Contains("\"REC_COMPANY_CODE\"", sql);
         Assert.Contains("\"REC_BRANCH_CODE\"", sql);
         Assert.DoesNotContain("\"EMP_IS_RELIEVED\" =", sql);
+    }
+
+    [Fact]
+    public void The_branch_names_are_the_company_branches_with_the_codes_in_an_IN_of_constants()
+    {
+        var sql = new EmployeeListRepository(Db()).BranchesByCode("c-1", ["KOC", "CHN"]).ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.DoesNotContain("JSON", sql);
+        Assert.Matches("\"COMP_TYPE\" = N?'+B'+", sql);
+        Assert.Contains("\"COMP_PARENT_ID\" = ", sql);
+        Assert.Matches("\"COMP_CODE\" IN \\(N?'+KOC'+, N?'+CHN'+\\)", sql);
     }
 
     [Fact]
@@ -88,5 +100,17 @@ public class EmployeeListQueryTests
         Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
         Assert.Contains("\"COMPANYM\"", sql);
         Assert.Matches("\"COMP_TYPE\" = N?'+B'+", sql);
+    }
+
+    [Fact]
+    public void A_scope_of_several_branches_filters_their_codes_with_an_IN_of_constants()
+    {
+        var sql = new EmployeeListRepository(Db()).Employees(new EmployeeListQuery { Status = "all" }, new EmployeeScope("CMP", ["KOC", "CHN"])).ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.DoesNotContain("JSON", sql); // no JSON collection parameters: Oracle 10g has none
+        Assert.Matches("\"REC_COMPANY_CODE\" = ", sql);
+        Assert.Matches("\"REC_BRANCH_CODE\" IN \\(N?'+KOC'+, N?'+CHN'+\\)", sql);
+        Assert.Matches("ORDER BY \"e\".\"EMP_NAME\", \"e\".\"EMP_PKID\"", sql);
     }
 }

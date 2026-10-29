@@ -1,7 +1,7 @@
 # employee-list-api Specification
 
 ## Purpose
-Provides the read-only backend of the Employee List: a filtered, paged list of the employees of the session's company and branch (current by default, or relieved, or both), and the profile and photo of any employee in that list.
+Provides the read-only backend of the Employee List: a filtered, paged list of the employees of the session's company and branch (current by default, or relieved, or both), where a user with the admin right in the session branch may choose another branch assigned to them, or all of those; those allowed branches for that choice; and the profile and photo of any employee in that list.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # employee-list-page Specification
 
 ## Purpose
-Provides the Employee List screen: a read-only list of the session branch's employees with a search by code, name and status (Active, Relieved or All), from which each employee's profile opens view only.
+Provides the Employee List screen: a read-only list of the session branch's employees with a search by code, name and status (Active, Relieved or All), and by branch (the session's by default; for a user with the admin right in the session branch also another branch assigned to them, or All of those), from which each employee's profile opens view only.
 
 ## Requirements
 

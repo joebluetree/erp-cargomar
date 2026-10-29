@@ -5,9 +5,9 @@ import { Employee, EmployeeListQuery } from './employee-list.model';
 import { EmployeeListService } from './employee-list.service';
 
 const asha: Employee = {
-  id: 'e-1', code: '1001', name: 'Asha Nair', fatherName: null, dateOfBirth: '1990-03-05', address: null, mobile: null, email: null,
+  id: 'e-1', code: '1001', name: 'Asha Nair', fatherName: null, dateOfBirth: '1990-03-05', address: null, mobile: null, email: null, branch: 'Kochi',
 };
-const query = (extra: Partial<EmployeeListQuery> = {}): EmployeeListQuery => ({ code: '', name: '', status: 'active', page: 1, pageSize: 10, ...extra });
+const query = (extra: Partial<EmployeeListQuery> = {}): EmployeeListQuery => ({ code: '', name: '', status: 'active', branch: null, page: 1, pageSize: 10, ...extra });
 const paged = (items: Employee[], total = items.length, page = 1, pageSize = 10) => ({ items, total, page, pageSize });
 
 describe('EmployeeListService', () => {
@@ -43,6 +43,35 @@ describe('EmployeeListService', () => {
     service.load(query({ status }));
 
     expect(expectRequest().request.params.get('status')).toBe(status);
+  });
+
+  it.each(['all', 'b-2'])('sends the branch %s', (branch) => {
+    const { service, expectRequest } = setup();
+
+    service.load(query({ branch }));
+
+    expect(expectRequest().request.params.get('branch')).toBe(branch);
+  });
+
+  it('leaves the branch out for the session branch', () => {
+    const { service, expectRequest } = setup();
+
+    service.load(query({ branch: null }));
+
+    expect(expectRequest().request.params.has('branch')).toBe(false);
+  });
+
+  it('requests the branches from admin/employees/branches', () => {
+    const { service, http } = setup();
+    const branches = [{ id: 'b-2', code: 'CHN', name: 'Chennai' }];
+    let received: unknown;
+
+    service.branches().subscribe((b) => (received = b));
+    const req = http.expectOne('admin/employees/branches');
+    req.flush(branches);
+
+    expect(req.request.method).toBe('GET');
+    expect(received).toEqual(branches);
   });
 
   it('sends the filters, trimmed, and leaves out blank ones', () => {

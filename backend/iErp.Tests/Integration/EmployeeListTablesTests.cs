@@ -10,7 +10,7 @@ namespace iErp.Tests.Integration;
 /// <summary>
 /// Needs IERP_TEST_ORACLE. EMPM and COMPANYM are existing, externally owned tables. If the test schema has both, the
 /// test only reads them; if it has neither, it creates shaped tables, checks the Employee List queries (scope, status,
-/// filters, order and paging) and drops them again. A schema with only one of them is left untouched. Never point
+/// filters, order and paging, and the several-branch scope of the Branch filter) and drops them again. A schema with only one of them is left untouched. Never point
 /// IERP_TEST_ORACLE at the dev database.
 /// </summary>
 public class EmployeeListTablesTests
@@ -33,20 +33,34 @@ public class EmployeeListTablesTests
             // Real tables: read only. Every listed employee of a branch is in that branch's scope, with the status asked for.
             var any = await db.Set<Employee>().AsNoTracking()
                 .Where(e => e.Relieved == "N" && e.CompanyCode != null && e.BranchCode != null).OrderBy(e => e.Id).FirstAsync();
-            var scope = new EmployeeScope(any.CompanyCode!, any.BranchCode!);
+            var (company, branch) = (any.CompanyCode!, any.BranchCode!);
+            var scope = new EmployeeScope(company, branch);
             var (items, total) = await list.ListAsync(new EmployeeListQuery { PageSize = 100 }, scope);
             Assert.True(total >= 1);
-            Assert.All(items, e => Assert.Equal((scope.CompanyCode, scope.BranchCode, "N"), (e.CompanyCode, e.BranchCode, e.Relieved)));
+            Assert.All(items, e => Assert.Equal((company, branch, "N"), (e.CompanyCode, e.BranchCode, e.Relieved)));
             Assert.NotNull(await profiles.FindInScopeAsync(any.Id, scope));
 
             // Each status's total is the plain count of the branch's EMPM rows with that flag (any flag for "all").
-            var (company, branch) = (scope.CompanyCode, scope.BranchCode);
             var active = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch} AND EMP_IS_RELIEVED = 'N'");
             var relieved = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch} AND EMP_IS_RELIEVED = 'Y'");
             var everyone = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE = {branch}");
             Assert.Equal(active, total);
             Assert.Equal(relieved, (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.Relieved }, scope)).Total);
             Assert.Equal(everyone, (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.All }, scope)).Total);
+
+            // A scope of several branches counts as the plain count of their EMPM rows (admin-emp-status design D5). The
+            // branch options are the user's assigned branches, read by Change Branch's query (ChangeBranchTablesTests).
+            var codes = (await db.Database.SqlQuery<string>(
+                    $"SELECT DISTINCT REC_BRANCH_CODE AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE IS NOT NULL")
+                .ToListAsync())
+                // Two of them, taken here: a Take in the query would be FETCH FIRST, which Oracle 10g does not have.
+                .Order(StringComparer.Ordinal).Take(2).ToList();
+            if (codes.Count == 2)
+            {
+                var (first, second) = (codes[0], codes[1]);
+                var inBoth = await Count(db, $"SELECT COUNT(*) AS \"Value\" FROM EMPM WHERE REC_COMPANY_CODE = {company} AND REC_BRANCH_CODE IN ({first}, {second})");
+                Assert.Equal(inBoth, (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.All }, new EmployeeScope(company, codes))).Total);
+            }
 
             var gone = await db.Set<Employee>().AsNoTracking()
                 .Where(e => e.Relieved == "Y" && e.CompanyCode == company && e.BranchCode == branch).OrderBy(e => e.Id).FirstOrDefaultAsync();
@@ -83,6 +97,8 @@ public class EmployeeListTablesTests
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_CODE, COMP_NAME) VALUES ('c-1', 'C', 'CMP', 'Company')",
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_CODE, COMP_NAME) VALUES ('b-1', 'B', 'c-1', 'KOC', 'Kochi')",
                 "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_CODE, COMP_NAME) VALUES ('b-2', 'B', 'c-1', 'CHE', 'Chennai')",
+                "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_CODE, COMP_NAME, REC_DELETED_DATE) VALUES ('b-3', 'B', 'c-1', 'DEL', 'Deleted', SYSDATE)",
+                "INSERT INTO COMPANYM (COMP_PKID, COMP_TYPE, COMP_PARENT_ID, COMP_CODE, COMP_NAME) VALUES ('b-4', 'B', 'c-2', 'OTB', 'Another company branch')",
                 "INSERT INTO EMPM (EMP_PKID, EMP_NO, EMP_NAME, REC_COMPANY_CODE, REC_BRANCH_CODE, EMP_IS_RELIEVED) VALUES ('e-1', '1001', 'Bala', 'CMP', 'KOC', 'N')",
                 "INSERT INTO EMPM (EMP_PKID, EMP_NO, EMP_NAME, REC_COMPANY_CODE, REC_BRANCH_CODE, EMP_IS_RELIEVED) VALUES ('e-2', '1002', 'Anu', 'CMP', 'KOC', 'N')",
                 "INSERT INTO EMPM (EMP_PKID, EMP_NO, EMP_NAME, REC_COMPANY_CODE, REC_BRANCH_CODE, EMP_IS_RELIEVED) VALUES ('e-3', '2001', 'Anu', 'CMP', 'KOC', 'N')",
@@ -126,6 +142,18 @@ public class EmployeeListTablesTests
             Assert.NotNull(await profiles.FindInScopeAsync("e-4", scope)); // relieved, but of this branch
             Assert.Null(await profiles.FindInScopeAsync("e-5", scope));
             Assert.Null(await profiles.FindInScopeAsync("e-6", scope));
+
+            // The Branch filter: a scope of two branches lists both, and never another company's employees.
+            var two = new EmployeeScope("CMP", ["KOC", "CHE"]);
+            Assert.Equal(["e-2", "e-3", "e-1", "e-7", "e-5"], (await list.ListAsync(new EmployeeListQuery(), two)).Items.Select(e => e.Id));
+            Assert.Equal(["e-4"], (await list.ListAsync(new EmployeeListQuery { Status = EmployeeStatus.Relieved }, two)).Items.Select(e => e.Id));
+            Assert.Equal(["e-5"], (await list.ListAsync(new EmployeeListQuery(), new EmployeeScope("CMP", "CHE"))).Items.Select(e => e.Id));
+            Assert.NotNull(await profiles.FindInScopeAsync("e-5", two));
+            Assert.Null(await profiles.FindInScopeAsync("e-6", two));
+
+            // The Branch column: the company's branches by code, a deleted one too (DEL), never another company's (OTB).
+            Assert.Equal(["CHE", "DEL", "KOC"], (await list.ListBranchesByCodeAsync("c-1", ["KOC", "CHE", "DEL", "OTB"]))
+                .Select(b => b.Code!).Order(StringComparer.Ordinal));
         }
         finally
         {

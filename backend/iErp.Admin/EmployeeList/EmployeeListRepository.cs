@@ -10,6 +10,9 @@ public interface IEmployeeListRepository
 {
     Task<(IReadOnlyList<Employee> Items, int Total)> ListAsync(
         EmployeeListQuery query, EmployeeScope scope, CancellationToken ct = default);
+
+    /// <summary>The company's branches (deleted or not) with these codes, for the names in the Branch column.</summary>
+    Task<IReadOnlyList<Company>> ListBranchesByCodeAsync(string companyId, IReadOnlyCollection<string> codes, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -20,6 +23,18 @@ public class EmployeeListRepository(AppDbContext db) : IEmployeeListRepository
     public Task<(IReadOnlyList<Employee> Items, int Total)> ListAsync(
         EmployeeListQuery query, EmployeeScope scope, CancellationToken ct = default) =>
         Employees(query, scope).ToPageAsync(query.Page, query.PageSize, ct);
+
+    public async Task<IReadOnlyList<Company>> ListBranchesByCodeAsync(
+        string companyId, IReadOnlyCollection<string> codes, CancellationToken ct = default) =>
+        codes.Count == 0 ? [] : await BranchesByCode(companyId, codes).ToListAsync(ct);
+
+    /// <summary>
+    /// The company's branches with these codes: an <c>IN</c> of constants, no JSON collection parameter. Public so tests
+    /// can check the SQL it produces for Oracle 10g.
+    /// </summary>
+    public IQueryable<Company> BranchesByCode(string companyId, IReadOnlyCollection<string> codes) =>
+        db.Set<Company>().AsNoTracking()
+            .Where(c => c.Type == EmployeeProfileRepository.BranchType && c.ParentId == companyId && codes.Contains(c.Code!));
 
     /// <summary>
     /// The scope, the status, the filters and the order. Public so tests can check the SQL it produces for Oracle 10g.

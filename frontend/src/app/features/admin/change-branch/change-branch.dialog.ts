@@ -1,4 +1,3 @@
-import { Location } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -12,6 +11,7 @@ import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { AuthSession } from '../../../core/auth/auth-session';
 import { SERVER_ERROR_MESSAGE, isApiError } from '../../../core/errors/api-error';
+import { HistoryEpoch } from '../../../core/navigation/history-epoch';
 import { NotificationService } from '../../../core/notifications/notification.service';
 import { FieldError } from '../../../shared/ui/field-error/field-error';
 import { BranchOption, YearOption } from './change-branch.model';
@@ -38,7 +38,7 @@ export class ChangeBranchDialog {
   private readonly notifications = inject(NotificationService);
   private readonly ref = inject<BrnDialogRef<boolean>>(BrnDialogRef);
   private readonly router = inject(Router);
-  private readonly location = inject(Location);
+  private readonly historyEpoch = inject(HistoryEpoch);
 
   protected readonly form = new FormGroup({
     branch: new FormControl<BranchOption | null>(null, Validators.required),
@@ -101,19 +101,19 @@ export class ChangeBranchDialog {
       // No notification: the header showing the new branch and year is the confirmation.
       next: () => {
         this.ref.close(true);
-        this.recheckScreen();
+        this.openDashboard();
       },
       error: (error: unknown) => this.reportFailure(error),
     });
   }
 
   /**
-   * Opens the current screen again, so the screen guard checks it and reloads its rights for the new branch: the
-   * rights store is cleared on a switch, and the screen stays. The address bar's URL is used, as it is the screen's
-   * also while the no-access page is shown, so a screen allowed in the new branch comes back.
+   * Opens the Dashboard in place of the current screen, which belongs to the old branch, and starts a new history
+   * epoch, so the browser's Back cannot return to the screens opened before the switch (`historyEpochGuard`).
    */
-  private recheckScreen(): void {
-    void this.router.navigateByUrl(this.location.path(), { onSameUrlNavigation: 'reload', replaceUrl: true });
+  private openDashboard(): void {
+    this.historyEpoch.reset();
+    void this.router.navigateByUrl('/', { replaceUrl: true });
   }
 
   protected cancel(): void {

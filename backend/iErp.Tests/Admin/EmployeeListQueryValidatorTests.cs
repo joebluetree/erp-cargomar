@@ -57,4 +57,12 @@ public class EmployeeListQueryValidatorTests
     [InlineData("1")]
     public void Another_status_is_rejected_and_named(string status)
         => Assert.Equal(["Status"], Validator.Validate(new EmployeeListQuery { Status = status }).Errors.Select(e => e.PropertyName));
+
+    [Fact]
+    public void A_branch_longer_than_40_characters_is_rejected_and_named()
+    {
+        Assert.Equal(["Branch"], Validator.Validate(new EmployeeListQuery { Branch = new string('b', 41) }).Errors.Select(e => e.PropertyName));
+        Assert.True(Validator.Validate(new EmployeeListQuery { Branch = new string('b', 40) }).IsValid);
+        Assert.True(Validator.Validate(new EmployeeListQuery { Branch = "all" }).IsValid);
+    }
 }

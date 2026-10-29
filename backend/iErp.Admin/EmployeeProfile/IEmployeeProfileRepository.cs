@@ -14,6 +14,7 @@ public interface IEmployeeProfileRepository
     /// <summary>The code (<c>COMPANYM.COMP_CODE</c>) of the branch with this id, or null when there is no such branch.</summary>
     Task<string?> FindBranchCodeAsync(string branchId, CancellationToken ct = default);
 
+
     /// <summary>The PARAM rows of type STATE or COUNTRY whose id is one of <paramref name="ids"/>.</summary>
     Task<IReadOnlyList<Parameter>> ListPlacesAsync(IReadOnlyCollection<string> ids, CancellationToken ct = default);
 }

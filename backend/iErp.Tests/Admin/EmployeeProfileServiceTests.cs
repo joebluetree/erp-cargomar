@@ -53,7 +53,7 @@ public class EmployeeProfileServiceTests
         var photos = Substitute.For<IEmployeePhotoStore>();
         photos.Find("1590.jpg").Returns(Photo);
         var scopes = Substitute.For<IEmployeeScopeResolver>();
-        scopes.ResolveAsync(Arg.Any<CancellationToken>()).Returns(noScope ? null : scope ?? Scope);
+        scopes.ResolveProfileAsync(Arg.Any<CancellationToken>()).Returns(noScope ? null : scope ?? Scope);
         return (new EmployeeProfileService(repository, Session(employeeId), photos, scopes), repository);
     }
 

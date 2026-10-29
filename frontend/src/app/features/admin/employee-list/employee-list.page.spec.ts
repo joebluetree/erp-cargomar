@@ -18,7 +18,7 @@ function employee(n: number, extra: Partial<Employee> = {}): Employee {
   const no = String(n).padStart(2, '0');
   return {
     id: `e-${no}`, code: `10${no}`, name: `Name ${no}`, fatherName: `Father ${no}`, dateOfBirth: '1990-03-05',
-    address: `House ${n}, Road`, mobile: `98470000${no}`, email: `e${no}@mail.com`, ...extra,
+    address: `House ${n}, Road`, mobile: `98470000${no}`, email: `e${no}@mail.com`, branch: 'Kochi', ...extra,
   };
 }
 
@@ -48,6 +48,8 @@ describe('EmployeeListPage', () => {
   let sent: Sent[];
   /** The `status` of each request answered, in order. */
   let statuses: (string | null)[];
+  /** The `branch` of each request answered, in order (null when it was left out). */
+  let branches: (string | null)[];
 
   /** `profileView`: the Profile's view right, as the screen guard loads it with the list. */
   function create(profileView = true) {
@@ -67,6 +69,7 @@ describe('EmployeeListPage', () => {
     el = fixture.nativeElement as HTMLElement;
     sent = [];
     statuses = [];
+    branches = [];
     fixture.detectChanges();
   }
 
@@ -76,6 +79,7 @@ describe('EmployeeListPage', () => {
     const p = req.request.params;
     sent.push({ code: p.get('code'), name: p.get('name'), page: p.get('page'), pageSize: p.get('pageSize') });
     statuses.push(p.get('status'));
+    branches.push(p.get('branch'));
     const code = (p.get('code') ?? '').toLowerCase();
     const name = (p.get('name') ?? '').toLowerCase();
     const status = p.get('status');
@@ -143,6 +147,7 @@ describe('EmployeeListPage', () => {
   function leaveAndReturn() {
     sent = [];
     statuses = [];
+    branches = [];
     fixture.destroy();
     fixture = TestBed.createComponent(EmployeeListPage);
     el = fixture.nativeElement as HTMLElement;
@@ -161,6 +166,7 @@ describe('EmployeeListPage', () => {
         el.querySelector('h1')!,
         input('filter-code'),
         input('filter-name'),
+        el.querySelector<HTMLButtonElement>('#filter-branch')!,
         statusTrigger(),
         searchButton(),
         el.querySelector('app-table-wrap-toggle')!,
@@ -186,14 +192,14 @@ describe('EmployeeListPage', () => {
       expect(range()).toBe('Showing 1–10 of 23');
     });
 
-    it('shows the Profile column first, then the seven columns in order, and each row with its values, the date as dd-MM-yyyy', () => {
+    it('shows the Profile column first, then the eight columns in order, Branch last, and each row with its values, the date as dd-MM-yyyy', () => {
       create();
       answer([employee(1)]);
 
       const heads = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
-      expect(heads).toEqual(['Profile', 'Emp. No', 'Emp. Name', "Father's Name", 'DOB', 'Address', 'Mobile', 'Email']);
+      expect(heads).toEqual(['Profile', 'Emp. No', 'Emp. Name', "Father's Name", 'DOB', 'Address', 'Mobile', 'Email', 'Branch']);
       // The Profile cell holds only the icon, so it has no text.
-      expect(cells(rows()[0])).toEqual(['', '1001', 'Name 01', 'Father 01', '05-03-1990', 'House 1, Road', '9847000001', 'e01@mail.com']);
+      expect(cells(rows()[0])).toEqual(['', '1001', 'Name 01', 'Father 01', '05-03-1990', 'House 1, Road', '9847000001', 'e01@mail.com', 'Kochi']);
     });
 
     it('keeps the DOB on one line with wrap text on, and lets the other columns wrap', () => {
@@ -201,30 +207,31 @@ describe('EmployeeListPage', () => {
       answer([employee(1)]);
 
       const nowrap = Array.from(rows()[0].querySelectorAll('td')).map((td) => td.classList.contains('group-data-[wrap=true]:whitespace-nowrap'));
-      expect(nowrap).toEqual([false, false, false, false, true, false, false, false]);
+      expect(nowrap).toEqual([false, false, false, false, true, false, false, false, false]);
     });
 
     it('shows the Email in lower case', () => {
       create();
       answer([{ ...employee(1), email: ' VSPradeep1973@GMAIL.COM ' }]);
 
-      expect(cells(rows()[0]).at(-1)).toBe('vspradeep1973@gmail.com');
+      expect(cells(rows()[0]).at(-2)).toBe('vspradeep1973@gmail.com');
     });
 
     it('shows a dash for every empty value', () => {
       create();
-      answer([{ id: 'e-x', code: null, name: null, fatherName: null, dateOfBirth: null, address: null, mobile: '  ', email: null }]);
+      answer([{ id: 'e-x', code: null, name: null, fatherName: null, dateOfBirth: null, address: null, mobile: '  ', email: null, branch: null }]);
 
-      expect(cells(rows()[0]).slice(1)).toEqual(['—', '—', '—', '—', '—', '—', '—']);
+      expect(cells(rows()[0]).slice(1)).toEqual(['—', '—', '—', '—', '—', '—', '—', '—']);
     });
 
     it('has no create, edit, save or delete control', () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
 
       const actions = Array.from(el.querySelectorAll('button:not(th button)')).map((b) => b.getAttribute('aria-label') ?? b.textContent?.trim());
-      // The Status dropdown's trigger is a button showing the chosen status.
-      expect(actions).toEqual(['Back', 'Active', 'Search', 'Wrap text: on', 'First page', 'Previous page', 'Next page', 'Last page']);
+      // The Status and Branch dropdowns' triggers are buttons showing the chosen status and branch.
+      expect(actions).toEqual(['Back', 'Kochi', 'Active', 'Search', 'Wrap text: on', 'First page', 'Previous page', 'Next page', 'Last page']);
     });
 
     it('is built from the shared table pieces and sets no colors of its own', () => {
@@ -327,14 +334,15 @@ describe('EmployeeListPage', () => {
       expect(firstCells()).toEqual(['1001', '1002', '1003']);
     });
 
-    it('offers Active, Relieved and All, in that order', async () => {
+    it('offers All, Active and Relieved, in that order, with Active chosen', async () => {
       create();
       answer(mixed);
 
       statusTrigger().click();
       await settle();
 
-      expect(Array.from(document.querySelectorAll('hlm-select-item')).map((i) => i.textContent?.trim())).toEqual(['Active', 'Relieved', 'All']);
+      expect(Array.from(document.querySelectorAll('hlm-select-item')).map((i) => i.textContent?.trim())).toEqual(['All', 'Active', 'Relieved']);
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
     });
 
     it('asks for nothing when a status is chosen, and for page 1 with it on Search', async () => {
@@ -407,6 +415,311 @@ describe('EmployeeListPage', () => {
       expect(statuses).toEqual(['relieved']);
       expect(statusTrigger().textContent?.trim()).toBe('All');
       expect(firstCells()).toEqual(['1004', '1005']);
+    });
+
+    it('opens with Active again after logging out and in', async () => {
+      create();
+      answer(mixed);
+      await chooseStatus('Relieved');
+      search();
+      answer(mixed);
+
+      const auth = TestBed.inject(AuthSession);
+      fixture.destroy();
+      auth.end();
+      TestBed.tick();
+      auth.start(testSession({ token: 'next-token' }));
+      TestBed.tick();
+      leaveAndReturn();
+      answer(mixed);
+
+      expect(statuses).toEqual(['active']);
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(firstCells()).toEqual(['1001', '1002', '1003']);
+    });
+  });
+
+  describe('branch filter', () => {
+    /**
+     * The allowed branches of a user assigned Kochi, Chennai and Delhi, logged in to Kochi with the admin right there, as
+     * the backend returns them: by name.
+     */
+    const allowedBranches = [
+      { id: 'b-2', code: 'CHN', name: 'Chennai' },
+      { id: 'b-3', code: 'DEL', name: 'Delhi' },
+      { id: 'b-1', code: 'KOC', name: 'Kochi' },
+    ];
+    const branchTrigger = () => el.querySelector<HTMLButtonElement>('#filter-branch');
+    const isBranchesRequest = (r: HttpRequest<unknown>) => r.url === 'admin/employees/branches';
+
+    /** Opens the Employee List logged in to Kochi (b-1), answering the allowed branches and the first page. */
+    function open(branches: typeof allowedBranches = allowedBranches) {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answerBranches(branches);
+      answer();
+    }
+
+    function answerBranches(branches: typeof allowedBranches = allowedBranches) {
+      http.expectOne(isBranchesRequest).flush(branches);
+      fixture.detectChanges();
+    }
+
+    /**
+     * Switches the session to Chennai (b-2) and answers the allowed branches of the new session, then page 1. With
+     * `admin` false the user has no admin right in Chennai.
+     */
+    function switchToChennai(admin = true) {
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.detectChanges();
+      answerBranches(admin ? allowedBranches : []);
+      answer();
+    }
+
+    async function chooseBranch(label: string) {
+      branchTrigger()!.click();
+      await settle();
+      Array.from(document.querySelectorAll<HTMLElement>('hlm-select-item')).find((i) => i.textContent?.trim() === label)!.click();
+      await settle();
+    }
+
+    const optionLabels = async () => {
+      branchTrigger()!.click();
+      await settle();
+      return Array.from(document.querySelectorAll('hlm-select-item')).map((i) => i.textContent?.trim());
+    };
+
+    /** The dropdown is there, disabled, on the session's branch. */
+    function expectDisabledOnKochi() {
+      expect(branchTrigger()!.disabled).toBe(true);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
+      expect(el.querySelector('label[for="filter-branch"]')?.textContent?.trim()).toBe('Branch');
+    }
+
+    it('is disabled on the session branch without the admin right there (no allowed branches), and asks for no branch', () => {
+      open([]);
+
+      expectDisabledOnKochi();
+      expect(branches).toEqual([null]);
+    });
+
+    it('is disabled on the session branch while the allowed branches load, and the list still loads', () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+
+      expectDisabledOnKochi();
+      expect(rows()).toHaveLength(10);
+      http.expectOne(isBranchesRequest);
+    });
+
+    it('is disabled on the session branch when the allowed branches cannot be loaded, and the list still loads', () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      http.expectOne(isBranchesRequest).flush(null, { status: 500, statusText: 'Server Error' });
+      answer();
+
+      expectDisabledOnKochi();
+      expect(rows()).toHaveLength(10);
+    });
+
+    it('is enabled for an admin on the session branch, offering All and the assigned branches by name', async () => {
+      open();
+
+      expect(branchTrigger()!.disabled).toBe(false);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
+      expect(el.querySelector('label[for="filter-branch"]')?.textContent?.trim()).toBe('Branch');
+      expect(branches).toEqual([null]);
+      expect(await optionLabels()).toEqual(['All', 'Chennai', 'Delhi', 'Kochi']);
+    });
+
+    it('offers All and the session branch to an admin assigned no other branch', async () => {
+      open([{ id: 'b-1', code: 'KOC', name: 'Kochi' }]);
+
+      expect(await optionLabels()).toEqual(['All', 'Kochi']);
+    });
+
+    it('places Emp. No above Name and Branch above Status, tabbing Emp. No, Name, Branch, Status, then Search, Branch and Status as wide', () => {
+      open();
+
+      const parts = [input('filter-code'), input('filter-name'), branchTrigger()!, statusTrigger(), searchButton()];
+      for (let i = 1; i < parts.length; i++) {
+        expect(parts[i - 1].compareDocumentPosition(parts[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+      // Two columns of label and field each: the four filters are cells of one grid.
+      const grid = input('filter-code').parentElement!;
+      expect(grid.classList).toContain('sm:grid-cols-[auto_auto_auto_auto]');
+      expect([input('filter-name'), branchTrigger()!, statusTrigger()].every((f) => grid.contains(f))).toBe(true);
+      // Emp. No above Name on the left, Branch above Status on the right; the source order above is the Tab order.
+      const select = (trigger: HTMLElement) => trigger.closest('hlm-select')!;
+      const place = (f: Element) => [...f.classList].filter((c) => /^sm:(col|row)-start-/.test(c)).sort();
+      expect(place(input('filter-code'))).toEqual(['sm:col-start-2', 'sm:row-start-1']);
+      expect(place(input('filter-name'))).toEqual(['sm:col-start-2', 'sm:row-start-2']);
+      expect(place(select(branchTrigger()!))).toEqual(['sm:col-start-4', 'sm:row-start-1']);
+      expect(place(select(statusTrigger()))).toEqual(['sm:col-start-4', 'sm:row-start-2']);
+      // Branch and Status share the wider width, so a full branch name shows.
+      expect(select(branchTrigger()!).classList).toContain('w-80');
+      expect(select(statusTrigger()).classList).toContain('w-80');
+    });
+
+    it('asks for nothing when a branch is chosen, for page 1 with it on Search, and pages with it', async () => {
+      open();
+      button('Next page').click();
+      fixture.detectChanges();
+      answer();
+
+      await chooseBranch('Chennai');
+      http.expectNone(isEmployeesRequest);
+      search();
+      answer();
+      expect([branches.at(-1), sent.at(-1)?.page]).toEqual(['b-2', '1']);
+
+      await chooseBranch('All');
+      button('Next page').click();
+      fixture.detectChanges();
+      answer();
+      expect([branches.at(-1), sent.at(-1)?.page]).toEqual(['b-2', '2']);
+    });
+
+    it('sends no branch when the session branch is chosen again and searched', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      await chooseBranch('Kochi');
+      search();
+      answer();
+
+      expect(branches).toEqual([null, 'all', null]);
+    });
+
+    it('says none match when another branch was searched with no rows', async () => {
+      open();
+
+      await chooseBranch('Delhi');
+      search();
+      answer([]);
+
+      expect(rows()[0].textContent?.trim()).toBe('No employees match the filters.');
+    });
+
+    it('brings back the chosen and the searched branch after leaving and returning', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+      await chooseBranch('Delhi');
+
+      leaveAndReturn();
+      // The searched All waits for the allowed branches, which still allow it.
+      http.expectNone(isEmployeesRequest);
+      answerBranches();
+      answer();
+
+      expect(branches).toEqual(['all']);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Delhi');
+    });
+
+    it('follows a branch switch while on the session branch, asking for the allowed branches of the new session', () => {
+      open();
+
+      switchToChennai();
+
+      expect(branches.at(-1)).toBeNull();
+      expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
+    });
+
+    it('keeps a searched All after a branch switch', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      switchToChennai();
+
+      expect(branches.at(-1)).toBe('all');
+      expect(branchTrigger()!.textContent?.trim()).toBe('All');
+    });
+
+    it('lists the new session branch, disabled, after a switch to a branch without the admin right, never asking for All', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.detectChanges();
+      http.expectNone(isEmployeesRequest);
+      answerBranches([]);
+      answer();
+
+      expect(branches.at(-1)).toBeNull();
+      expect(sent.at(-1)?.page).toBe('1');
+      expect(el.querySelector('[role="alert"]')).toBeNull();
+      expect(branchTrigger()!.disabled).toBe(true);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
+    });
+
+    it('lists the session branch when the allowed branches fail after a switch, never asking for All', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.detectChanges();
+      http.expectOne(isBranchesRequest).flush(null, { status: 500, statusText: 'Server Error' });
+      fixture.detectChanges();
+      answer();
+
+      expect(branches.at(-1)).toBeNull();
+      expect(branchTrigger()!.disabled).toBe(true);
+    });
+
+    it('drops a remembered All on returning without the admin right any more', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      leaveAndReturn();
+      http.expectNone(isEmployeesRequest);
+      answerBranches([]);
+      answer();
+
+      expect(branches).toEqual([null]);
+      expect(branchTrigger()!.disabled).toBe(true);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
+    });
+
+    it('asks for the rows at once when the session branch is searched, before the allowed branches answer', () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+
+      expect(branches).toEqual([null]);
+      http.expectOne(isBranchesRequest);
+    });
+
+    it('opens with the session branch again after logging out and in', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      const auth = TestBed.inject(AuthSession);
+      fixture.destroy();
+      auth.end();
+      TestBed.tick();
+      auth.start(testSession({ token: 'next-token' }));
+      TestBed.tick();
+      leaveAndReturn();
+      answer();
+      answerBranches();
+
+      expect(branches).toEqual([null]);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
     });
   });
 
@@ -552,7 +865,7 @@ describe('EmployeeListPage', () => {
       const heads = Array.from(el.querySelectorAll('th')).map((th) => th.textContent?.trim());
       expect(heads).not.toContain('Profile');
       expect(el.querySelectorAll('[data-employee-profile-cell], a[data-slot="employee-profile"]')).toHaveLength(0);
-      expect(rows()[0].querySelectorAll('td')).toHaveLength(7);
+      expect(rows()[0].querySelectorAll('td')).toHaveLength(8);
     });
 
     it('still selects the row from the other cells', () => {
@@ -619,6 +932,62 @@ describe('EmployeeListPage', () => {
 
       expect(sent.at(-1)).toEqual({ code: null, name: 'name', page: '1', pageSize: '10' });
       expect(rows()).toHaveLength(3);
+    });
+
+    it('puts the status back to Active, chosen and searched, keeping the other filters', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      type('filter-name', 'name');
+      await chooseStatus('Relieved');
+      search();
+      answer();
+
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      await settle();
+      answer();
+
+      expect(statuses.at(-1)).toBe('active');
+      expect(sent.at(-1)).toEqual({ code: null, name: 'name', page: '1', pageSize: '10' });
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(input('filter-name').value).toBe('name');
+    });
+
+    it('opens again with Active after a branch switch made while on another screen', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      type('filter-name', 'name');
+      await chooseStatus('Relieved');
+      search();
+      answer();
+      fixture.destroy();
+
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      leaveAndReturn();
+      await settle();
+      answer();
+
+      expect(statuses).toEqual(['active']);
+      expect(sent).toEqual([{ code: null, name: 'name', page: '1', pageSize: '10' }]);
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(input('filter-name').value).toBe('name');
+    });
+
+    it('keeps a chosen status when the list is opened again in the same branch', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      await chooseStatus('Relieved');
+      search();
+      answer();
+
+      leaveAndReturn();
+      await settle();
+      answer();
+
+      expect(statuses).toEqual(['relieved']);
+      expect(statusTrigger().textContent?.trim()).toBe('Relieved');
     });
 
     it('sends no request when the session changes without a branch change', () => {

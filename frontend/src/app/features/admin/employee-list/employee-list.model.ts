@@ -10,6 +10,8 @@ export interface Employee {
   address: string | null;
   mobile: string | null;
   email: string | null;
+  /** The name of the employee's branch, or its code when the company has no branch with that code. */
+  branch: string | null;
 }
 
 /** The status filter (admin-emp-status): current employees, relieved ones, or both. */
@@ -23,19 +25,43 @@ export interface StatusOption {
 
 /** The Status dropdown's options, in display order. */
 export const STATUS_OPTIONS: readonly StatusOption[] = [
+  { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'relieved', label: 'Relieved' },
-  { value: 'all', label: 'All' },
 ];
 
 /** The status until the user searches another: current employees only. */
 export const DEFAULT_STATUS: EmployeeStatus = 'active';
+
+/** One branch of the session's company, as `GET /api/admin/employees/branches` returns it (admins only). */
+export interface EmployeeBranch {
+  id: string;
+  code: string | null;
+  name: string | null;
+}
+
+/** The `branch` value that lists every branch of the company. */
+export const ALL_BRANCHES = 'all';
+
+/**
+ * A choice of the Branch filter (admin-emp-status design D7): `null` is the session's branch, so it follows a branch
+ * switch; otherwise `all` or a branch id.
+ */
+export type BranchChoice = string | null;
+
+/** One option of the Branch dropdown. */
+export interface BranchOption {
+  value: BranchChoice;
+  label: string;
+}
 
 /** What the page asks the backend for: the searched filters and one page. */
 export interface EmployeeListQuery {
   code: string;
   name: string;
   status: EmployeeStatus;
+  /** Sent as `branch` unless it is `null` (the session's branch). */
+  branch: BranchChoice;
   /** One-based page number. */
   page: number;
   pageSize: number;
@@ -58,8 +84,10 @@ export interface EmployeeListState {
   codeInput: string;
   nameInput: string;
   statusInput: EmployeeStatus;
+  /** The branch chosen (admins only), searched or not. */
+  branchInput: BranchChoice;
   /** The filters last searched; paging and the request on return use these. */
-  applied: { code: string; name: string; status: EmployeeStatus };
+  applied: { code: string; name: string; status: EmployeeStatus; branch: BranchChoice };
   /** One-based page number. */
   page: number;
   pageSize: number;
@@ -68,6 +96,8 @@ export interface EmployeeListState {
   sortChosen: boolean;
   /** Whether the "Wrap text" toggle is on. */
   wrap: boolean;
+  /** The session's branch when the state was saved: after a branch switch the status is back to Active. */
+  sessionBranch: string | null;
 }
 
 /** The key under which the Employee List saves its state in `TableStateStore`. */
@@ -82,6 +112,7 @@ export const COLUMNS: readonly { key: SortColumn; label: string; nowrap?: boolea
   { key: 'address', label: 'Address' },
   { key: 'mobile', label: 'Mobile' },
   { key: 'email', label: 'Email' },
+  { key: 'branch', label: 'Branch' },
 ];
 
 /** The backend returns employees by name, so that is the order shown until the user chooses a sort. */

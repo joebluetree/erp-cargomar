@@ -44,7 +44,7 @@ User with its rights can only
 
 - **Date:** 2026-10-28
 - **Change Ref:** `admin-emp-status`
-- **Affects:** BR-003
+- **Affects:** BR-003, BR-004
 
 **Changes:**
 
@@ -108,6 +108,20 @@ User with its rights can only
   THEN Show only relieved = Y employee list.
 - **BR-003.S3 [v1.1]** WHEN user search all(status type) employee
   THEN Show only employee list without checking relieved column.
+
+### BR-004 — Branch Search for user employee list
+
+- **BR-004.1 [v1.1]** User can search branch wise employee list.
+- **BR-004.2 [v1.1]** Search have all branches + ALL option based on company wise.
+
+**Scenarios**
+
+- **BR-004.S1 [v1.1]** User having Admin rights for employee list will have branch filter.
+- **BR-004.S2 [v1.1]** WHEN user select a branch in branch filter
+  THEN Show employee of that branch only.
+- **BR-004.S3 [v1.1]** WHEN user select ALL in branch
+  THEN Show all employees with in all branches of same company(loged-in company).
+- **BR-004.S4 [v1.1]** branch dropdown shows all branches under the same company.
 
 ---
 
@@ -182,6 +196,12 @@ User with its rights can only
 | 1.0 | EMP_ESINO | ESI No |
 | 1.0 | EMP_UAN_NO | UAN |
 
+**Master Details**
+| Ver | Column | Description |
+|---|---|---|
+| 1.2 | REC_COMPANY_CODE | for Comapny wise filter |
+| 1.2 | REC_BRANCH_ID | for Branch wise filter |
+
 ### Parameter Table (PARAM)
 
 **Purpose:** shared lookup values. Existing table; read only. Used here for state and country names.
@@ -223,8 +243,9 @@ customer records. refere [list-screen](../../platform/list-screen.md)
 
 #### Search
 
-As defined in BR-002 and BR-003.
+As defined in BR-002, BR-003 and BR-004.
 - for status show a dropdown list with value Active, Relieved and All.
+- for user with Admin rights in employee list(NS-EMPLIST) will only have branch filter option.
 
 ### Employee List
 

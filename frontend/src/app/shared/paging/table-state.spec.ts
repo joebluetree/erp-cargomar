@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { AuthSession, SESSION_STORAGE_KEY } from '../../core/auth/auth-session';
+import { testSession } from '../../core/auth/auth-session.testing';
 import { TableStateStore } from './table-state';
 
 describe('TableStateStore', () => {
@@ -44,5 +46,50 @@ describe('TableStateStore', () => {
     TestBed.resetTestingModule();
 
     expect(TestBed.inject(TableStateStore).get('t')).toBeUndefined();
+  });
+
+  describe('per login', () => {
+    beforeEach(() => sessionStorage.removeItem(SESSION_STORAGE_KEY));
+    afterEach(() => sessionStorage.removeItem(SESSION_STORAGE_KEY));
+
+    function loggedIn() {
+      const auth = TestBed.inject(AuthSession);
+      auth.start(testSession());
+      const tables = store();
+      TestBed.tick();
+      tables.set('admin/employees', { statusInput: 'relieved' });
+      return { auth, tables };
+    }
+
+    it('is cleared on logout, also of what a closing screen saves after it', () => {
+      const { auth, tables } = loggedIn();
+
+      auth.end();
+      TestBed.tick();
+      expect(tables.get('admin/employees')).toBeUndefined();
+
+      tables.set('admin/employees', { statusInput: 'all' });
+      auth.start(testSession({ token: 'next-token' }));
+      TestBed.tick();
+      expect(tables.get('admin/employees')).toBeUndefined();
+    });
+
+    it('is cleared when another user logs in', () => {
+      const { auth, tables } = loggedIn();
+
+      auth.start(testSession({ token: 'other-token', userCode: 'U02' }));
+      TestBed.tick();
+
+      expect(tables.get('admin/employees')).toBeUndefined();
+    });
+
+    it('is kept on a branch or year switch', () => {
+      const { auth, tables } = loggedIn();
+
+      auth.start(testSession({ token: 'token-2', branchId: 'b-2', branchName: 'Chennai', yearId: 'y-2' }));
+      TestBed.tick();
+
+      expect(tables.get('admin/employees')).toEqual({ statusInput: 'relieved' });
+    });
   });
 });

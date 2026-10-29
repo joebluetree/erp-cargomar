@@ -22,5 +22,8 @@ public class EmployeeListQueryValidator : AbstractValidator<EmployeeListQuery>
 
         RuleFor(q => q.Status).Must(EmployeeStatus.IsKnown)
             .WithMessage($"Status must be {EmployeeStatus.Active}, {EmployeeStatus.Relieved} or {EmployeeStatus.All}.");
+
+        RuleFor(q => q.Branch).MaximumLength(EmployeeListQuery.MaxBranchLength)
+            .WithMessage($"Branch must be at most {EmployeeListQuery.MaxBranchLength} characters.");
     }
 }
