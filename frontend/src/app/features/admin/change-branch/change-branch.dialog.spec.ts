@@ -1,4 +1,3 @@
-import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -10,6 +9,7 @@ import { AuthSession } from '../../../core/auth/auth-session';
 import { testSession } from '../../../core/auth/auth-session.testing';
 import { httpErrorInterceptor } from '../../../core/errors/http-error.interceptor';
 import { NotificationService } from '../../../core/notifications/notification.service';
+import { HistoryEpoch } from '../../../core/navigation/history-epoch';
 import { ChangeBranchDialog } from './change-branch.dialog';
 import { CHANGE_RESPONSE, SESSION_OPTIONS } from './change-branch.testing';
 
@@ -178,22 +178,22 @@ describe('ChangeBranchDialog', () => {
       expect(dialog()).toBeNull();
     });
 
-    it('opens the current screen again after the switch, so its rights load for the new branch', async () => {
+    it('opens the Dashboard in place of the current screen after the switch, with a new history epoch', async () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
-      vi.spyOn(TestBed.inject(Location), 'path').mockReturnValue('/admin/employees?menuId=NS-EMPLIST');
+      const reset = vi.spyOn(TestBed.inject(HistoryEpoch), 'reset');
       await open();
       await choose(branch(), 'Mumbai');
 
       button('Select').click();
       await settle();
       expect(navigate).not.toHaveBeenCalled();
+      expect(reset).not.toHaveBeenCalled();
       controller.expectOne('admin/session/change').flush(CHANGE_RESPONSE);
       await settle();
 
-      expect(navigate).toHaveBeenCalledExactlyOnceWith('/admin/employees?menuId=NS-EMPLIST', {
-        onSameUrlNavigation: 'reload',
-        replaceUrl: true,
-      });
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/', { replaceUrl: true });
+      expect(reset).toHaveBeenCalledTimes(1);
+      expect(reset.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0]);
     });
 
     it('does not open the screen again when the switch is refused', async () => {

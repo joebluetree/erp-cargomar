@@ -19,6 +19,12 @@ public interface IMenuAccess
 {
     /// <summary>True when the session user has the view right, in the session branch, on the company's menu with this code.</summary>
     Task<bool> CanViewAsync(string menuCode, CancellationToken ct = default);
+
+    /// <summary>
+    /// True when the session user's rights row, in the session branch, on the company's menu with this code has the admin
+    /// right (admin-emp-status design D4).
+    /// </summary>
+    Task<bool> IsAdminAsync(string menuCode, CancellationToken ct = default);
 }
 
 /// <summary>

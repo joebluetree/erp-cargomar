@@ -6,7 +6,8 @@ namespace iErp.Admin.EmployeeProfile;
 /// <summary>
 /// Builds employee profiles and finds their photos: the logged-in user's own (the employee comes from the token,
 /// <see cref="ICurrentSession"/>, design D2, D7), and those of the employees in the session's scope that the Employee
-/// List opens (admin-emp-list design D3). An employee outside the scope is treated as not found. Both use the same
+/// List opens (admin-emp-list design D3); for an admin of the Employee List the scope is their allowed branches
+/// (admin-emp-status design D5). An employee outside the scope is treated as not found. Both use the same
 /// mapping, so the two profiles always show the same fields.
 /// </summary>
 public class EmployeeProfileService(
@@ -52,7 +53,7 @@ public class EmployeeProfileService(
         var id = Clean(employeeId);
         if (id is null)
             return null;
-        var scope = await scopes.ResolveAsync(ct);
+        var scope = await scopes.ResolveProfileAsync(ct);
         return scope is null ? null : await repository.FindInScopeAsync(id, scope, ct);
     }
 

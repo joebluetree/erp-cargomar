@@ -1,10 +1,12 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Paged } from '../../../shared/paging/paged';
-import { Employee, EmployeeListQuery } from './employee-list.model';
+import { Employee, EmployeeBranch, EmployeeListQuery } from './employee-list.model';
 
 /**
- * Loads one page of the session branch's employees from the backend and owns its state. Provided by the feature
+ * Loads one page of the employees (of the session's branch, or for an admin of the branch chosen) from the backend and
+ * owns its state. Provided by the feature
  * routes, not in root. Failures are reported by the HTTP error interceptor; the service only records that one happened.
  */
 @Injectable()
@@ -36,6 +38,7 @@ export class EmployeeListService {
     const name = query.name.trim();
     if (code) params = params.set('code', code);
     if (name) params = params.set('name', name);
+    if (query.branch !== null) params = params.set('branch', query.branch);
 
     this.http.get<Paged<Employee>>('admin/employees', { params }).subscribe({
       next: (result) => {
@@ -50,5 +53,10 @@ export class EmployeeListService {
         this._loading.set(false);
       },
     });
+  }
+
+  /** The user's allowed branches for the Branch filter; empty for a user without an admin branch. */
+  branches(): Observable<readonly EmployeeBranch[]> {
+    return this.http.get<readonly EmployeeBranch[]>('admin/employees/branches');
   }
 }

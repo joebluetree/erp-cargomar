@@ -1,5 +1,6 @@
 using NSubstitute;
 using iErp.Admin.UserRights;
+using iErp.Entities;
 using iErp.Shared.Auth;
 
 namespace iErp.Tests.Admin;
@@ -35,6 +36,42 @@ public class MenuAccessTests
         var repository = Substitute.For<IMenuRepository>();
 
         Assert.False(await new MenuAccess(repository, Session(company, user, branch)).CanViewAsync(MenuCodes.CompanyList));
+        Assert.Empty(repository.ReceivedCalls());
+    }
+
+    [Theory]
+    [InlineData("Y", true)]
+    [InlineData(" y ", true)]
+    [InlineData("N", false)]
+    [InlineData(null, false)]
+    public async Task The_admin_right_is_the_session_branch_row_s_admin_flag(string? flag, bool expected)
+    {
+        var repository = Substitute.For<IMenuRepository>();
+        repository.ListRightsAsync(
+                Arg.Is<IReadOnlyCollection<string>>(c => c!.SequenceEqual(new[] { "NS-EMPLIST" })), "CPL", "u-1", "b-1", Arg.Any<CancellationToken>())
+            .Returns([new MenuCodeRight("NS-EMPLIST", new UserRight { Id = "r-1", Admin = flag })]);
+
+        Assert.Equal(expected, await new MenuAccess(repository, Session()).IsAdminAsync(MenuCodes.EmployeeList));
+    }
+
+    [Fact]
+    public async Task Without_a_rights_row_there_is_no_admin_right()
+    {
+        var repository = Substitute.For<IMenuRepository>();
+        repository.ListRightsAsync(default!, default!, default!, default!, default).ReturnsForAnyArgs([]);
+
+        Assert.False(await new MenuAccess(repository, Session()).IsAdminAsync(MenuCodes.EmployeeList));
+    }
+
+    [Theory]
+    [InlineData(null, "u-1", "b-1")]
+    [InlineData("CPL", null, "b-1")]
+    [InlineData("CPL", "u-1", "")]
+    public async Task Without_a_company_user_or_branch_there_is_no_admin_right_and_nothing_is_read(string? company, string? user, string? branch)
+    {
+        var repository = Substitute.For<IMenuRepository>();
+
+        Assert.False(await new MenuAccess(repository, Session(company, user, branch)).IsAdminAsync(MenuCodes.EmployeeList));
         Assert.Empty(repository.ReceivedCalls());
     }
 }

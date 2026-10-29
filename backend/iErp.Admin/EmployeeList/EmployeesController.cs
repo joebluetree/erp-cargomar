@@ -8,25 +8,41 @@ using Microsoft.AspNetCore.Mvc;
 namespace iErp.Admin.EmployeeList;
 
 /// <summary>
-/// The Employee List and the profile and photo of a listed employee. All need a valid token (the default policy) and
-/// see only the employees of the session's company and branch, relieved or not; any other id answers 404.
-/// The list needs the Employee List right; an employee's profile and photo open the Profile screen, so they need the
-/// Profile right (admin-user-rights design D3).
+/// The Employee List, its branch options, and the profile and photo of a listed employee. All need a valid token (the
+/// default policy) and see only the employees of the session's company and branch, relieved or not; an admin of the
+/// list may choose another of their allowed branches or all of them, and opens any employee of those branches
+/// (admin-emp-status design D5). Any other id answers 404. The list and the branches need the Employee List right; an
+/// employee's profile and photo open the Profile screen, so they need the Profile right (admin-user-rights design D3).
 /// </summary>
 [ApiController]
 [Route("api/admin/employees")]
 public class EmployeesController(IEmployeeListService list, IEmployeeProfileService profiles) : ControllerBase
 {
     public const string NotFoundMessage = "Employee not found.";
+    public const string BranchNotAllowedMessage = "You do not have access to this branch.";
 
-    /// <summary>One page of employees, filtered by code, name and status and ordered by name.</summary>
+    /// <summary>
+    /// One page of employees, filtered by code, name, status and, for an admin, branch, and ordered by name. 403 for a
+    /// branch that is not one of the user's allowed branches.
+    /// </summary>
     [HttpGet]
     [RequiresMenu(MenuCodes.EmployeeList)]
     [ProducesResponseType<PagedResult<EmployeeListItemDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<PagedResult<EmployeeListItemDto>> List([FromQuery] EmployeeListQuery query, CancellationToken ct)
-        => await list.ListAsync(query, ct);
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> List([FromQuery] EmployeeListQuery query, CancellationToken ct)
+    {
+        var result = await list.ListAsync(query, ct);
+        return result.Error == BranchChoiceError.NotAllowed ? Forbidden() : Ok(result.Page);
+    }
+
+    /// <summary>The allowed branches for the Branch filter, ordered by name; empty for a user without an admin branch.</summary>
+    [HttpGet("branches")]
+    [RequiresMenu(MenuCodes.EmployeeList)]
+    [ProducesResponseType<IReadOnlyList<EmployeeBranchDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IReadOnlyList<EmployeeBranchDto>> Branches(CancellationToken ct) => await list.ListBranchesAsync(ct);
 
     /// <summary>The profile of a listed employee.</summary>
     [HttpGet("{id}")]
@@ -55,6 +71,9 @@ public class EmployeesController(IEmployeeListService list, IEmployeeProfileServ
         Response.Headers.CacheControl = "no-store";
         return PhysicalFile(photo.Path, photo.ContentType);
     }
+
+    private ObjectResult Forbidden() =>
+        new(ApiProblem.Create(HttpContext, StatusCodes.Status403Forbidden, BranchNotAllowedMessage)) { StatusCode = StatusCodes.Status403Forbidden };
 
     private new ObjectResult NotFound() =>
         new(ApiProblem.Create(HttpContext, StatusCodes.Status404NotFound, NotFoundMessage)) { StatusCode = StatusCodes.Status404NotFound };

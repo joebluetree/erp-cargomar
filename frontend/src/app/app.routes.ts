@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { historyEpochGuard } from './core/navigation/history-epoch';
 import { menuAccessGuard } from './core/navigation/menu-access.guard';
 import { Shell } from './shell/shell';
 
@@ -13,8 +14,10 @@ export const routes: Routes = [
   {
     path: '',
     component: Shell,
-    // Every screen inside the shell needs a session; without one the login screen is shown.
+    // Every screen inside the shell needs a session; without one the login screen is shown. The browser's Back to a
+    // screen opened before a branch switch opens the Dashboard instead.
     canMatch: [authGuard],
+    canActivateChild: [historyEpochGuard],
     children: [
       {
         path: '',

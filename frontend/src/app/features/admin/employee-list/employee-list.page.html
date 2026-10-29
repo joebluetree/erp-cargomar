@@ -6,17 +6,28 @@
 </div>
 
 <app-table-toolbar>
-  <div class="flex items-center gap-2">
-    <label hlmLabel for="filter-code">Emp. No</label>
-    <input hlmInput id="filter-code" class="w-48" type="text" autocomplete="off" [value]="codeInput()" (input)="setCodeInput($event)" />
-  </div>
-  <div class="flex items-center gap-2">
-    <label hlmLabel for="filter-name">Name</label>
-    <input hlmInput id="filter-name" class="w-48" type="text" autocomplete="off" [value]="nameInput()" (input)="setNameInput($event)" />
-  </div>
-  <div class="flex items-center gap-2">
-    <label hlmLabel for="filter-status">Status</label>
-    <hlm-select class="w-48" [formControl]="statusInput" [itemToString]="statusLabel" [isItemEqualToValue]="sameStatus">
+  <!-- Two columns of label and field, aligned as a grid: Emp. No above Name on the left, Branch above Status (wide enough
+       for a full branch name) on the right. Each cell is placed, so the source order, and so Tab, goes Emp. No, Name,
+       Branch, Status. On a narrow screen the four filters stack in that order. -->
+  <div class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-3 sm:grid-cols-[auto_auto_auto_auto]">
+    <label hlmLabel for="filter-code" class="sm:col-start-1 sm:row-start-1">Emp. No</label>
+    <input hlmInput id="filter-code" class="w-48 sm:col-start-2 sm:row-start-1" type="text" autocomplete="off" [value]="codeInput()" (input)="setCodeInput($event)" />
+    <label hlmLabel for="filter-name" class="sm:col-start-1 sm:row-start-2">Name</label>
+    <input hlmInput id="filter-name" class="w-48 sm:col-start-2 sm:row-start-2" type="text" autocomplete="off" [value]="nameInput()" (input)="setNameInput($event)" />
+    <label hlmLabel for="filter-branch" class="sm:col-start-3 sm:row-start-1 sm:ms-4">Branch</label>
+    <!-- Enabled only for an admin of the list; otherwise disabled on the session's branch (design D7). -->
+    <hlm-select class="w-80 max-w-full sm:col-start-4 sm:row-start-1" [formControl]="branchInput" [itemToString]="branchLabel" [isItemEqualToValue]="sameBranch">
+      <hlm-select-trigger buttonId="filter-branch" class="w-full">
+        <hlm-select-value />
+      </hlm-select-trigger>
+      <hlm-select-content *hlmSelectPortal>
+        @for (option of branchOptions(); track option.value) {
+          <hlm-select-item [value]="option">{{ option.label }}</hlm-select-item>
+        }
+      </hlm-select-content>
+    </hlm-select>
+    <label hlmLabel for="filter-status" class="sm:col-start-3 sm:row-start-2 sm:ms-4">Status</label>
+    <hlm-select class="w-80 max-w-full sm:col-start-4 sm:row-start-2" [formControl]="statusInput" [itemToString]="statusLabel" [isItemEqualToValue]="sameStatus">
       <hlm-select-trigger buttonId="filter-status" class="w-full">
         <hlm-select-value />
       </hlm-select-trigger>
@@ -27,7 +38,7 @@
       </hlm-select-content>
     </hlm-select>
   </div>
-  <button hlmBtn type="button" (click)="search()">
+  <button hlmBtn type="button" class="self-end" (click)="search()">
     <ng-icon name="lucideSearch" aria-hidden="true" />
     Search
   </button>

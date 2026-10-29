@@ -2,7 +2,7 @@ import { COLUMNS, Employee } from './employee-list.model';
 import { sortEmployees } from './employee-list.table';
 
 function employee(id: string, name: string | null, extra: Partial<Employee> = {}): Employee {
-  return { id, code: id, name, fatherName: null, dateOfBirth: null, address: null, mobile: null, email: null, ...extra };
+  return { id, code: id, name, fatherName: null, dateOfBirth: null, address: null, mobile: null, email: null, branch: null, ...extra };
 }
 
 const sample = [employee('2', 'bala'), employee('1', 'Anu'), employee('3', 'Gopi Kumar')];

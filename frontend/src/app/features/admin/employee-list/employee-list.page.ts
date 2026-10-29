@@ -1,9 +1,10 @@
 import { Location } from '@angular/common';
 import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
+import { Subscription } from 'rxjs';
 import { lucideArrowDown, lucideArrowLeft, lucideArrowUp, lucideArrowUpDown, lucideSearch } from '@ng-icons/lucide';
 import { appProfileColor } from '../../../shared/ui/icons/profile-color';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -22,12 +23,16 @@ import { TableToolbar } from '../../../shared/ui/table-toolbar/table-toolbar';
 import { TableWrapToggle } from '../../../shared/ui/table-wrap-toggle/table-wrap-toggle';
 import { formatDate } from '../employee-profile/employee-profile.model';
 import {
+  ALL_BRANCHES,
+  BranchChoice,
+  BranchOption,
   COLUMNS,
   DEFAULT_SORT,
   DEFAULT_STATUS,
   EMPLOYEE_LIST_STATE_KEY,
   EMPTY_VALUE,
   Employee,
+  EmployeeBranch,
   EmployeeListState,
   STATUS_OPTIONS,
   SortColumn,
@@ -40,7 +45,8 @@ import { sortEmployees } from './employee-list.table';
 
 /**
  * The Employee List: the employees of the session's company and branch, current, relieved or both (admin-emp-status),
- * read-only. It works like the Company
+ * read-only. An admin of the list (admin right in the session branch) may also choose another branch where they have
+ * the view right, or all of those. It works like the Company
  * List: the backend filters and pages, what the user types is kept apart from the filters last searched, sorting
  * reorders only the rows on screen, and the state is kept while the user is elsewhere. The employee code opens that
  * employee's profile without changing the row selection. A branch switch reloads the list for the new branch.
@@ -78,14 +84,51 @@ export class EmployeeListPage {
   /** What is typed in the filter boxes. It has no effect until the user presses Search. */
   protected readonly codeInput = signal(this.saved?.codeInput ?? '');
   protected readonly nameInput = signal(this.saved?.nameInput ?? '');
+  /** The saved status counts only in the branch it was saved in: a branch switch puts the status back to Active. */
+  private readonly savedStatus = this.saved?.sessionBranch === (this.auth.session()?.branchId ?? null) ? this.saved : undefined;
   /** The Status dropdown (an LOV field, so a form control). Like the boxes, it has no effect until Search. */
-  protected readonly statusInput = new FormControl<StatusOption>(statusOption(this.saved?.statusInput), { nonNullable: true });
+  protected readonly statusInput = new FormControl<StatusOption>(statusOption(this.savedStatus?.statusInput), { nonNullable: true });
   private readonly statusChosen = toSignal(this.statusInput.valueChanges, { initialValue: this.statusInput.value });
+  /** The session's branch; without the Branch filter the list holds that branch's employees. */
+  private readonly branchId = computed(() => this.auth.session()?.branchId ?? null);
+  /**
+   * The user's allowed branches, as the backend gives them (design D6): with the Employee List's admin right in the
+   * session branch, the session's and those where the user has its view right. Empty while they load, when they cannot
+   * be loaded, and for a user without that admin right. The rights store cannot tell which branches have the view right.
+   */
+  private readonly branches = signal<readonly EmployeeBranch[]>([]);
+  private branchesRequest?: Subscription;
+  /** Whether the allowed branches of the current session have been answered (or failed). */
+  private branchesKnown = false;
+  /** A request for rows held back until the allowed branches are known, because it would ask for another branch. */
+  private fetchWaiting = false;
+  /** The Branch filter is enabled only for an admin of the list: someone with allowed branches. */
+  protected readonly isAdmin = computed(() => this.branches().length > 0);
+  /** The Branch dropdown's options: All, then the branches by name, the session's being `null`. */
+  protected readonly branchOptions = computed<readonly BranchOption[]>(() => {
+    const own: BranchOption = { value: null, label: this.auth.session()?.branchName ?? '' };
+    const listed = this.branches().map((b) => this.branchChoice(b.id) === null ? own : { value: b.id, label: b.name ?? b.code ?? b.id });
+    return [{ value: ALL_BRANCHES, label: 'All' }, ...(listed.includes(own) ? listed : [own, ...listed])];
+  });
+  protected readonly branchLabel = (option: BranchOption) => option.label;
+  protected readonly sameBranch = (option: BranchOption, value: BranchOption | null | undefined) => option.value === value?.value;
+  /**
+   * The branch the user chose, searched or not. It is kept apart from the dropdown, which can show it only once the
+   * options have loaded (until then, and if they fail, it shows the session's branch).
+   */
+  private readonly branchWanted = signal<BranchChoice>(this.saved?.branchInput ?? null);
+  /** The Branch dropdown (admins only). Like the boxes, it has no effect until Search. */
+  protected readonly branchInput = new FormControl<BranchOption>(
+    { value: this.branchOptionOf(this.branchWanted()), disabled: true },
+    { nonNullable: true },
+  );
+
   /** The filters that were last searched. Paging uses these. */
   private readonly applied = signal({
     code: this.saved?.applied.code ?? '',
     name: this.saved?.applied.name ?? '',
-    status: this.saved?.applied.status ?? DEFAULT_STATUS,
+    status: this.savedStatus?.applied.status ?? DEFAULT_STATUS,
+    branch: this.saved?.applied.branch ?? null,
   });
 
   protected readonly page = signal(this.saved?.page ?? 1);
@@ -103,30 +146,57 @@ export class EmployeeListPage {
 
   /** Whether the shown result comes from a search with filters, to tell "no employees" from "no match". */
   protected readonly hasFilters = computed(() => {
-    const { code, name, status } = this.applied();
-    return code !== '' || name !== '' || status !== DEFAULT_STATUS;
+    const { code, name, status, branch } = this.applied();
+    return code !== '' || name !== '' || status !== DEFAULT_STATUS || this.branchChoice(branch) !== null;
   });
 
-  /** The session's branch; the list holds that branch's employees. */
-  private readonly branchId = computed(() => this.auth.session()?.branchId ?? null);
-
   constructor() {
+    // The allowed branches decide whether the Branch filter is enabled; until they arrive (or if they fail), and for a
+    // non-admin, it is disabled on the session's branch.
+    this.loadBranches();
+
     // The first request is for the remembered page with the remembered searched filters (or page 1 on a first visit).
     this.fetch();
+    effect(() => {
+      const admin = this.isAdmin();
+      untracked(() => (admin ? this.branchInput.enable({ emitEvent: false }) : this.branchInput.disable({ emitEvent: false })));
+    });
 
-    // After a branch switch the rows belong to another branch: show page 1 of the new branch's employees.
+    // A choice in the dropdown is the user's; the page's own updates below do not emit.
+    this.branchInput.valueChanges.pipe(takeUntilDestroyed()).subscribe((option) => this.branchWanted.set(this.branchChoice(option.value)));
+
+    // When the options change (loaded, or a branch switch renames the session's branch), the dropdown shows the chosen
+    // branch with its current label.
+    effect(() => {
+      this.branchOptions();
+      const option = this.branchOptionOf(this.branchWanted());
+      untracked(() => {
+        if (option !== this.branchInput.value) this.branchInput.setValue(option, { emitEvent: false });
+      });
+    });
+
+    // After a branch switch the rows belong to another branch: show page 1 of the new branch's employees, Active ones.
     let shownBranch = untracked(this.branchId);
     effect(() => {
       const branch = this.branchId();
       if (branch === shownBranch) return;
       shownBranch = branch;
-      untracked(() => this.goToPage(1));
+      untracked(() => {
+        // The allowed branches first: a branch searched in the old session may not be allowed in the new one.
+        this.loadBranches();
+        this.statusInput.setValue(statusOption(DEFAULT_STATUS));
+        this.applied.update((applied) => ({ ...applied, status: DEFAULT_STATUS }));
+        this.goToPage(1);
+      });
     });
 
     // Save the state whenever any part of it changes, and once more when the page goes away, so a change made just
     // before leaving is not lost.
     effect(() => this.saveState());
-    inject(DestroyRef).onDestroy(() => untracked(() => this.saveState()));
+    inject(DestroyRef).onDestroy(() => {
+      this.branchesRequest?.unsubscribe();
+      untracked(() => this.saveState());
+    });
 
     // A page past the end (for example employees were relieved meanwhile) comes back empty with a total that still
     // has rows: ask for the last page that has rows instead.
@@ -146,18 +216,65 @@ export class EmployeeListPage {
       codeInput: this.codeInput(),
       nameInput: this.nameInput(),
       statusInput: this.statusChosen().value,
+      branchInput: this.branchChoice(this.branchWanted()),
       applied: this.applied(),
       page: this.page(),
       pageSize: this.pageSize(),
       sort: this.sort(),
       sortChosen: this.sortChosen(),
       wrap: this.wrap(),
+      sessionBranch: this.branchId(),
     });
   }
 
   private fetch(): void {
-    const { code, name, status } = this.applied();
-    this.service.load({ code, name, status, page: this.page(), pageSize: this.pageSize() });
+    const { code, name, status, branch } = this.applied();
+    const chosen = this.branchChoice(branch);
+    // The session's branch needs no parameter and is always allowed. Another branch, searched earlier (perhaps in
+    // another session, after a branch switch), is asked for only once the allowed branches say it still is one.
+    if (chosen !== null && !this.branchesKnown) {
+      this.fetchWaiting = true;
+      return;
+    }
+    this.service.load({ code, name, status, branch: chosen, page: this.page(), pageSize: this.pageSize() });
+  }
+
+  /** Asks for the allowed branches of the current session; an answer for an earlier session is dropped. */
+  private loadBranches(): void {
+    this.branchesRequest?.unsubscribe();
+    this.branchesKnown = false;
+    const known = (branches: readonly EmployeeBranch[]) => {
+      this.branches.set(branches);
+      this.branchesKnown = true;
+      this.dropBranchNotAllowed();
+      if (this.fetchWaiting) {
+        this.fetchWaiting = false;
+        this.fetch();
+      }
+    };
+    this.branchesRequest = this.service.branches().subscribe({ next: known, error: () => known([]) });
+  }
+
+  /**
+   * Puts the searched and the chosen branch back to the session's when they are no longer allowed, such as All after a
+   * switch to a branch without the admin right: such a user lists their session's branch only.
+   */
+  private dropBranchNotAllowed(): void {
+    const allowed = (choice: BranchChoice) =>
+      choice === null || (this.isAdmin() && (choice === ALL_BRANCHES || this.branches().some((b) => b.id === choice)));
+    if (!allowed(this.branchChoice(this.applied().branch))) this.applied.update((applied) => ({ ...applied, branch: null }));
+    if (!allowed(this.branchChoice(this.branchWanted()))) this.branchWanted.set(null);
+  }
+
+  /** The choice as kept: the session's branch id is `null`, so the choice follows a branch switch. */
+  private branchChoice(choice: BranchChoice): BranchChoice {
+    return choice === untracked(this.branchId) ? null : choice;
+  }
+
+  /** The dropdown option for a choice; the session's branch when it is not (yet) among the options. */
+  private branchOptionOf(choice: BranchChoice): BranchOption {
+    const options = untracked(this.branchOptions);
+    return options.find((o) => o.value === this.branchChoice(choice)) ?? options.find((o) => o.value === null)!;
   }
 
   /** Back to the page the user came from, or the Dashboard when this page was opened directly. */
@@ -179,7 +296,13 @@ export class EmployeeListPage {
 
   /** Applies the typed filters: one request for page 1. */
   protected search(): void {
-    this.applied.set({ code: this.codeInput().trim(), name: this.nameInput().trim(), status: this.statusInput.value.value });
+    this.applied.set({
+      code: this.codeInput().trim(),
+      name: this.nameInput().trim(),
+      status: this.statusInput.value.value,
+      // Only an admin has the dropdown; anyone else searches the session's branch.
+      branch: this.isAdmin() ? this.branchChoice(this.branchInput.value.value) : null,
+    });
     this.page.set(1);
     this.fetch();
   }

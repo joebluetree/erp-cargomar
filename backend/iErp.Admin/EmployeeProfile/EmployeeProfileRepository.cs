@@ -14,6 +14,9 @@ public class EmployeeProfileRepository(AppDbContext db) : IEmployeeProfileReposi
     public const string StateType = "STATE";
     public const string CountryType = "COUNTRY";
 
+    /// <summary>The <c>COMP_TYPE</c> of a branch.</summary>
+    public const string BranchType = "B";
+
     public Task<Employee?> FindEmployeeAsync(string employeeId, CancellationToken ct = default) =>
         Employee(employeeId).FirstOrDefaultAsync(ct);
 
@@ -25,7 +28,7 @@ public class EmployeeProfileRepository(AppDbContext db) : IEmployeeProfileReposi
 
     /// <summary>The branch (COMP_TYPE 'B') by id. Public so tests can check the SQL it produces for Oracle 10g.</summary>
     public IQueryable<Company> Branch(string branchId) =>
-        db.Set<Company>().AsNoTracking().Where(c => c.Id == branchId && c.Type == "B");
+        db.Set<Company>().AsNoTracking().Where(c => c.Id == branchId && c.Type == BranchType);
 
     public async Task<IReadOnlyList<Parameter>> ListPlacesAsync(IReadOnlyCollection<string> ids, CancellationToken ct = default) =>
         ids.Count == 0 ? [] : await Places(ids).ToListAsync(ct);
