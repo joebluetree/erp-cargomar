@@ -39,6 +39,23 @@
   --color-profile-label: var(--profile-label);
   --color-profile-box: var(--profile-box);
   --color-profile-photo: var(--profile-photo);
+  /* The notification bar above the header (admin-notify-bar): white with ICEGATE's navbar navy (#menu-main #183473)
+     for the text in the light theme (11.8:1), black with white text in the dark theme (21:1), as the user asked; a
+     thin line in the theme's border color sets it off from the header. The text is shown once at a time: it starts at the right end of the bar's
+     text lane (its left padding is the lane's width) and moves until it has left the lane on the left, then starts
+     again; the bar sets the pass's duration from the text's length (--announcement-duration), so every text moves at
+     about the same speed. */
+  --color-announcement: var(--announcement-bg);
+  --color-announcement-foreground: var(--announcement-fg);
+  --animate-announcement: announcement var(--announcement-duration, 20s) linear infinite;
+  @keyframes announcement {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
 }
 
 :root {
@@ -100,6 +117,9 @@
   --header-user-bg: oklch(0.93 0.045 265);
   --header-branch-bg: oklch(0.93 0.06 150);
   --header-year-bg: oklch(0.94 0.06 75);
+  /* White, with ICEGATE's navbar navy for the text (11.8:1). */
+  --announcement-bg: #ffffff;
+  --announcement-fg: #183473;
   /* Profile screen, the colors of its reference UI template. The page keeps its white background and the boxes are
      tinted pale blue-grey (--profile-box). On that tint: box headings in dark slate (11.4:1), field labels in blue (5.0:1;
      the template's lighter blue is only 2.9:1 on white; it is used for every label, including the basic rows). */
@@ -162,6 +182,9 @@
   --header-user-bg: oklch(0.32 0.09 265);
   --header-branch-bg: oklch(0.32 0.07 150);
   --header-year-bg: oklch(0.34 0.07 70);
+  /* Black in the dark theme, with white text (21:1). */
+  --announcement-bg: #000000;
+  --announcement-fg: #ffffff;
   /* before the chips: --header-user: oklch(77.54% 0.17271 65.397); --header-branch: oklch(86.738% 0.28702 143.363); */
   
     /* --header-user: oklch(71.181% 0.15682 249.571);

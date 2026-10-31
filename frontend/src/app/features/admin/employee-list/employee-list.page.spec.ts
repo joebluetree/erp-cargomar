@@ -630,7 +630,7 @@ describe('EmployeeListPage', () => {
       expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
     });
 
-    it('keeps a searched All after a branch switch', async () => {
+    it('puts a searched All back to the session branch after a branch switch', async () => {
       open();
       await chooseBranch('All');
       search();
@@ -638,8 +638,84 @@ describe('EmployeeListPage', () => {
 
       switchToChennai();
 
-      expect(branches.at(-1)).toBe('all');
-      expect(branchTrigger()!.textContent?.trim()).toBe('All');
+      expect(branches.at(-1)).toBeNull();
+      expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
+    });
+
+    it('puts a chosen branch, not searched, back to the session branch after a branch switch', async () => {
+      open();
+      await chooseBranch('Delhi');
+
+      switchToChennai();
+
+      expect(branches.at(-1)).toBeNull();
+      expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
+    });
+
+    it('puts a chosen and a searched branch back to the session branch after a year switch, asking for page 1', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+      await chooseBranch('Delhi');
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      fixture.detectChanges();
+      http.expectNone(isBranchesRequest);
+      answer();
+
+      expect(branches.at(-1)).toBeNull();
+      expect(sent.at(-1)?.page).toBe('1');
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
+    });
+
+    it('opens with the new session branch after a branch switch that closes the list before it resets', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      // The Change Branch dialog switches the session and goes to the Dashboard: the list closes at once.
+      TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.destroy();
+      leaveAndReturn();
+      answer();
+      answerBranches();
+
+      expect(branches).toEqual([null]);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Chennai');
+    });
+
+    it('opens with the session branch after a year switch that closes the list before it resets', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      fixture.destroy();
+      leaveAndReturn();
+      answer();
+      answerBranches();
+
+      expect(branches).toEqual([null]);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
+    });
+
+    it('opens with the session branch after a year switch made while on another screen', async () => {
+      open();
+      await chooseBranch('All');
+      search();
+      answer();
+      fixture.destroy();
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      leaveAndReturn();
+      answer();
+      answerBranches();
+
+      expect(branches).toEqual([null]);
+      expect(branchTrigger()!.textContent?.trim()).toBe('Kochi');
     });
 
     it('lists the new session branch, disabled, after a switch to a branch without the admin right, never asking for All', async () => {
@@ -650,7 +726,6 @@ describe('EmployeeListPage', () => {
 
       TestBed.inject(AuthSession).start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
       fixture.detectChanges();
-      http.expectNone(isEmployeesRequest);
       answerBranches([]);
       answer();
 
@@ -915,10 +990,11 @@ describe('EmployeeListPage', () => {
   });
 
   describe('branch switch', () => {
-    it('shows page 1 of the new branch\'s employees, keeping the searched filters', () => {
+    it('shows page 1 of the new branch\'s employees with Emp. No and Name back to empty, typed and searched', () => {
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
+      type('filter-code', '10');
       type('filter-name', 'name');
       search();
       answer();
@@ -930,11 +1006,13 @@ describe('EmployeeListPage', () => {
       fixture.detectChanges();
       answer(many.slice(0, 3));
 
-      expect(sent.at(-1)).toEqual({ code: null, name: 'name', page: '1', pageSize: '10' });
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '10' });
       expect(rows()).toHaveLength(3);
+      expect(input('filter-code').value).toBe('');
+      expect(input('filter-name').value).toBe('');
     });
 
-    it('puts the status back to Active, chosen and searched, keeping the other filters', async () => {
+    it('puts the status back to Active and the boxes back to empty, chosen and searched', async () => {
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
@@ -948,12 +1026,12 @@ describe('EmployeeListPage', () => {
       answer();
 
       expect(statuses.at(-1)).toBe('active');
-      expect(sent.at(-1)).toEqual({ code: null, name: 'name', page: '1', pageSize: '10' });
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '10' });
       expect(statusTrigger().textContent?.trim()).toBe('Active');
-      expect(input('filter-name').value).toBe('name');
+      expect(input('filter-name').value).toBe('');
     });
 
-    it('opens again with Active after a branch switch made while on another screen', async () => {
+    it('opens again with the default search fields after a branch switch made while on another screen', async () => {
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
@@ -969,15 +1047,16 @@ describe('EmployeeListPage', () => {
       answer();
 
       expect(statuses).toEqual(['active']);
-      expect(sent).toEqual([{ code: null, name: 'name', page: '1', pageSize: '10' }]);
+      expect(sent).toEqual([{ code: null, name: null, page: '1', pageSize: '10' }]);
       expect(statusTrigger().textContent?.trim()).toBe('Active');
-      expect(input('filter-name').value).toBe('name');
+      expect(input('filter-name').value).toBe('');
     });
 
-    it('keeps a chosen status when the list is opened again in the same branch', async () => {
+    it('keeps the search fields when the list is opened again in the same branch and year', async () => {
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
+      type('filter-name', 'name');
       await chooseStatus('Relieved');
       search();
       answer();
@@ -988,17 +1067,70 @@ describe('EmployeeListPage', () => {
 
       expect(statuses).toEqual(['relieved']);
       expect(statusTrigger().textContent?.trim()).toBe('Relieved');
+      expect(input('filter-name').value).toBe('name');
     });
 
-    it('sends no request when the session changes without a branch change', () => {
+    it('sends no request when the session changes without a branch or year change', () => {
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
       create();
       answer();
 
-      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      TestBed.inject(AuthSession).start(testSession({ token: 'next-token' }));
       fixture.detectChanges();
 
       http.expectNone(isEmployeesRequest);
+    });
+
+    it('sends no request on a year switch when the searched fields are the defaults, but clears what was typed or chosen', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      type('filter-code', '10');
+      await chooseStatus('Relieved');
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      await settle();
+
+      http.expectNone(isEmployeesRequest);
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(input('filter-code').value).toBe('');
+    });
+
+    it('puts the searched fields back to their defaults on a year switch, asking for page 1', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      type('filter-name', 'name');
+      await chooseStatus('Relieved');
+      search();
+      answer();
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      await settle();
+      answer();
+
+      expect(statuses.at(-1)).toBe('active');
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '10' });
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
+      expect(input('filter-name').value).toBe('');
+    });
+
+    it('opens again with Active after a year switch made while on another screen', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      await chooseStatus('Relieved');
+      search();
+      answer();
+      fixture.destroy();
+
+      TestBed.inject(AuthSession).start(testSession({ yearId: 'y-2' }));
+      leaveAndReturn();
+      await settle();
+      answer();
+
+      expect(statuses).toEqual(['active']);
+      expect(statusTrigger().textContent?.trim()).toBe('Active');
     });
   });
 });

@@ -5,9 +5,11 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
+import { AnnouncementStore } from '../core/announcement/announcement.store';
 import { AuthSession } from '../core/auth/auth-session';
 import { ThemeService } from '../core/theme/theme.service';
 import { AppIconTone } from '../shared/ui/icon-tone/icon-tone';
+import { AnnouncementBar } from './announcement-bar';
 import { AppNav } from './app-nav';
 import { LoadingService } from '../core/loading/loading.service';
 import { LoadingBar } from '../shared/ui/loading-bar/loading-bar';
@@ -19,11 +21,11 @@ import { LoadingOverlay } from '../shared/ui/loading-overlay/loading-overlay';
  * below that the sidebar is hidden and the header hamburger opens it as a sheet. The choice to hide the sidebar lives
  * here, in the component that stays alive across routes, so it is kept while the application stays open and is gone
  * after a reload. The header's title is the logged-in company; it also holds the user, branch and year, Change branch,
- * the light/dark theme switch and Log out.
+ * the light/dark theme switch and Log out. Above the header, the bar with the latest announcement, when there is one.
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, NgIcon, HlmButtonImports, HlmSheetImports, AppNav, AppIconTone, LoadingBar, LoadingOverlay],
+  imports: [RouterOutlet, RouterLink, NgIcon, HlmButtonImports, HlmSheetImports, AnnouncementBar, AppNav, AppIconTone, LoadingBar, LoadingOverlay],
   providers: [provideIcons({ lucideArrowLeftRight, lucideBuilding2, lucideCalendarDays, lucideLogOut, lucideMenu, lucideMoon, lucideSun, lucideUser })],
   templateUrl: './shell.html',
 })
@@ -33,6 +35,8 @@ export class Shell {
   private readonly dialogs = inject(HlmDialogService);
   protected readonly auth = inject(AuthSession);
   protected readonly loading = inject(LoadingService);
+  /** The latest announcement, for the bar above the header. */
+  protected readonly announcements = inject(AnnouncementStore);
 
   /** The header's main title: the logged-in company, or the fixed name when there is no session. */
   protected readonly title = computed(() => this.auth.details()?.company || 'Cargomar Pvt Ltd');

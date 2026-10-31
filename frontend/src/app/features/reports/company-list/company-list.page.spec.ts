@@ -5,6 +5,8 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { AuthSession, SESSION_STORAGE_KEY } from '../../../core/auth/auth-session';
+import { testSession } from '../../../core/auth/auth-session.testing';
 import { TableStateStore } from '../../../shared/paging/table-state';
 import { COMPANY_LIST_STATE_KEY, Company, CompanyListState } from './company-list.model';
 import { CompanyListPage } from './company-list.page';
@@ -873,6 +875,117 @@ describe('CompanyListPage', () => {
       expect(input('filter-code').value).toBe('');
       expect(header('Name').getAttribute('aria-sort')).toBe('ascending');
       expect(selected()).toEqual([]);
+    });
+  });
+
+  describe('branch or year switch', () => {
+    const auth = () => TestBed.inject(AuthSession);
+
+    /** Opens the list logged in, then types and searches Code and Name, showing page 2 of 5. */
+    function openAndSearch() {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      choosePageSize(5);
+      answer();
+      type('filter-code', 'c');
+      type('filter-name', 'name');
+      search();
+      answer();
+      pageTo('Next page');
+    }
+
+    function leaveAndReturn() {
+      sent = [];
+      fixture.destroy();
+      fixture = TestBed.createComponent(CompanyListPage);
+      el = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+    }
+
+    afterEach(() => sessionStorage.removeItem(SESSION_STORAGE_KEY));
+
+    it('puts Code and Name back to empty on a branch switch, typed and searched, asking for page 1', () => {
+      openAndSearch();
+
+      auth().start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.detectChanges();
+      answer();
+
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '5' });
+      expect(input('filter-code').value).toBe('');
+      expect(input('filter-name').value).toBe('');
+    });
+
+    it('puts Code and Name back to empty on a year switch, asking for page 1', () => {
+      openAndSearch();
+
+      auth().start(testSession({ yearId: 'y-2' }));
+      fixture.detectChanges();
+      answer();
+
+      expect(sent.at(-1)).toEqual({ code: null, name: null, page: '1', pageSize: '5' });
+      expect(input('filter-code').value).toBe('');
+      expect(input('filter-name').value).toBe('');
+    });
+
+    it('sends no request on a switch when nothing was searched, but clears what was typed', () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      create();
+      answer();
+      type('filter-code', 'c');
+
+      auth().start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      fixture.detectChanges();
+
+      http.expectNone(isCompaniesRequest);
+      expect(input('filter-code').value).toBe('');
+    });
+
+    it('sends no request when the session changes without a branch or year change, keeping the fields', () => {
+      openAndSearch();
+
+      auth().start(testSession({ token: 'next-token' }));
+      fixture.detectChanges();
+
+      http.expectNone(isCompaniesRequest);
+      expect(input('filter-code').value).toBe('c');
+    });
+
+    it('opens with empty fields after a switch made while on another screen', () => {
+      openAndSearch();
+      fixture.destroy();
+
+      auth().start(testSession({ yearId: 'y-2' }));
+      leaveAndReturn();
+      answer();
+
+      expect(sent).toEqual([{ code: null, name: null, page: '2', pageSize: '5' }]);
+      expect(input('filter-code').value).toBe('');
+      expect(input('filter-name').value).toBe('');
+    });
+
+    it('opens with empty fields after a switch that closes the list before it resets', () => {
+      openAndSearch();
+
+      // The Change Branch dialog switches the session and goes to the Dashboard: the list closes at once.
+      auth().start(testSession({ branchId: 'b-2', branchName: 'Chennai' }));
+      leaveAndReturn();
+      answer();
+
+      expect(sent.at(-1)?.code).toBeNull();
+      expect(sent.at(-1)?.name).toBeNull();
+      expect(input('filter-code').value).toBe('');
+    });
+
+    it('keeps the fields when the list is opened again in the same branch and year', () => {
+      openAndSearch();
+
+      leaveAndReturn();
+      answer();
+
+      expect(sent).toEqual([{ code: 'c', name: 'name', page: '2', pageSize: '5' }]);
+      expect(input('filter-code').value).toBe('c');
     });
   });
 

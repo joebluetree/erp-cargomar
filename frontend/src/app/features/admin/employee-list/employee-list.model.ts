@@ -96,8 +96,12 @@ export interface EmployeeListState {
   sortChosen: boolean;
   /** Whether the "Wrap text" toggle is on. */
   wrap: boolean;
-  /** The session's branch when the state was saved: after a branch switch the status is back to Active. */
+  /**
+   * The session's branch and year the search fields were set for: after a branch or year switch Emp. No, Name, Branch
+   * and Status are back to their defaults (empty, empty, the session's branch, Active).
+   */
   sessionBranch: string | null;
+  sessionYear: string | null;
 }
 
 /** The key under which the Employee List saves its state in `TableStateStore`. */

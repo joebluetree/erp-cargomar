@@ -13,6 +13,7 @@ import { provideTestMenu } from '../core/navigation/menu.testing';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { vi } from 'vitest';
+import { routes } from '../app.routes';
 import { Shell } from './shell';
 
 @Component({ template: '<p id="page-body">Page body</p>' })
@@ -535,6 +536,58 @@ describe('Shell', () => {
       // Whatever Back restores, the page that was open before cannot be shown again without a login.
       await harness.navigateByUrl('/reports');
       expect(router.url).toBe('/login');
+    });
+  });
+
+  describe('notification bar', () => {
+    const bar = (el: HTMLElement) => el.querySelector<HTMLElement>('app-announcement-bar');
+    const content = (el: HTMLElement) => el.querySelector<HTMLElement>('[data-slot="app-content"]')!;
+    const announcementRequests = () => TestBed.inject(HttpTestingController).match('admin/notification');
+
+    async function renderWith(answer: object | 'none') {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession()));
+      const rendered = await render();
+      const [req] = announcementRequests();
+      if (answer === 'none') req.flush({ title: 'Notification not found.' }, { status: 404, statusText: 'Not Found' });
+      else req.flush(answer);
+      await settle(rendered.harness);
+      return rendered;
+    }
+
+    it('shows the bar with the heading as the top line, above the header, on every screen', async () => {
+      const { harness, el } = await renderWith({ id: 7, banner: 'Office closed on Friday', heading: 'The heading', content: null, createdDate: null });
+
+      expect(content(el).firstElementChild?.tagName).toBe('APP-ANNOUNCEMENT-BAR');
+      expect(content(el).children[1].tagName).toBe('HEADER');
+      expect(bar(el)!.querySelector('[data-slot="announcement-text"]')!.textContent).toBe('Office closed on Friday');
+
+      await harness.navigateByUrl('/reports');
+      await settle(harness);
+      expect(bar(el)!.querySelector('[data-slot="announcement-text"]')!.textContent).toBe('Office closed on Friday');
+      // Asked once for the session, not again for another screen.
+      expect(announcementRequests()).toHaveLength(0);
+    });
+
+    it('shows no bar without a notification: the header is the top line', async () => {
+      const { el } = await renderWith('none');
+
+      expect(bar(el)).toBeNull();
+      expect(content(el).firstElementChild?.tagName).toBe('HEADER');
+    });
+
+    it('is never on the login screen, which is outside the shell', () => {
+      const login = routes.find((r) => r.path === 'login')!;
+      expect(login.component).toBeUndefined();
+      expect(routes.find((r) => r.component === Shell)!.children!.some((c) => c.path === 'login')).toBe(false);
+    });
+
+    it('removes the bar on logout', async () => {
+      const { harness, el } = await renderWith({ id: 7, banner: 'Office closed on Friday', heading: 'The heading', content: null, createdDate: null });
+
+      TestBed.inject(AuthSession).end();
+      await settle(harness);
+
+      expect(bar(el)).toBeNull();
     });
   });
 });

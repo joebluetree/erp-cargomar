@@ -46,6 +46,12 @@ export interface CompanyListState {
   sortChosen: boolean;
   /** Whether the "Wrap text" toggle is on. Optional so state saved before it existed means the default (on). */
   wrap?: boolean;
+  /**
+   * The session's branch and year the search fields were set for: after a branch or year switch Code and Name are back
+   * to empty. Optional so state saved before they existed counts as another session's.
+   */
+  sessionBranch?: string | null;
+  sessionYear?: string | null;
 }
 
 /** The key under which the Company List saves its state in `TableStateStore`. */

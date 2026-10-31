@@ -55,6 +55,12 @@ export const routes: Routes = [
           import('./features/admin/holiday-list/holiday-list.routes').then((m) => m.HOLIDAY_LIST_ROUTES),
       },
       {
+        // The latest announcement, opened from the bar above the header; every logged-in user may open it (no menu).
+        path: 'admin/notification',
+        loadChildren: () =>
+          import('./features/admin/notification/notification.routes').then((m) => m.NOTIFICATION_ROUTES),
+      },
+      {
         // In place of a screen without the view right (the menu access guard keeps the screen's URL).
         path: 'no-access',
         loadComponent: () => import('./features/no-access/no-access.page').then((m) => m.NoAccessPage),

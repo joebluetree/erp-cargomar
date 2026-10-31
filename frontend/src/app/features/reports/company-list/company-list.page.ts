@@ -13,6 +13,7 @@ import { PageTitle } from '../../../shared/ui/page-title/page-title';
 import { TableToolbar } from '../../../shared/ui/table-toolbar/table-toolbar';
 import { TableWrapToggle } from '../../../shared/ui/table-wrap-toggle/table-wrap-toggle';
 import { TableStateStore } from '../../../shared/paging/table-state';
+import { AuthSession } from '../../../core/auth/auth-session';
 import { COLUMNS, COMPANY_LIST_STATE_KEY, CompanyListState, DEFAULT_SORT, SortColumn, SortState } from './company-list.model';
 import { CompanyListSelection } from './company-list.selection';
 import { CompanyListService } from './company-list.service';
@@ -22,7 +23,8 @@ import { sortCompanies } from './company-list.table';
  * The Company List report. The backend filters and pages: a search or a page change is one request. What the user
  * types is kept apart from the filters that were last searched, so paging never uses text that was not searched.
  * Sorting reorders only the rows of the page on screen. The page state is saved while it changes and restored when the
- * page is shown again, so leaving and returning shows the same filters, page, page size, sort and selection.
+ * page is shown again, so leaving and returning shows the same filters, page, page size, sort and selection. A branch
+ * or year switch puts the search fields (Code, Name) back to empty.
  */
 @Component({
   selector: 'app-company-list',
@@ -34,6 +36,7 @@ export class CompanyListPage {
   protected readonly service = inject(CompanyListService);
   private readonly selection = inject(CompanyListSelection);
   private readonly stateStore = inject(TableStateStore);
+  private readonly auth = inject(AuthSession);
   private readonly location = inject(Location);
   private readonly router = inject(Router);
   /** True when the user reached this page from another page of the app, so browser history can take them back. */
@@ -44,11 +47,25 @@ export class CompanyListPage {
   /** What the user left behind last time (undefined on the first visit and after a browser reload). */
   private readonly saved = this.stateStore.get<CompanyListState>(COMPANY_LIST_STATE_KEY);
 
+  /** The session's branch and year; a switch of either resets the search fields. */
+  private readonly branchId = computed(() => this.auth.session()?.branchId ?? null);
+  private readonly yearId = computed(() => this.auth.session()?.yearId ?? null);
+  /**
+   * The branch and year the search fields were last set for. They are saved instead of the session's: a switch that
+   * closes the page before it could reset the fields (the Change Branch dialog goes to the Dashboard) must not save
+   * the old fields as the new session's.
+   */
+  private filtersBranch = untracked(this.branchId);
+  private filtersYear = untracked(this.yearId);
+  /** The saved search fields count only in the branch and year they were saved in. */
+  private readonly savedFilters =
+    this.saved?.sessionBranch === this.filtersBranch && this.saved?.sessionYear === this.filtersYear ? this.saved : undefined;
+
   /** What is typed in the filter boxes. It has no effect until the user presses Search. */
-  protected readonly codeInput = signal(this.saved?.codeInput ?? '');
-  protected readonly nameInput = signal(this.saved?.nameInput ?? '');
+  protected readonly codeInput = signal(this.savedFilters?.codeInput ?? '');
+  protected readonly nameInput = signal(this.savedFilters?.nameInput ?? '');
   /** The filters that were last searched. Paging uses these. */
-  private readonly applied = signal(this.saved?.applied ?? { code: '', name: '' });
+  private readonly applied = signal(this.savedFilters?.applied ?? { code: '', name: '' });
 
   protected readonly page = signal(this.saved?.page ?? 1);
   protected readonly pageSize = signal(this.saved?.pageSize ?? DEFAULT_PAGE_SIZE);
@@ -69,6 +86,23 @@ export class CompanyListPage {
   constructor() {
     // The first request is for the remembered page with the remembered searched filters (or page 1 on a first visit).
     this.fetch();
+
+    // A branch or year switch puts the search fields back to empty, typed and searched. The companies do not depend on
+    // the session's branch or year, so the list asks again (for page 1) only when the searched fields were not empty.
+    effect(() => {
+      const branch = this.branchId();
+      const year = this.yearId();
+      if (branch === this.filtersBranch && year === this.filtersYear) return;
+      untracked(() => {
+        const { code, name } = this.applied();
+        this.codeInput.set('');
+        this.nameInput.set('');
+        this.applied.set({ code: '', name: '' });
+        this.filtersBranch = branch;
+        this.filtersYear = year;
+        if (code !== '' || name !== '') this.goToPage(1);
+      });
+    });
 
     // Save the state whenever any part of it changes, and once more when the page goes away, so a change made just
     // before leaving is not lost.
@@ -98,6 +132,8 @@ export class CompanyListPage {
       sort: this.sort(),
       sortChosen: this.sortChosen(),
       wrap: this.wrap(),
+      sessionBranch: this.filtersBranch,
+      sessionYear: this.filtersYear,
     });
   }
 

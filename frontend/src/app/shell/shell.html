@@ -1,5 +1,9 @@
 <!-- While a backend request runs the application is inert (no focus or keys) and the freeze layer catches clicks. -->
 <div class="flex min-h-screen flex-col" data-slot="app-content" [attr.inert]="loading.busy() ? '' : null">
+  <!-- The latest announcement, above the header; without one the header is the top line (admin-notify-bar). -->
+  @if (announcements.barText(); as text) {
+    <app-announcement-bar [text]="text" />
+  }
   <header class="relative flex h-14 items-center gap-2 border-b px-4">
     <button
       hlmBtn
