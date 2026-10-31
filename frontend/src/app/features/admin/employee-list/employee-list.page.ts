@@ -49,7 +49,8 @@ import { sortEmployees } from './employee-list.table';
  * the view right, or all of those. It works like the Company
  * List: the backend filters and pages, what the user types is kept apart from the filters last searched, sorting
  * reorders only the rows on screen, and the state is kept while the user is elsewhere. The employee code opens that
- * employee's profile without changing the row selection. A branch switch reloads the list for the new branch.
+ * employee's profile without changing the row selection. A branch switch reloads the list for the new branch; a branch
+ * or year switch puts the search fields (Emp. No, Name, Branch, Status) back to their defaults.
  */
 @Component({
   selector: 'app-employee-list',
@@ -81,16 +82,32 @@ export class EmployeeListPage {
   /** What the user left behind last time (undefined on the first visit and after a browser reload). */
   private readonly saved = this.stateStore.get<EmployeeListState>(EMPLOYEE_LIST_STATE_KEY);
 
+  /**
+   * The saved search fields count only in the branch and year they were saved in: a branch or year switch puts Emp. No,
+   * Name, Branch and Status back to their defaults.
+   */
+  private readonly savedFilters =
+    this.saved?.sessionBranch === (this.auth.session()?.branchId ?? null) && this.saved?.sessionYear === (this.auth.session()?.yearId ?? null)
+      ? this.saved
+      : undefined;
+
   /** What is typed in the filter boxes. It has no effect until the user presses Search. */
-  protected readonly codeInput = signal(this.saved?.codeInput ?? '');
-  protected readonly nameInput = signal(this.saved?.nameInput ?? '');
-  /** The saved status counts only in the branch it was saved in: a branch switch puts the status back to Active. */
-  private readonly savedStatus = this.saved?.sessionBranch === (this.auth.session()?.branchId ?? null) ? this.saved : undefined;
+  protected readonly codeInput = signal(this.savedFilters?.codeInput ?? '');
+  protected readonly nameInput = signal(this.savedFilters?.nameInput ?? '');
   /** The Status dropdown (an LOV field, so a form control). Like the boxes, it has no effect until Search. */
-  protected readonly statusInput = new FormControl<StatusOption>(statusOption(this.savedStatus?.statusInput), { nonNullable: true });
+  protected readonly statusInput = new FormControl<StatusOption>(statusOption(this.savedFilters?.statusInput), { nonNullable: true });
   private readonly statusChosen = toSignal(this.statusInput.valueChanges, { initialValue: this.statusInput.value });
   /** The session's branch; without the Branch filter the list holds that branch's employees. */
   private readonly branchId = computed(() => this.auth.session()?.branchId ?? null);
+  /** The session's financial year; a year switch resets the search fields. */
+  private readonly yearId = computed(() => this.auth.session()?.yearId ?? null);
+  /**
+   * The branch and year the search fields were last set for. They are saved instead of the session's: a switch that
+   * closes the page before it could reset the fields (the Change Branch dialog goes to the Dashboard) must not save
+   * the old fields as the new session's.
+   */
+  private filtersBranch = untracked(this.branchId);
+  private filtersYear = untracked(this.yearId);
   /**
    * The user's allowed branches, as the backend gives them (design D6): with the Employee List's admin right in the
    * session branch, the session's and those where the user has its view right. Empty while they load, when they cannot
@@ -116,7 +133,7 @@ export class EmployeeListPage {
    * The branch the user chose, searched or not. It is kept apart from the dropdown, which can show it only once the
    * options have loaded (until then, and if they fail, it shows the session's branch).
    */
-  private readonly branchWanted = signal<BranchChoice>(this.saved?.branchInput ?? null);
+  private readonly branchWanted = signal<BranchChoice>(this.savedFilters?.branchInput ?? null);
   /** The Branch dropdown (admins only). Like the boxes, it has no effect until Search. */
   protected readonly branchInput = new FormControl<BranchOption>(
     { value: this.branchOptionOf(this.branchWanted()), disabled: true },
@@ -125,10 +142,10 @@ export class EmployeeListPage {
 
   /** The filters that were last searched. Paging uses these. */
   private readonly applied = signal({
-    code: this.saved?.applied.code ?? '',
-    name: this.saved?.applied.name ?? '',
-    status: this.savedStatus?.applied.status ?? DEFAULT_STATUS,
-    branch: this.saved?.applied.branch ?? null,
+    code: this.savedFilters?.applied.code ?? '',
+    name: this.savedFilters?.applied.name ?? '',
+    status: this.savedFilters?.applied.status ?? DEFAULT_STATUS,
+    branch: this.savedFilters?.applied.branch ?? null,
   });
 
   protected readonly page = signal(this.saved?.page ?? 1);
@@ -175,18 +192,27 @@ export class EmployeeListPage {
       });
     });
 
-    // After a branch switch the rows belong to another branch: show page 1 of the new branch's employees, Active ones.
-    let shownBranch = untracked(this.branchId);
+    // A branch or year switch puts the search fields back to their defaults (Emp. No and Name empty, the session's
+    // branch, Active), typed and searched. After a branch switch the rows belong to another branch: show page 1 of the
+    // new branch's employees. A year switch asks again only when the searched fields were not the defaults.
     effect(() => {
       const branch = this.branchId();
-      if (branch === shownBranch) return;
-      shownBranch = branch;
+      const year = this.yearId();
+      if (branch === this.filtersBranch && year === this.filtersYear) return;
+      const branchSwitched = branch !== this.filtersBranch;
       untracked(() => {
-        // The allowed branches first: a branch searched in the old session may not be allowed in the new one.
-        this.loadBranches();
+        const { code, name, status, branch: searched } = this.applied();
+        const searchedDefaults = code === '' && name === '' && status === DEFAULT_STATUS && this.branchChoice(searched) === null;
+        // The allowed branches first: they decide whether the Branch filter is enabled in the new session.
+        if (branchSwitched) this.loadBranches();
+        this.codeInput.set('');
+        this.nameInput.set('');
         this.statusInput.setValue(statusOption(DEFAULT_STATUS));
-        this.applied.update((applied) => ({ ...applied, status: DEFAULT_STATUS }));
-        this.goToPage(1);
+        this.branchWanted.set(null);
+        this.applied.set({ code: '', name: '', status: DEFAULT_STATUS, branch: null });
+        this.filtersBranch = branch;
+        this.filtersYear = year;
+        if (branchSwitched || !searchedDefaults) this.goToPage(1);
       });
     });
 
@@ -223,7 +249,8 @@ export class EmployeeListPage {
       sort: this.sort(),
       sortChosen: this.sortChosen(),
       wrap: this.wrap(),
-      sessionBranch: this.branchId(),
+      sessionBranch: this.filtersBranch,
+      sessionYear: this.filtersYear,
     });
   }
 

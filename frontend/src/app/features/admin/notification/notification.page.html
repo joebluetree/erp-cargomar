@@ -1,0 +1,35 @@
+<div class="mb-4 flex items-center gap-2">
+  <button hlmBtn variant="ghost" size="icon" type="button" aria-label="Back" (click)="back()">
+    <ng-icon name="lucideArrowLeft" aria-hidden="true" />
+  </button>
+  <h1 appPageTitle>Notification</h1>
+</div>
+<app-page-rule />
+
+@if (service.loading()) {
+  <!-- While it loads, the screen shows nothing of its own: the shell freezes it and shows the spinner. -->
+} @else if (service.notFound()) {
+  <p role="status" data-slot="not-found" class="p-4 text-muted-foreground">There is no notification.</p>
+} @else if (service.error()) {
+  <div role="alert" class="flex flex-wrap items-center gap-4 rounded-md border p-4">
+    <p>The notification could not be loaded.</p>
+    <button hlmBtn variant="outline" type="button" (click)="reload()">Retry</button>
+  </div>
+} @else if (service.announcement(); as announcement) {
+  <!-- One tinted box like the Holiday List's that fits its text: as wide as the longest line and as high as the lines,
+       so the heading and the content show exactly as entered (pre): every space and line break is kept, and no line is
+       wrapped. A line wider than the screen does not break: the box stops at the screen's width and scrolls sideways. -->
+  <section
+    hlmCard
+    class="h-fit w-fit max-w-full rounded-2xl bg-profile-box shadow-md ring-0"
+    data-slot="notification-box"
+    aria-label="Notification"
+  >
+    <div hlmCardContent class="overflow-x-auto">
+      <h2 data-slot="notification-heading" class="font-semibold whitespace-pre text-profile-heading">{{ headingText(announcement) }}</h2>
+      @if (announcement.content) {
+        <p data-slot="notification-content" class="mt-4 whitespace-pre">{{ announcement.content }}</p>
+      }
+    </div>
+  </section>
+}

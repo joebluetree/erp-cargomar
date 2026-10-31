@@ -8,6 +8,7 @@ using iErp.Admin.HolidayList;
 using iErp.Shared.Auth;
 using iErp.SharedBusiness.Holidays;
 using iErp.Admin.Login;
+using iErp.Admin.Notification;
 using iErp.Admin.Session;
 using iErp.Admin.UserRights;
 
@@ -34,6 +35,8 @@ public static class AdminRegistration
         services.AddScoped<IHolidayListRepository, HolidayListRepository>();
         services.AddScoped<IHolidayListService, HolidayListService>();
         services.TryAddSingleton<IHolidayFileStore, HolidayFileStore>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IMenuRepository, MenuRepository>();
         services.AddScoped<IUserMenuService, UserMenuService>();
         services.AddScoped<IMenuAccess, MenuAccess>();
