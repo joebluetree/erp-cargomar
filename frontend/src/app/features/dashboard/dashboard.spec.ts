@@ -25,7 +25,7 @@ describe('Dashboard', () => {
     const { el } = create();
 
     expect(el.querySelector('h1')?.textContent).toContain('Dashboard');
-    expect(el.textContent).toContain('Welcome to iErp');
+    expect(el.textContent).toContain('Welcome to Cargomar Portal');
   });
 
   it('shows the heading in the primary color', () => {
@@ -39,7 +39,7 @@ describe('Dashboard', () => {
 
     expect(el.querySelector('[role="status"]')).toBeNull();
     expect(el.textContent).not.toContain('Loading');
-    expect(el.textContent).toContain('Welcome to iErp');
+    expect(el.textContent).toContain('Welcome to Cargomar Portal');
   });
 
   it('shows no quick-links section while the user has no menus', () => {
