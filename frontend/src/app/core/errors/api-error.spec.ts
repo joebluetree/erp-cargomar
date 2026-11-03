@@ -3,6 +3,7 @@ import {
   NETWORK_ERROR_MESSAGE,
   NOT_FOUND_MESSAGE,
   SERVER_ERROR_MESSAGE,
+  VALIDATION_ERROR_MESSAGE,
   isApiError,
   toApiError,
 } from './api-error';
@@ -35,6 +36,18 @@ describe('toApiError', () => {
 
   it('has no field errors for a 400 without an errors map', () => {
     expect(toApiError(failure(400, { title: 'Bad request' })).fieldErrors).toBeUndefined();
+  });
+
+  it("keeps a 400's own title when it has no field errors", () => {
+    expect(toApiError(failure(400, { title: 'The holiday list file is empty.' })).message).toBe('The holiday list file is empty.');
+  });
+
+  it('keeps the general message for a 400 with field errors or without a title', () => {
+    expect(toApiError(failure(400, { title: 'One or more validation errors occurred.', errors: { Title: ['Required'] } })).message).toBe(
+      VALIDATION_ERROR_MESSAGE,
+    );
+    expect(toApiError(failure(400, {})).message).toBe(VALIDATION_ERROR_MESSAGE);
+    expect(toApiError(failure(400, null)).message).toBe(VALIDATION_ERROR_MESSAGE);
   });
 
   it('uses the problem title for other 4xx responses when present', () => {

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using iErp.Admin.ChangeBranch;
 using iErp.Admin.Session;
+using iErp.Admin.UserRights;
 using iErp.Entities;
 using iErp.Shared.Auth;
 using iErp.Shared.Lib;
@@ -88,18 +89,24 @@ public class LoginService(
         }
 
         var (user, company) = credentials.Value;
+        // The same branch rule as the switch: the admin user may use every branch of the company (admin-admin-user-rights D6).
         var branch = string.IsNullOrWhiteSpace(row.BranchId)
             ? await DefaultBranchAsync(user, company, ct)
-            : await switchable.FindBranchAsync(user.Id, company.Id, row.BranchId.Trim(), ct);
+            : AdminUser.IsCode(user.Code)
+                ? await switchable.FindCompanyBranchAsync(company.Id, row.BranchId.Trim(), ct)
+                : await switchable.FindBranchAsync(user.Id, company.Id, row.BranchId.Trim(), ct);
         if (branch is null)
         {
             logger.LogWarning("Automatic login failed for user {UserCode} of company {CompanyCode}: branch not allowed", userCode, companyCode);
             return Failed();
         }
 
+        // The same year rule as the switch: the admin user may use every year of the company, closed or not (D7).
         var year = string.IsNullOrWhiteSpace(row.YearId)
             ? await repository.FindLatestYearAsync(company.Code!, ct)
-            : await switchable.FindYearAsync(company.Code ?? "", row.YearId.Trim(), ct);
+            : AdminUser.IsCode(user.Code)
+                ? await switchable.FindCompanyYearAsync(company.Code ?? "", row.YearId.Trim(), ct)
+                : await switchable.FindYearAsync(company.Code ?? "", row.YearId.Trim(), ct);
         if (year is null)
         {
             logger.LogWarning("Automatic login failed for user {UserCode} of company {CompanyCode}: year not allowed", userCode, companyCode);

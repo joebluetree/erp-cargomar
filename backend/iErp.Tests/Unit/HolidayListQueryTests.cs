@@ -35,4 +35,28 @@ public class HolidayListQueryTests
         Assert.Contains("\"YEARM\"", sql);
         Assert.Contains("\"YEAR_PKID\"", sql);
     }
+
+    [Fact]
+    public void An_uploaded_file_s_branch_is_a_not_deleted_branch_of_the_company_by_code()
+    {
+        var sql = Repository().CompanyBranchByCode("c-1", " coksf ").ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.Matches("\"COMP_TYPE\" = N?'+B'+", sql);
+        Assert.Contains("\"COMP_PARENT_ID\"", sql);
+        Assert.Contains("IS NULL", sql);
+        Assert.Contains("UPPER(", sql);
+        Assert.Contains("COKSF", sql);
+    }
+
+    [Fact]
+    public void An_uploaded_file_s_year_is_a_year_of_the_company_by_code_open_or_closed()
+    {
+        var sql = Repository().CompanyYearByCode("CPL", 2026m).ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.Contains("\"REC_COMPANY_CODE\"", sql);
+        Assert.Contains("\"YEAR_CODE\"", sql);
+        Assert.DoesNotMatch("\"YEAR_CLOSED\" =", sql);
+    }
 }

@@ -10,6 +10,9 @@ public interface IMenuRepository
     /// <summary>The company's new-software menus on which the user has the view right in the branch.</summary>
     Task<IReadOnlyList<Menu>> ListVisibleMenusAsync(string companyCode, string userId, string branchId, CancellationToken ct = default);
 
+    /// <summary>All the company's new-software menus, with no rights read: the admin user's menu.</summary>
+    Task<IReadOnlyList<Menu>> ListNewSoftwareMenusAsync(string companyCode, CancellationToken ct = default);
+
     /// <summary>The company's modules with these ids.</summary>
     Task<IReadOnlyList<MenuModule>> ListModulesAsync(string companyCode, IReadOnlyCollection<string> ids, CancellationToken ct = default);
 
@@ -37,6 +40,9 @@ public class MenuRepository(AppDbContext db) : IMenuRepository
 
     public async Task<IReadOnlyList<Menu>> ListVisibleMenusAsync(string companyCode, string userId, string branchId, CancellationToken ct = default) =>
         await VisibleMenus(companyCode, userId, branchId).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Menu>> ListNewSoftwareMenusAsync(string companyCode, CancellationToken ct = default) =>
+        await NewSoftwareMenus(companyCode).ToListAsync(ct);
 
     public async Task<IReadOnlyList<MenuModule>> ListModulesAsync(string companyCode, IReadOnlyCollection<string> ids, CancellationToken ct = default) =>
         ids.Count == 0
@@ -71,6 +77,7 @@ public class MenuRepository(AppDbContext db) : IMenuRepository
     public IQueryable<string> ViewRightIds(string menuCode, string companyCode, string userId, string branchId) =>
         VisibleMenus(companyCode, userId, branchId).Where(m => m.Code == menuCode).Select(m => m.Id);
 
-    private IQueryable<Menu> NewSoftwareMenus(string companyCode) =>
+    /// <summary>The company's new-software menus. Public so tests can check the SQL it produces for Oracle 10g.</summary>
+    public IQueryable<Menu> NewSoftwareMenus(string companyCode) =>
         db.Set<Menu>().AsNoTracking().Where(m => m.CompanyCode == companyCode && m.NewSoftware == Yes);
 }

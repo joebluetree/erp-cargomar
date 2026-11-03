@@ -33,6 +33,18 @@ public class MenuQueryTests
     }
 
     [Fact]
+    public void The_admin_user_s_menus_are_the_company_s_new_software_menus_with_no_rights_read()
+    {
+        var sql = Repository().NewSoftwareMenus("CPL").ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.Contains("\"MENUM\"", sql);
+        Assert.Contains("\"REC_COMPANY_CODE\"", sql);
+        Assert.Matches("\"MENU_NEWSOFTWARE\" = N?'+Y'+", sql);
+        Assert.DoesNotContain("\"USERRIGHTS\"", sql);
+    }
+
+    [Fact]
     public void The_view_right_check_reads_one_menu_id_with_no_bool_literal()
     {
         // The exact query the check runs (FirstOrDefault of it); AnyAsync would add THEN TRUE ELSE FALSE.

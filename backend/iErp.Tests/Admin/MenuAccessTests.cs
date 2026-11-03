@@ -7,13 +7,55 @@ namespace iErp.Tests.Admin;
 
 public class MenuAccessTests
 {
-    private static ICurrentSession Session(string? companyCode = " CPL ", string? userId = " u-1 ", string? branchId = " b-1 ")
+    private static ICurrentSession Session(string? companyCode = " CPL ", string? userId = " u-1 ", string? branchId = " b-1 ", string? userCode = "U01")
     {
         var session = Substitute.For<ICurrentSession>();
         session.CompanyCode.Returns(companyCode);
         session.UserId.Returns(userId);
         session.BranchId.Returns(branchId);
+        session.UserCode.Returns(userCode);
         return session;
+    }
+
+    [Theory]
+    [InlineData("ADMIN")]
+    [InlineData(" admin ")]
+    public async Task The_admin_user_can_view_and_is_admin_on_any_menu_with_nothing_read(string userCode)
+    {
+        var repository = Substitute.For<IMenuRepository>();
+        var access = new MenuAccess(repository, Session(userCode: userCode));
+
+        Assert.True(await access.CanViewAsync(MenuCodes.CompanyList));
+        Assert.True(await access.CanViewAsync("NS-ANY"));
+        Assert.True(await access.IsAdminAsync(MenuCodes.EmployeeList));
+        Assert.Empty(repository.ReceivedCalls());
+    }
+
+    [Theory]
+    [InlineData(null, "u-1", "b-1", "NS-COMPLIST")]
+    [InlineData("CPL", null, "b-1", "NS-COMPLIST")]
+    [InlineData("CPL", "u-1", "", "NS-COMPLIST")]
+    [InlineData("CPL", "u-1", "b-1", " ")]
+    public async Task The_admin_user_without_a_full_session_or_with_a_blank_code_has_no_access(string? company, string? user, string? branch, string code)
+    {
+        var repository = Substitute.For<IMenuRepository>();
+        var access = new MenuAccess(repository, Session(company, user, branch, "ADMIN"));
+
+        Assert.False(await access.CanViewAsync(code));
+        Assert.False(await access.IsAdminAsync(code));
+        Assert.Empty(repository.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task A_user_whose_code_only_contains_admin_keeps_the_row_based_answers()
+    {
+        var repository = Substitute.For<IMenuRepository>();
+        repository.ListRightsAsync(default!, default!, default!, default!, default).ReturnsForAnyArgs([]);
+        var access = new MenuAccess(repository, Session(userCode: "SUBADMIN"));
+
+        Assert.False(await access.CanViewAsync(MenuCodes.CompanyList));
+        Assert.False(await access.IsAdminAsync(MenuCodes.EmployeeList));
+        await repository.Received(1).HasViewRightAsync("NS-COMPLIST", "CPL", "u-1", "b-1", Arg.Any<CancellationToken>());
     }
 
     [Theory]

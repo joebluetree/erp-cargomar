@@ -28,6 +28,19 @@ public class ChangeBranchQueryTests
     }
 
     [Fact]
+    public void The_company_years_query_has_no_boolean_literals_keeps_closed_years_and_the_same_order()
+    {
+        var sql = Repository().CompanyYears("CMP").ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        // The column is selected, but closed years are not filtered out.
+        Assert.DoesNotMatch("\"YEAR_CLOSED\" =", sql);
+        Assert.Contains("\"REC_COMPANY_CODE\"", sql);
+        Assert.Contains("ORDER BY CASE", sql);
+        Assert.Contains("\"YEAR_START_DATE\" DESC", sql);
+    }
+
+    [Fact]
     public void The_allowed_branches_query_has_no_boolean_literals_and_reads_only_the_USERD_keys()
     {
         var sql = Repository().AllowedBranches("u-1", "c-1").ToQueryString();
@@ -35,5 +48,16 @@ public class ChangeBranchQueryTests
         Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
         Assert.Contains("\"USERD\"", sql);
         Assert.DoesNotContain("ICEGATE", sql);
+    }
+
+    [Fact]
+    public void The_company_branches_query_has_no_boolean_literals_and_reads_no_USERD()
+    {
+        var sql = Repository().CompanyBranches("c-1").ToQueryString();
+
+        Assert.DoesNotMatch(@"\b(TRUE|FALSE)\b", sql);
+        Assert.Contains("\"COMPANYM\"", sql);
+        Assert.Matches("\"COMP_TYPE\" = N?'+B'+", sql);
+        Assert.DoesNotContain("\"USERD\"", sql);
     }
 }

@@ -49,3 +49,15 @@
     </div>
   </section>
 }
+
+@if (canUpload() && !service.loading() && !service.error()) {
+  <!-- Admins only (the Holiday List's admin right, or the admin user): below the list, the empty message or "Holiday
+       List Not Found", so a first file can be uploaded too. -->
+  <!-- Set off by a thin line above and below, in the color of the line under the page's title. -->
+  <div class="mt-4 border-y border-table-line py-4" data-slot="holiday-upload-bar">
+    <button hlmBtn type="button" data-slot="holiday-upload" (click)="openUpload()">
+      <ng-icon name="lucideUpload" aria-hidden="true" />
+      Upload
+    </button>
+  </div>
+}

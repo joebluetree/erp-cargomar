@@ -26,6 +26,12 @@ public class ChangeBranchRepository(AppDbContext db) : IChangeBranchRepository
     public Task<Company?> FindBranchAsync(string userId, string companyId, string branchId, CancellationToken ct = default) =>
         AllowedBranches(userId, companyId).Where(c => c.Id == branchId).FirstOrDefaultAsync(ct);
 
+    public async Task<IReadOnlyList<Company>> ListCompanyBranchesAsync(string companyId, CancellationToken ct = default) =>
+        await CompanyBranches(companyId).OrderBy(c => c.Name).ThenBy(c => c.Id).ToListAsync(ct);
+
+    public Task<Company?> FindCompanyBranchAsync(string companyId, string branchId, CancellationToken ct = default) =>
+        CompanyBranches(companyId).Where(c => c.Id == branchId).FirstOrDefaultAsync(ct);
+
     public async Task<IReadOnlyList<FinancialYear>> ListYearsAsync(string companyCode, CancellationToken ct = default) =>
         await Years(companyCode).ToListAsync(ct);
 
@@ -34,18 +40,41 @@ public class ChangeBranchRepository(AppDbContext db) : IChangeBranchRepository
             .Where(y => y.Id == yearId && y.CompanyCode == companyCode && y.Closed == "N")
             .FirstOrDefaultAsync(ct);
 
+    public async Task<IReadOnlyList<FinancialYear>> ListCompanyYearsAsync(string companyCode, CancellationToken ct = default) =>
+        await CompanyYears(companyCode).ToListAsync(ct);
+
+    public Task<FinancialYear?> FindCompanyYearAsync(string companyCode, string yearId, CancellationToken ct = default) =>
+        db.Set<FinancialYear>().AsNoTracking()
+            .Where(y => y.Id == yearId && y.CompanyCode == companyCode)
+            .FirstOrDefaultAsync(ct);
+
     /// <summary>The company's open years (YEAR_CLOSED = 'N'), newest first. Public so tests can check the SQL it produces for Oracle 10g.</summary>
     public IQueryable<FinancialYear> Years(string companyCode) =>
-        db.Set<FinancialYear>().AsNoTracking()
-            .Where(y => y.CompanyCode == companyCode && y.Closed == "N")
-            // Newest first; a year without a start date goes last (Oracle would put NULLs first in a descending sort).
-            // Sorted on a number, not a bool: Oracle 10g has no TRUE/FALSE literals for EF's CASE.
-            .OrderBy(y => y.StartDate == null ? 1 : 0).ThenByDescending(y => y.StartDate).ThenBy(y => y.Id);
+        Ordered(db.Set<FinancialYear>().AsNoTracking().Where(y => y.CompanyCode == companyCode && y.Closed == "N"));
+
+    /// <summary>
+    /// Every year of the company, open or closed, newest first: the admin user's years (admin-admin-user-rights design
+    /// D7). Public so tests can check the SQL it produces for Oracle 10g.
+    /// </summary>
+    public IQueryable<FinancialYear> CompanyYears(string companyCode) =>
+        Ordered(db.Set<FinancialYear>().AsNoTracking().Where(y => y.CompanyCode == companyCode));
+
+    // Newest first; a year without a start date goes last (Oracle would put NULLs first in a descending sort).
+    // Sorted on a number, not a bool: Oracle 10g has no TRUE/FALSE literals for EF's CASE.
+    private static IQueryable<FinancialYear> Ordered(IQueryable<FinancialYear> years) =>
+        years.OrderBy(y => y.StartDate == null ? 1 : 0).ThenByDescending(y => y.StartDate).ThenBy(y => y.Id);
 
     /// <summary>The user's allotted branches of the company. Public so tests can check the SQL it produces for Oracle 10g.</summary>
     public IQueryable<Company> AllowedBranches(string userId, string companyId) =>
         from allotted in db.Set<UserBranch>().AsNoTracking()
-        join branch in db.Set<Company>().AsNoTracking() on allotted.BranchId equals branch.Id
-        where allotted.UserId == userId && branch.Type == "B" && branch.DeletedDate == null && branch.ParentId == companyId
+        join branch in CompanyBranches(companyId) on allotted.BranchId equals branch.Id
+        where allotted.UserId == userId
         select branch;
+
+    /// <summary>
+    /// The company's not-deleted branches (type "B" under it), allotted or not: the admin user's branches
+    /// (admin-admin-user-rights design D6). Public so tests can check the SQL it produces for Oracle 10g.
+    /// </summary>
+    public IQueryable<Company> CompanyBranches(string companyId) =>
+        db.Set<Company>().AsNoTracking().Where(branch => branch.Type == "B" && branch.DeletedDate == null && branch.ParentId == companyId);
 }

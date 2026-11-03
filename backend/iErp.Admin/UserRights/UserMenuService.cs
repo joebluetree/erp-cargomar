@@ -17,6 +17,9 @@ public record MenuCodeRightsDto(string Code, bool View, bool Add, bool Edit, boo
 {
     /// <summary>No right at all: no such menu, or no rights row.</summary>
     public static MenuCodeRightsDto None(string code) => new(code, false, false, false, false, false, false, false, false, false);
+
+    /// <summary>Every right: the admin user's, on any code.</summary>
+    public static MenuCodeRightsDto All(string code) => new(code, true, true, true, true, true, true, true, true, true);
 }
 
 public interface IUserMenuService
@@ -39,7 +42,10 @@ public class UserMenuService(IMenuRepository repository, ICurrentSession current
         if (Session() is not var (companyCode, userId, branchId))
             return new UserMenuDto([]);
 
-        var menus = await repository.ListVisibleMenusAsync(companyCode, userId, branchId, ct);
+        // The admin user sees every new-software menu of the company, with no rights read (admin-admin-user-rights D2).
+        var menus = AdminUser.Is(current)
+            ? await repository.ListNewSoftwareMenusAsync(companyCode, ct)
+            : await repository.ListVisibleMenusAsync(companyCode, userId, branchId, ct);
         var moduleIds = menus.Select(m => m.ModuleId?.Trim()).OfType<string>().Where(id => id.Length > 0).Distinct().ToList();
         var modules = await repository.ListModulesAsync(companyCode, moduleIds, ct);
 
@@ -60,6 +66,9 @@ public class UserMenuService(IMenuRepository repository, ICurrentSession current
         var wanted = codes.Select(c => c.Trim()).ToList();
         if (Session() is not var (companyCode, userId, branchId))
             return wanted.Select(MenuCodeRightsDto.None).ToList();
+        // The admin user has every right on every code, with nothing read (admin-admin-user-rights D3).
+        if (AdminUser.Is(current))
+            return wanted.Select(MenuCodeRightsDto.All).ToList();
 
         var rows = await repository.ListRightsAsync(wanted.Distinct().ToList(), companyCode, userId, branchId, ct);
         // At most one row per user, menu and branch; the first wins should the data hold more.

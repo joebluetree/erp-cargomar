@@ -7,12 +7,13 @@ namespace iErp.Tests.Admin;
 
 public class UserMenuServiceTests
 {
-    private static ICurrentSession Session(string? companyCode = " CPL ", string? userId = "u-1", string? branchId = "b-1")
+    private static ICurrentSession Session(string? companyCode = " CPL ", string? userId = "u-1", string? branchId = "b-1", string? userCode = "U01")
     {
         var session = Substitute.For<ICurrentSession>();
         session.CompanyCode.Returns(companyCode);
         session.UserId.Returns(userId);
         session.BranchId.Returns(branchId);
+        session.UserCode.Returns(userCode);
         return session;
     }
 
@@ -74,6 +75,35 @@ public class UserMenuServiceTests
     }
 
     [Fact]
+    public async Task The_admin_user_gets_every_new_software_menu_under_its_module_in_order_with_no_rights_read()
+    {
+        var (service, repository) = ServiceWith(Session(userCode: " admin "), [], [
+            new MenuModule { Id = "hr", Name = "Hr", Order = 50 },
+            new MenuModule { Id = "acc", Name = "Accounts", Order = 40 },
+        ]);
+        repository.ListNewSoftwareMenusAsync("CPL", Arg.Any<CancellationToken>()).Returns(
+            [Menu("m2", "hr", 2, "Profile"), Menu("m1", "hr", 1, "Company List"), Menu("m3", "acc", 1, "Ledger")]);
+
+        var menu = await service.GetMenuAsync();
+
+        Assert.Equal(["Accounts", "Hr"], menu.Modules.Select(m => m.Name));
+        Assert.Equal(["Company List", "Profile"], menu.Modules[1].Menus.Select(m => m.Name));
+        await repository.DidNotReceiveWithAnyArgs().ListVisibleMenusAsync(default!, default!, default!, default);
+    }
+
+    [Fact]
+    public async Task A_user_whose_code_only_contains_admin_gets_the_visible_menus()
+    {
+        var (service, repository) = ServiceWith(Session(userCode: "SUBADMIN"), [Menu("m1", "hr", 1, "Company List")],
+            [new MenuModule { Id = "hr", Name = "Hr", Order = 50 }]);
+
+        var menu = await service.GetMenuAsync();
+
+        Assert.Equal(["Company List"], menu.Modules.Single().Menus.Select(m => m.Name));
+        await repository.DidNotReceiveWithAnyArgs().ListNewSoftwareMenusAsync(default!, default);
+    }
+
+    [Fact]
     public async Task Rights_are_true_only_for_Y()
     {
         var (service, repository) = ServiceWith(Session(), [], []);
@@ -105,6 +135,30 @@ public class UserMenuServiceTests
         await repository.Received(1).ListRightsAsync(
             Arg.Is<IReadOnlyCollection<string>>(c => c!.SequenceEqual(new[] { "NS-EMPPROFILE", "NS-EMPLIST", "OTHER" })),
             "CPL", "u-1", "b-1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task The_admin_user_has_every_right_on_each_code_in_the_order_given_with_nothing_read()
+    {
+        var (service, repository) = ServiceWith(Session(userCode: "ADMIN"), [], []);
+
+        var rights = await service.GetRightsAsync([" NS-EMPLIST ", "NS-EMPPROFILE"]);
+
+        Assert.Equal([MenuCodeRightsDto.All("NS-EMPLIST"), MenuCodeRightsDto.All("NS-EMPPROFILE")], rights);
+        Assert.Equal(new MenuCodeRightsDto("NS-EMPLIST", true, true, true, true, true, true, true, true, true), rights[0]);
+        Assert.Empty(repository.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task A_user_whose_code_only_contains_admin_keeps_the_rights_of_their_rows()
+    {
+        var (service, repository) = ServiceWith(Session(userCode: "ADMIN1"), [], []);
+        repository.ListRightsAsync(Arg.Any<IReadOnlyCollection<string>>(), "CPL", "u-1", "b-1", Arg.Any<CancellationToken>()).Returns(
+            [new MenuCodeRight("NS-EMPLIST", new UserRight { Id = "r", View = "Y" })]);
+
+        var rights = await service.GetRightsAsync(["NS-EMPLIST"]);
+
+        Assert.Equal([new MenuCodeRightsDto("NS-EMPLIST", true, false, false, false, false, false, false, false, false)], rights);
     }
 
     [Fact]

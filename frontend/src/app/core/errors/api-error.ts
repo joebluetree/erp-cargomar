@@ -37,7 +37,12 @@ export function toApiError(error: HttpErrorResponse): ApiError {
     return { status: 0, message: NETWORK_ERROR_MESSAGE };
   }
   if (error.status === 400) {
-    return { status: 400, message: VALIDATION_ERROR_MESSAGE, fieldErrors: toFieldErrors(error.error) };
+    const fieldErrors = toFieldErrors(error.error);
+    // A refusal without field errors (such as an upload's "The holiday list file is empty.") keeps the backend's own
+    // text; form validation, which marks its fields, keeps the general message.
+    const title = (error.error as { title?: unknown } | null)?.title;
+    const message = !fieldErrors && typeof title === 'string' && title ? title : VALIDATION_ERROR_MESSAGE;
+    return { status: 400, message, fieldErrors };
   }
   if (error.status === 404) {
     return { status: 404, message: NOT_FOUND_MESSAGE };

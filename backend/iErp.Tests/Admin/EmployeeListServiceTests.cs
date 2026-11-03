@@ -2,6 +2,7 @@ using NSubstitute;
 using iErp.Admin.ChangeBranch;
 using iErp.Admin.EmployeeList;
 using iErp.Admin.EmployeeProfile;
+using iErp.Admin.UserRights;
 using iErp.Entities;
 using iErp.Shared.Auth;
 using iErp.Tests.TestSupport;
@@ -263,6 +264,39 @@ public class EmployeeScopeResolverTests
         Assert.Empty(await Resolver().ListAllowedBranchesAsync());
         Assert.Empty(await Resolver(admin: true, companyId: null).ListAllowedBranchesAsync());
         Assert.Empty(await Resolver(admin: true, userId: null).ListAllowedBranchesAsync());
+    }
+
+    [Fact]
+    public async Task The_admin_user_with_no_rights_rows_is_allowed_every_branch_of_the_company()
+    {
+        // The real rights check, with no USERRIGHTS rows at all: only the user code ADMIN gives the admin right. The
+        // company also has Mumbai (b-4), which is not assigned to the user.
+        var session = Session(" CMP ", "b-1", "c-1", " u-1 ");
+        session.UserCode.Returns("ADMIN");
+        var menus = Substitute.For<IMenuRepository>();
+        var mumbai = new Company { Id = "b-4", Code = "BOM", Name = "Mumbai" };
+        var assigned = Assigned();
+        assigned.ListCompanyBranchesAsync("c-1", Arg.Any<CancellationToken>()).Returns([Chennai, Delhi, Kochi, mumbai]);
+        var resolver = new EmployeeScopeResolver(Branches(), assigned, session, new MenuAccess(menus, session));
+
+        Assert.Equal([Chennai, Delhi, Kochi, mumbai], await resolver.ListAllowedBranchesAsync());
+        Assert.Equal(new EmployeeListScope(new EmployeeScope("CMP", ["KOC", "CHN", "DEL", "BOM"])), await resolver.ResolveListAsync("all"));
+        Assert.Equal(new EmployeeListScope(new EmployeeScope("CMP", "BOM")), await resolver.ResolveListAsync("b-4"));
+        Assert.Equal(new EmployeeListScope(null, BranchChoiceError.NotAllowed), await resolver.ResolveListAsync("b-other"));
+        Assert.Empty(menus.ReceivedCalls());
+        await assigned.DidNotReceiveWithAnyArgs().ListBranchesAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task A_rights_admin_who_is_not_the_admin_user_keeps_the_assigned_branches()
+    {
+        var assigned = Assigned();
+        var access = new FakeMenuAccess();
+        access.AdminOf.Add(MenuCodes.EmployeeList);
+        var resolver = new EmployeeScopeResolver(Branches(), assigned, Session(" CMP ", "b-1", "c-1", " u-1 "), access);
+
+        Assert.Equal([Chennai, Delhi, Kochi], await resolver.ListAllowedBranchesAsync());
+        await assigned.DidNotReceiveWithAnyArgs().ListCompanyBranchesAsync(default!, default);
     }
 
     [Fact]

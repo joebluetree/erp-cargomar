@@ -34,6 +34,7 @@ public static class AdminRegistration
         services.AddScoped<IEmployeeListService, EmployeeListService>();
         services.AddScoped<IHolidayListRepository, HolidayListRepository>();
         services.AddScoped<IHolidayListService, HolidayListService>();
+        services.AddScoped<IHolidayUploadService, HolidayUploadService>();
         services.TryAddSingleton<IHolidayFileStore, HolidayFileStore>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationService, NotificationService>();

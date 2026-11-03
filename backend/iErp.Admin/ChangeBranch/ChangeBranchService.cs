@@ -1,6 +1,7 @@
 using System.Globalization;
 using iErp.Admin.Login;
 using iErp.Admin.Session;
+using iErp.Admin.UserRights;
 using iErp.Entities;
 using iErp.Shared.Auth;
 using Microsoft.Extensions.Logging;
@@ -25,8 +26,15 @@ public class ChangeBranchService(
             return null;
 
         var (user, company) = context.Value;
-        var branches = await repository.ListBranchesAsync(user.Id, company.Id, ct);
-        var years = await repository.ListYearsAsync(company.Code ?? "", ct);
+        // The admin user may switch to every branch and every year, closed or not, of the company (admin-admin-user-rights
+        // design D6, D7).
+        var admin = AdminUser.IsCode(user.Code);
+        var branches = admin
+            ? await repository.ListCompanyBranchesAsync(company.Id, ct)
+            : await repository.ListBranchesAsync(user.Id, company.Id, ct);
+        var years = admin
+            ? await repository.ListCompanyYearsAsync(company.Code ?? "", ct)
+            : await repository.ListYearsAsync(company.Code ?? "", ct);
         return new SessionOptions(
             branches.Select(b => new BranchOption(b.Id, b.Name ?? "")).ToList(),
             years.Select(y => new YearOption(y.Id, YearCode(y), y.Name ?? "")).ToList());
@@ -39,14 +47,21 @@ public class ChangeBranchService(
             return new ChangeBranchResult(ChangeBranchOutcome.SessionGone);
 
         var (user, company) = context.Value;
-        var branch = await repository.FindBranchAsync(user.Id, company.Id, request.BranchId!.Trim(), ct);
+        var admin = AdminUser.IsCode(user.Code);
+        var branchId = request.BranchId!.Trim();
+        var branch = admin
+            ? await repository.FindCompanyBranchAsync(company.Id, branchId, ct)
+            : await repository.FindBranchAsync(user.Id, company.Id, branchId, ct);
         if (branch is null)
         {
             logger.LogWarning("Branch change refused for user {UserCode}: branch {BranchId} is not allotted", user.Code, request.BranchId);
             return new ChangeBranchResult(ChangeBranchOutcome.BranchNotAllowed);
         }
 
-        var year = await repository.FindYearAsync(company.Code ?? "", request.YearId!.Trim(), ct);
+        var yearId = request.YearId!.Trim();
+        var year = admin
+            ? await repository.FindCompanyYearAsync(company.Code ?? "", yearId, ct)
+            : await repository.FindYearAsync(company.Code ?? "", yearId, ct);
         if (year is null)
         {
             logger.LogWarning("Branch change refused for user {UserCode}: year {YearId} is not of company {CompanyCode}",
