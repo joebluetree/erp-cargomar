@@ -2,10 +2,14 @@ import { Location } from '@angular/common';
 import { Component, computed, effect, inject, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft } from '@ng-icons/lucide';
+import { lucideArrowLeft, lucideUpload } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { AuthSession } from '../../../core/auth/auth-session';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
+import { NotificationService } from '../../../core/notifications/notification.service';
+import { HolidayUploadDialog } from './holiday-upload.dialog';
 import { PageTitle } from '../../../shared/ui/page-title/page-title';
 import { PageRule } from '../../../shared/ui/page-rule/page-rule';
 import { EMPTY_VALUE, HOLIDAY_COLUMNS, NOT_FOUND_TEXT } from './holiday-list.model';
@@ -24,7 +28,7 @@ import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
 @Component({
   selector: 'app-holiday-list',
   imports: [NgIcon, HlmButtonImports, HlmCardImports, PageTitle, PageRule],
-  providers: [provideIcons({ lucideArrowLeft })],
+  providers: [provideIcons({ lucideArrowLeft, lucideUpload })],
   templateUrl: './holiday-list.page.html',
 })
 export class HolidayListPage {
@@ -40,6 +44,16 @@ export class HolidayListPage {
    * Holiday List.
    */
   protected readonly branchId = inject(ActivatedRoute, { optional: true })?.snapshot.paramMap.get('id') ?? null;
+
+  private readonly rights = inject(MenuRightsStore);
+  private readonly dialogs = inject(HlmDialogService);
+  private readonly notifications = inject(NotificationService);
+
+  /**
+   * Whether the Upload button shows (admin-list-upload design D5): on the user's own list only, with the Holiday List's
+   * admin right in the session branch as loaded when the screen opened. The admin user has every right.
+   */
+  protected readonly canUpload = computed(() => this.rights.rightsOf(MENU_CODES.holidayList)?.admin === true);// !this.branchId &&
 
   protected readonly empty = EMPTY_VALUE;
   protected readonly notFoundText = NOT_FOUND_TEXT;
@@ -69,6 +83,20 @@ export class HolidayListPage {
 
   protected reload(): void {
     this.load();
+  }
+
+  /**
+   * Opens the upload dialog. It closes with the names it saved: then this says so and loads the list again, as one of
+   * the files may be this list's.
+   */
+  protected openUpload(): void {
+    // Wide enough for the hint, a file name and the longest refusal to each fit on one line.
+    this.dialogs.open(HolidayUploadDialog, { contentClass: 'w-4xl sm:max-w-4xl' }).closed$.subscribe((saved) => {
+      const names = Array.isArray(saved) ? (saved as string[]) : [];
+      if (names.length === 0) return;
+      this.notifications.success(names.length === 1 ? `Holiday list ${names[0]} uploaded.` : `${names.length} holiday lists uploaded.`);
+      this.load();
+    });
   }
 
   /**

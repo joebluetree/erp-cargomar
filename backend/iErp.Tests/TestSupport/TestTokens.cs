@@ -20,7 +20,8 @@ public static class TestTokens
         string companyId = "c-1",
         string branchId = "b-1",
         string yearId = "y-1",
-        string? employeeId = null)
+        string? employeeId = null,
+        string userCode = "U01")
     {
         var expiresAt = expires ?? DateTimeOffset.UtcNow.AddHours(1);
         var descriptor = new SecurityTokenDescriptor
@@ -34,7 +35,7 @@ public static class TestTokens
             (Claim[])
             [
                 new Claim(SessionClaims.UserId, "u-1"),
-                new Claim(SessionClaims.UserCode, "U01"),
+                new Claim(SessionClaims.UserCode, userCode),
                 new Claim(SessionClaims.UserName, "ADMIN"),
                 new Claim(SessionClaims.CompanyId, companyId),
                 new Claim(SessionClaims.CompanyCode, "CMP"),

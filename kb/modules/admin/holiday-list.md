@@ -5,10 +5,10 @@
 |---|---|
 | **Domain** | Admin |
 | **Capability** | Hoiday List |
-| **Current Version** | 1.0 |
+| **Current Version** | 1.1 |
 | **Status** | Approved |
 | **Owner** | Sourav V |
-| **Last Updated** | 2026-10-17 |
+| **Last Updated** | 2026-11-02 |
 
 ## Document Use
 
@@ -29,16 +29,27 @@ everything else here already exists.
 
 This menu allows a user to view their own branch holiday-list, including holiday reason and date from a txt file.
 Users can view only their own Holiday list(branch's). When the **Holiday List** menu is selected (clicked), it directly opens the currently logged-in user's holiday list(using company and branch logined).
+Admin user and Users with admin rights in holiday list can upload holiday list .txt file to resources.
 
 
 
 ## Change History
 
+### v1.1 — Initial Holiday List   [Status: Proposed]
+
+- **Date:** 2026-11-02
+- **Change Ref:** `admin-list-upload`
+- **Affects:** BR-002
+
+**Changes:**
+
+- ADDED Holiday List Option for Admin and User with admin rights in holiday list
+
 ### v1.0 — Initial Holiday List   [Status: Proposed]
 
 - **Date:** 2026-10-15
 - **Change Ref:** `admin-holiday-list`
-- **Affects:** BR-001, BR-002, holiday display screen, main menu
+- **Affects:** BR-001
 
 **Changes:**
 
@@ -51,6 +62,7 @@ Users can view only their own Holiday list(branch's). When the **Holiday List** 
 ## Scope
 
 - View the logged-in user's(based on company and branch) own holiday list (view only).
+- Admin user and User with admin rights can upload .txt file into holiday-list folder (path in appsettings.json).
 
 **Out of scope (later changes):**
 
@@ -78,6 +90,18 @@ Users can view only their own Holiday list(branch's). When the **Holiday List** 
 - **BR-001.S3 [v1.0]** WHEN .txt file of corresponding branch not found
   THEN show "Holiday List Not Found".
 
+### BR-002 — Holiday List Upload
+
+- **BR-002.1 [v1.1]** Admin user CAN upload holiday list (.txt) file directly to holday-list folder
+- **BR-002.2 [v1.1]** The user with Admin rights in holiday list menu can upload holiday-list
+- **BR-002.3 [v1.1]** All other user can only view holiday list, No upload option.
+
+**Scenarios**
+
+- **BR-002.S1 [v1.1]** WHEN a logged-in as Admin user or user having Admin rights in holiday list
+  THEN file upload option appear.
+- **BR-002.S2 [v1.1]** Files are uploaded to folder as path mentioned in appsettings
+
 <!-- ---
 
 ## Data Model
@@ -98,6 +122,13 @@ Users can view only their own Holiday list(branch's). When the **Holiday List** 
 - Refer to the UI template [Holiday-list](../../ui-templates/admin/emp-profile-basic-info.JPG), like this add a single box and show holiday reson on left and date on right (both alligned to left).
 <!-- - Uses the full content area width. -->
 - on top show header or title Holiday List and below show holiday list as per the .txt file
+
+### Holiday List Upload
+
+- A Upload action button on below of list.
+- A modal window opens which have option to browse file (holiday-list in .txt) from local file folder.
+- A upload and a cancel button in modal window.
+- The file is uploaded into folder mention in appsettings
 
 #### Actions
 

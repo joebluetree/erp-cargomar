@@ -12,6 +12,11 @@ import { NotificationService } from '../../../core/notifications/notification.se
 import { Holiday } from './holiday-list.model';
 import { HolidayListPage } from './holiday-list.page';
 import { HolidayListService } from './holiday-list.service';
+import { HolidayUploadDialog } from './holiday-upload.dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
+import { of } from 'rxjs';
+import { MENU_CODES, MenuRights } from '../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 
 const HOLIDAYS: Holiday[] = [
   { holiday: 'Republic Day', day: 'Monday', date: '26-01-2026' },
@@ -273,6 +278,20 @@ describe('HolidayListPage for a listed branch', () => {
     expect(rowsOf(el())).toEqual([['Republic Day', 'Monday', '26-01-2026']]);
   });
 
+  it('shows no Upload button on a branch opened from the Branch List, even to a Holiday List admin', async () => {
+    const { harness, http, el } = await open();
+    TestBed.inject(MenuRightsStore).set(MENU_CODES.holidayList, {
+      view: true, add: true, edit: true, delete: true, print: true, email: true, docs: true, docsUpload: true, admin: true,
+    });
+    await harness.navigateByUrl('/reports/branches/b-2/holidays');
+
+    http.expectOne('reports/branches/b-2/holidays').flush({ branchCode: 'BLRAF', branchName: 'Bangalore', items: [{ holiday: 'A', day: 'B', date: 'C' }] });
+    harness.detectChanges();
+
+    expect(el().querySelector('[data-slot="holiday-box"]')).not.toBeNull();
+    expect(el().querySelector('[data-slot="holiday-upload"]')).toBeNull();
+  });
+
   it('has a Back button before the title that returns to the Branch List', async () => {
     const { harness, http, el, router } = await open('/reports/branches', '/reports/branches/b-2/holidays');
     http.expectOne('reports/branches/b-2/holidays').flush({ branchCode: 'BLRAF', branchName: 'Bangalore', items: [{ holiday: 'A', day: 'B', date: 'C' }] });
@@ -363,3 +382,122 @@ describe('HolidayListPage for a listed branch', () => {
   });
 });
 
+
+describe('HolidayListPage upload button', () => {
+  let fixture: ComponentFixture<HolidayListPage>;
+  let http: HttpTestingController;
+  let el: HTMLElement;
+  const notifications = { error: vi.fn(), success: vi.fn() };
+  /** The upload dialog's answer: the saved file name, or nothing when cancelled. */
+  let dialogAnswer: string[] | undefined;
+  const dialogs = { open: vi.fn(() => ({ closed$: of(dialogAnswer) })) };
+
+  const rights = (admin: boolean): MenuRights => ({
+    view: true, add: admin, edit: admin, delete: admin, print: admin, email: admin, docs: admin, docsUpload: admin, admin,
+  });
+
+  /** Opens the user's own Holiday List with the Holiday List rights the screen guard loaded (none when null). */
+  function create(admin: boolean | null) {
+    Object.values(notifications).forEach((fn) => fn.mockReset());
+    dialogs.open.mockClear();
+    TestBed.configureTestingModule({
+      imports: [HolidayListPage],
+      providers: [
+        HolidayListService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: NotificationService, useValue: notifications },
+        { provide: HlmDialogService, useValue: dialogs },
+      ],
+    });
+    if (admin !== null) TestBed.inject(MenuRightsStore).set(MENU_CODES.holidayList, rights(admin));
+    fixture = TestBed.createComponent(HolidayListPage);
+    http = TestBed.inject(HttpTestingController);
+    el = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+  }
+
+  function answer(status = 200) {
+    const req = http.expectOne('admin/holidays');
+    if (status === 200) req.flush({ branchCode: 'COKSF', branchName: 'Kochi Sea', items: [{ holiday: 'Onam', day: 'Wednesday', date: '26-08-2026' }] });
+    else req.flush({ status }, { status, statusText: 'x' });
+    fixture.detectChanges();
+  }
+
+  const upload = () => el.querySelector<HTMLButtonElement>('[data-slot="holiday-upload"]');
+
+  it('shows Upload below the list to a user with the Holiday List admin right (the admin user has every right)', () => {
+    create(true);
+    answer();
+
+    expect(upload()?.textContent?.trim()).toBe('Upload');
+    const box = el.querySelector('[data-slot="holiday-box"]')!;
+    expect(box.compareDocumentPosition(upload()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows no Upload to a view-only user, or before the rights are known', () => {
+    create(false);
+    answer();
+    expect(upload()).toBeNull();
+
+    TestBed.resetTestingModule();
+    create(null);
+    answer();
+    expect(upload()).toBeNull();
+  });
+
+  it('shows Upload below "Holiday List Not Found", so a first file can be uploaded', () => {
+    create(true);
+    answer(404);
+
+    expect(el.querySelector('[data-slot="not-found"]')).not.toBeNull();
+    expect(upload()).not.toBeNull();
+  });
+
+  it('shows no Upload while the list loads or after a failure', () => {
+    create(true);
+    expect(upload()).toBeNull();
+
+    answer(500);
+    expect(el.querySelector('[role="alert"]')).not.toBeNull();
+    expect(upload()).toBeNull();
+  });
+
+  it('opens the upload dialog, and after a saved file says so and loads the list again', () => {
+    create(true);
+    answer(404);
+    dialogAnswer = ['COKSF-file.txt'];
+
+    upload()!.click();
+    fixture.detectChanges();
+
+    expect(dialogs.open).toHaveBeenCalledWith(HolidayUploadDialog, expect.anything());
+    expect(notifications.success).toHaveBeenCalledWith('Holiday list COKSF-file.txt uploaded.');
+    answer();
+    expect(el.querySelector('[data-slot="holiday-box"]')).not.toBeNull();
+  });
+
+  it('says how many lists were uploaded when several were saved', () => {
+    create(true);
+    answer();
+    dialogAnswer = ['CPL-COKSF-2026.txt', 'CPL-MAASF-2026.txt'];
+
+    upload()!.click();
+    fixture.detectChanges();
+
+    expect(notifications.success).toHaveBeenCalledWith('2 holiday lists uploaded.');
+    answer();
+  });
+
+  it('changes nothing when the dialog is cancelled', () => {
+    create(true);
+    answer();
+    dialogAnswer = undefined;
+
+    upload()!.click();
+    fixture.detectChanges();
+
+    expect(notifications.success).not.toHaveBeenCalled();
+    http.expectNone('admin/holidays');
+  });
+});

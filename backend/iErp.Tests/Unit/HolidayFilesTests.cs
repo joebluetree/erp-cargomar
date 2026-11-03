@@ -24,4 +24,34 @@ public class HolidayFilesTests
     {
         Assert.Null(HolidayFiles.NameFor(company, branch, hasYear ? 2026m : null));
     }
+
+    [Theory]
+    [InlineData("CPL-COKSF-2026.txt", "COKSF", 2026)]
+    [InlineData("cpl-coksf-2026.TXT", "coksf", 2026)]
+    [InlineData(" CPL-COKSF-2025.txt ", "COKSF", 2025)]
+    [InlineData("CPL-KOC-SF-2026.txt", "KOC-SF", 2026)]
+    public void An_uploaded_name_of_the_company_gives_its_branch_and_year(string name, string branch, int year)
+    {
+        Assert.Equal((branch, (decimal)year), HolidayFiles.Parse(name, " CPL "));
+    }
+
+    [Theory]
+    [InlineData("XYZ-COKSF-2026.txt")] // another company
+    [InlineData("CPLX-COKSF-2026.txt")]
+    [InlineData("CPL-COKSF-20A6.txt")] // a year that is not digits
+    [InlineData("CPL-COKSF-.txt")]
+    [InlineData("CPL--2026.txt")] // no branch
+    [InlineData("CPL-2026.txt")]
+    [InlineData("CPL-COKSF-2026.csv")]
+    [InlineData("CPL-COKSF-2026")]
+    [InlineData("holidays.txt")]
+    [InlineData(@"..\CPL-COKSF-2026.txt")]
+    [InlineData("sub/CPL-COKSF-2026.txt")]
+    [InlineData(@"C:\CPL-COKSF-2026.txt")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void Any_other_name_is_refused(string? name)
+    {
+        Assert.Null(HolidayFiles.Parse(name, "CPL"));
+    }
 }

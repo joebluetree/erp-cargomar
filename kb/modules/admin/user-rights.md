@@ -5,10 +5,10 @@
 |---|---|
 | **Domain** | Admin |
 | **Capability** | Menu and User rights |
-| **Current Version** | 1.0 |
+| **Current Version** | 1.1 |
 | **Status** | Approved |
 | **Owner** | Sourav V |
-| **Last Updated** | 2026-10-22 |
+| **Last Updated** | 2026-11-01 |
 
 ## Document Use
 
@@ -40,6 +40,15 @@ Based on loged in user' rights for each menu (userrights table)
 
 ## Change History
 
+### v1.1 — Admin User Rights   [Status: Implemented]
+
+- **Date:** 2026-11-02
+- **Change Ref:** `admin-admin user-rights`
+- **Affects:** BR-003
+
+**Changes:**
+- ADDED Rights assigned for admin user when logged in and menu selection
+
 ### v1.0 — Initial Menu and Userrights   [Status: Draft]
 
 - **Date:** 2026-10-22
@@ -59,6 +68,8 @@ Based on loged in user' rights for each menu (userrights table)
 - Module is displayed only when minimum one menu is is displayed.
 - When a menu is clicked pass menu id with URL parameters.
 - Check user rights for that menu id passed to backend and display menu options based on rights
+- For Admin user (user name with admin) and if passes login check. show all NS- rights a Y.
+- Admin user can have access/rights in all menu, all rights. No database checked for Admin User 
 
 ---
 
@@ -134,6 +145,23 @@ THEN Menu is hide from navabar or not displayed
 WHEN login user have View rights
 THEN User Can only view record and record list, no Add,Edit,Detete etc..
 
+### BR-003 — Admin User Rights Check
+
+- **BR-003.1 [v1.1]** Admin user have all rights in all menu, not on basis of database (userrights table).
+- **BR-003.2 [v1.1]** All Menu is Displayed on dasboard, After admin user login successfully.
+- **BR-003.3 [v1.1]** Menu Displayed are in order of column order.
+- **BR-003.4 [v1.1]** When a menu is selected the backend should pass all rights as Y without checking DB
+
+**Scenarios**
+
+- **BR-003.S1 [v1.1]** 
+WHEN Admin User logged-in 
+THEN All menu is displayed on software with all rights as Y
+
+- **BR-003.S2 [v1.1]** 
+WHEN Admin open a menu
+THEN backend check user and sends those menu all rights as Y
+
 ---
 
 ## User Interface
@@ -149,7 +177,8 @@ THEN User Can only view record and record list, no Add,Edit,Detete etc..
 - When software is opened, Show module only if minimum one menu is assigned(displayed).
 - When a menu is selected/clicked pass menu id as URL parameter
 - Based on this menu id param check user rights, like for add, edit ,delete etc.
-
+- When Admin user logged in, send hardcode rights (All Y) from backend and no need to check DB.
+- when admin opens any menu then also pass all rights as Y hardcoded.
 
 ---
 

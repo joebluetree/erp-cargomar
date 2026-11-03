@@ -15,7 +15,7 @@ namespace iErp.Tests.Integration;
 /// </summary>
 public class MenuEndpointTests
 {
-    private static (HttpClient Client, IMenuRepository Repository) ClientWith(bool authenticated = true)
+    private static (HttpClient Client, IMenuRepository Repository) ClientWith(bool authenticated = true, string? token = null)
     {
         var repository = Substitute.For<IMenuRepository>();
         repository.ListVisibleMenusAsync("CMP", "u-1", "b-1", Arg.Any<CancellationToken>()).Returns(
@@ -28,8 +28,10 @@ public class MenuEndpointTests
             .Returns([new MenuCodeRight("NS-EMPLIST", new UserRight { Id = "r-1", View = "Y", Add = "N", Edit = "Y" })]);
 
         var client = new ApiFactory().WithWebHostBuilder(b => b.ConfigureServices(s => s.AddScoped(_ => repository))).CreateClient();
-        return (authenticated ? client.Authenticated() : client, repository);
+        return (authenticated ? client.Authenticated(token) : client, repository);
     }
+
+    private static string AdminToken() => TestTokens.Create(userCode: "ADMIN");
 
     [Fact]
     public async Task The_menu_is_the_session_user_s_modules_and_menus_in_camel_case()
@@ -59,6 +61,30 @@ public class MenuEndpointTests
             (list.GetProperty("view").GetBoolean(), list.GetProperty("add").GetBoolean(), list.GetProperty("edit").GetBoolean(), list.GetProperty("delete").GetBoolean()));
         Assert.False(list.GetProperty("docsUpload").GetBoolean());
         Assert.False(entries[1].GetProperty("view").GetBoolean());
+    }
+
+    [Fact]
+    public async Task The_admin_user_has_every_right_on_each_code_with_no_rights_read()
+    {
+        var (client, repository) = ClientWith(token: AdminToken());
+
+        var body = await client.GetFromJsonAsync<JsonElement>("/api/admin/menu/rights?codes=NS-EMPLIST,NS-EMPPROFILE");
+
+        var entries = body.EnumerateArray().ToList();
+        Assert.Equal(["NS-EMPLIST", "NS-EMPPROFILE"], entries.Select(e => e.GetProperty("code").GetString()));
+        string[] rights = ["view", "add", "edit", "delete", "print", "email", "docs", "docsUpload", "admin"];
+        Assert.All(entries, e => Assert.All(rights, r => Assert.True(e.GetProperty(r).GetBoolean(), r)));
+        await repository.DidNotReceiveWithAnyArgs().ListRightsAsync(default!, default!, default!, default!, default);
+    }
+
+    [Theory]
+    [InlineData("/api/admin/menu/rights")]
+    [InlineData("/api/admin/menu/rights?codes=A,B,C,D,E,F,G,H,I,J,K")]
+    public async Task The_admin_user_s_codes_are_still_checked(string url)
+    {
+        var (client, _) = ClientWith(token: AdminToken());
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(url)).StatusCode);
     }
 
     [Theory]

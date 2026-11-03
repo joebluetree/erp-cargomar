@@ -6,6 +6,7 @@ using NSubstitute;
 using iErp.Admin.EmployeeList;
 using iErp.Admin.EmployeeProfile;
 using iErp.Admin.HolidayList;
+using iErp.Admin.UserRights;
 using iErp.Entities;
 using iErp.Reports.BranchList;
 using iErp.Reports.CompanyList;
@@ -121,6 +122,31 @@ public class MenuAccessEndpointTests
 
         Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Empty(access.Asked);
+    }
+
+    [Theory]
+    [InlineData("ADMIN", HttpStatusCode.OK)]
+    [InlineData("U01", HttpStatusCode.Forbidden)]
+    public async Task With_the_real_rights_check_and_no_rights_rows_only_the_admin_user_opens_a_screen(string userCode, HttpStatusCode expected)
+    {
+        var menus = Substitute.For<IMenuRepository>();
+        menus.HasViewRightAsync(default!, default!, default!, default!, default).ReturnsForAnyArgs(false);
+        menus.ListRightsAsync(default!, default!, default!, default!, default).ReturnsForAnyArgs([]);
+        var companies = Substitute.For<ICompanyListRepository>();
+        companies.ListCompaniesAsync(Arg.Any<CompanyListQuery>(), Arg.Any<CancellationToken>())
+            .Returns(((IReadOnlyList<Company>)[], 0));
+        var client = new ApiFactory().WithWebHostBuilder(b => b.ConfigureServices(s =>
+        {
+            s.AddScoped<IMenuAccess, MenuAccess>();
+            s.AddScoped(_ => menus);
+            s.AddScoped(_ => companies);
+        })).CreateClient().Authenticated(TestTokens.Create(userCode: userCode));
+
+        var response = await client.GetAsync("/api/reports/companies");
+
+        Assert.Equal(expected, response.StatusCode);
+        if (expected == HttpStatusCode.Forbidden)
+            Assert.Equal(MenuAccessFilter.NoAccessMessage, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("title").GetString());
     }
 
     [Fact]

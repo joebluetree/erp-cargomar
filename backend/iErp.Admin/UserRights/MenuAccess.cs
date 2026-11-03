@@ -5,18 +5,21 @@ namespace iErp.Admin.UserRights;
 /// <summary>
 /// The view-right check behind <see cref="RequiresMenuAttribute"/>: the session company's new-software menu with the
 /// code, and the session user's view right on it in the session branch; and their admin right there. Without a user,
-/// company or branch both are false.
+/// company or branch both are false. The admin user has both on every menu, with nothing read (admin-admin-user-rights
+/// design D4).
 /// </summary>
 public class MenuAccess(IMenuRepository repository, ICurrentSession current) : IMenuAccess
 {
     public async Task<bool> CanViewAsync(string menuCode, CancellationToken ct = default) =>
         Session(menuCode) is var (code, companyCode, userId, branchId)
-        && await repository.HasViewRightAsync(code, companyCode, userId, branchId, ct);
+        && (AdminUser.Is(current) || await repository.HasViewRightAsync(code, companyCode, userId, branchId, ct));
 
     public async Task<bool> IsAdminAsync(string menuCode, CancellationToken ct = default)
     {
         if (Session(menuCode) is not var (code, companyCode, userId, branchId))
             return false;
+        if (AdminUser.Is(current))
+            return true;
 
         var rows = await repository.ListRightsAsync([code], companyCode, userId, branchId, ct);
         // At most one row per user, menu and branch; the first wins should the data hold more. The flag is compared

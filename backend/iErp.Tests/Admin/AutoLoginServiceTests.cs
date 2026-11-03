@@ -64,6 +64,8 @@ public class AutoLoginServiceTests
         var switchable = Substitute.For<IChangeBranchRepository>();
         switchable.FindBranchAsync("u-1", "c-1", "b-2", Arg.Any<CancellationToken>()).Returns(allotted ?? Chennai);
         switchable.FindYearAsync("CMP", "y-1", Arg.Any<CancellationToken>()).Returns(openYear ?? Earlier);
+        // The admin user's year lookup (every year of the company); y-1 is one of them.
+        switchable.FindCompanyYearAsync("CMP", "y-1", Arg.Any<CancellationToken>()).Returns(openYear ?? Earlier);
 
         var options = Options.Create(new JwtOptions { SigningKey = TestTokens.TestingKey, LifetimeMinutes = 480 });
         var logger = new CapturingLogger();
@@ -132,6 +134,70 @@ public class AutoLoginServiceTests
         { "branch not allotted", () => ServiceWith(rows: [Row(branchId: "b-9")]) },
         { "year closed or of another company", () => ServiceWith(rows: [Row(yearId: "y-other")]) },
     };
+
+    [Fact]
+    public async Task The_admin_user_logs_in_to_a_branch_of_the_company_that_is_not_allotted()
+    {
+        var admin = Admin();
+        admin.Code = "ADMIN";
+        var mumbai = new Company { Id = "b-3", Type = "B", ParentId = "c-1", Name = "Mumbai" };
+        var setup = ServiceWith(rows: [Row(branchId: " b-3 ")], users: [admin]);
+        setup.Switchable.FindCompanyBranchAsync("c-1", "b-3", Arg.Any<CancellationToken>()).Returns(mumbai);
+
+        var result = await AutoLogin(setup);
+
+        Assert.Equal(AutoLoginOutcome.Success, result.Outcome);
+        Assert.Equal(("b-3", "Mumbai"), (result.Response!.Session.BranchId, result.Response.Session.BranchName));
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindBranchAsync(default!, default!, default!, default);
+    }
+
+    [Fact]
+    public async Task The_admin_user_still_fails_on_a_branch_that_is_not_the_company_s()
+    {
+        var admin = Admin();
+        admin.Code = "ADMIN";
+
+        Assert.Equal(new AutoLoginResult(AutoLoginOutcome.Failed), await AutoLogin(ServiceWith(rows: [Row(branchId: "b-other")], users: [admin])));
+    }
+
+    [Fact]
+    public async Task The_admin_user_logs_in_to_a_closed_year_of_the_company()
+    {
+        var admin = Admin();
+        admin.Code = "ADMIN";
+        var closed = new FinancialYear { Id = "y-0", Code = 2023, Name = "2023-2024", CompanyCode = "CMP", Closed = "Y" };
+        var setup = ServiceWith(rows: [Row(yearId: " y-0 ")], users: [admin]);
+        setup.Switchable.FindCompanyBranchAsync("c-1", "b-2", Arg.Any<CancellationToken>()).Returns(Chennai);
+        setup.Switchable.FindCompanyYearAsync("CMP", "y-0", Arg.Any<CancellationToken>()).Returns(closed);
+
+        var result = await AutoLogin(setup);
+
+        Assert.Equal(AutoLoginOutcome.Success, result.Outcome);
+        Assert.Equal(("y-0", "2023-2024"), (result.Response!.Session.YearId, result.Response.Session.YearName));
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindYearAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task Another_user_s_closed_year_still_fails()
+    {
+        var setup = ServiceWith(rows: [Row(yearId: "y-0")]);
+        setup.Switchable.FindCompanyYearAsync("CMP", "y-0", Arg.Any<CancellationToken>())
+            .Returns(new FinancialYear { Id = "y-0", Code = 2023, Name = "2023-2024", CompanyCode = "CMP", Closed = "Y" });
+
+        Assert.Equal(new AutoLoginResult(AutoLoginOutcome.Failed), await AutoLogin(setup));
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindCompanyYearAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task Another_user_s_branch_that_is_not_allotted_still_fails_even_when_it_is_the_company_s()
+    {
+        var setup = ServiceWith(rows: [Row(branchId: "b-3")]);
+        setup.Switchable.FindCompanyBranchAsync("c-1", "b-3", Arg.Any<CancellationToken>())
+            .Returns(new Company { Id = "b-3", Type = "B", ParentId = "c-1", Name = "Mumbai" });
+
+        Assert.Equal(new AutoLoginResult(AutoLoginOutcome.Failed), await AutoLogin(setup));
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindCompanyBranchAsync(default!, default!, default);
+    }
 
     [Theory]
     [MemberData(nameof(Failures))]

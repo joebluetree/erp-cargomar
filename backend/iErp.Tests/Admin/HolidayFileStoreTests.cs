@@ -73,4 +73,56 @@ public sealed class HolidayFileStoreTests : IDisposable
 
         Assert.Equal(["Other, 01-01-2026"], store.Read("CPL-COKSF-2026.txt"));
     }
+
+    private string[] TempFiles() => Directory.GetFiles(folder, "*.tmp");
+
+    [Fact]
+    public void A_new_file_is_written_byte_for_byte()
+    {
+        byte[] content = [0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes("Onam,Wednesday,26-08-2026\r\n")];
+
+        var result = StoreFor(folder).Store.Write("CPL-MAASF-2026.txt", content, replace: false);
+
+        Assert.Equal(HolidayFileWrite.Written, result);
+        Assert.Equal(content, File.ReadAllBytes(Path.Combine(folder, "CPL-MAASF-2026.txt")));
+        Assert.True(StoreFor(folder).Store.Exists("CPL-MAASF-2026.txt"));
+        Assert.Empty(TempFiles());
+    }
+
+    [Fact]
+    public void An_existing_file_is_kept_unless_replacing_is_asked_for()
+    {
+        var store = StoreFor(folder).Store;
+        var path = Path.Combine(folder, "CPL-COKSF-2026.txt");
+        var before = File.ReadAllBytes(path);
+
+        Assert.Equal(HolidayFileWrite.Exists, store.Write("CPL-COKSF-2026.txt", "New,01-01-2026"u8.ToArray(), replace: false));
+        Assert.Equal(before, File.ReadAllBytes(path));
+
+        Assert.Equal(HolidayFileWrite.Written, store.Write("CPL-COKSF-2026.txt", "New,01-01-2026"u8.ToArray(), replace: true));
+        Assert.Equal("New,01-01-2026"u8.ToArray(), File.ReadAllBytes(path));
+        Assert.Empty(TempFiles());
+    }
+
+    [Theory]
+    [InlineData(@"..\secret.txt")]
+    [InlineData("../other.txt")]
+    [InlineData("CPL-COKSF-2026.csv")]
+    [InlineData("")]
+    public void A_name_the_store_refuses_writes_nothing(string fileName)
+    {
+        var secret = File.ReadAllBytes(Path.Combine(root, "secret.txt"));
+
+        Assert.Equal(HolidayFileWrite.Refused, StoreFor(folder).Store.Write(fileName, "x"u8.ToArray(), replace: true));
+        Assert.Equal(secret, File.ReadAllBytes(Path.Combine(root, "secret.txt")));
+        Assert.False(File.Exists(Path.Combine(root, "other.txt")));
+        Assert.Equal(3, Directory.GetFiles(folder).Length);
+    }
+
+    [Fact]
+    public void Without_a_folder_nothing_is_written()
+    {
+        Assert.Equal(HolidayFileWrite.Refused, StoreFor(" ").Store.Write("CPL-COKSF-2026.txt", "x"u8.ToArray(), replace: true));
+        Assert.False(StoreFor(" ").Store.Exists("CPL-COKSF-2026.txt"));
+    }
 }

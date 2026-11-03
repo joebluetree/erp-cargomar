@@ -1,4 +1,5 @@
 using iErp.Admin.ChangeBranch;
+using iErp.Admin.UserRights;
 using iErp.Entities;
 using iErp.Shared.Auth;
 
@@ -119,7 +120,10 @@ public class EmployeeScopeResolver(
         // no rights checked there. The session's branch is always in the scopes (Codes), assigned or not.
         if (!await access.IsAdminAsync(MenuCodes.EmployeeList, ct))
             return [];
-        return await assigned.ListBranchesAsync(userId, companyId, ct);
+        // The admin user's allowed branches are every branch of the company (admin-admin-user-rights design D6).
+        return AdminUser.Is(current)
+            ? await assigned.ListCompanyBranchesAsync(companyId, ct)
+            : await assigned.ListBranchesAsync(userId, companyId, ct);
     }
 
     /// <summary>The session's branch code and the codes of the allowed branches, each once.</summary>

@@ -1,0 +1,71 @@
+<!-- The title set off by a thin line, in the color of the line under a page's title (app-page-rule). -->
+<hlm-dialog-header class="border-b border-table-line pb-4">
+  <h2 hlmDialogTitle>Upload Holiday List</h2>
+</hlm-dialog-header>
+
+<form class="flex flex-col gap-4" novalidate (submit)="$event.preventDefault(); existing().length > 0 ? replace() : upload()">
+  <div class="flex flex-col gap-2">
+    @if (files().length > 0 && results().length === 0) {
+      <!-- The chosen files, one row each in the order chosen, until they are sent; then the results list takes over. -->
+      <ul class="flex max-h-60 flex-col gap-1 overflow-y-auto text-sm" aria-label="Selected files" data-slot="selected-files">
+        @for (file of files(); track file) {
+          <li data-slot="selected-file" class="font-medium [overflow-wrap:anywhere]">{{ file.name }}</li>
+        }
+      </ul>
+    }
+    <input
+      id="holiday-upload-file"
+      type="file"
+      multiple
+      aria-label="Holiday list files"
+      accept=".txt,text/plain"
+      aria-describedby="holiday-upload-hint"
+      class="text-sm file:mr-3 file:rounded-md file:border file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium"
+      [disabled]="sending()"
+      (change)="choose($event)"
+    />
+    <p id="holiday-upload-hint" class="text-sm text-muted-foreground">
+      File name format: &lt;company code&gt;-&lt;branch code&gt;-&lt;year code&gt;.txt (e.g. CPL-COKSF-2026.txt)
+    </p>
+    @if (tooMany()) {
+      <p appFieldError role="alert">Choose at most {{ maxFiles }} files at a time.</p>
+    }
+  </div>
+
+  @if (results().length > 0) {
+    <!-- One row per chosen file, in the order chosen: its name and what happened to it. -->
+    <ul class="flex max-h-60 flex-col gap-2 overflow-y-auto text-sm" aria-label="Upload results" data-slot="upload-results">
+      @for (result of results(); track result.file) {
+        <li data-slot="upload-result" [attr.data-state]="result.state">
+          <span class="font-medium [overflow-wrap:anywhere]">{{ result.file.name }}</span>
+          @switch (result.state) {
+            @case ('pending') {
+              <span class="text-muted-foreground"> — waiting…</span>
+            }
+            @case ('saved') {
+              <span class="text-muted-foreground"> — uploaded as {{ result.savedAs }}</span>
+            }
+            @default {
+              <p appFieldError>{{ result.message }}</p>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  <!-- The buttons set off by a thin line above them, in the color of the title's line. -->
+  <div class="mt-2 flex justify-end gap-2 border-t border-table-line pt-4">
+    <button hlmBtn type="submit" [disabled]="sending() || (existing().length === 0 && (files().length === 0 || results().length > 0))">
+      @if (sending()) {
+        <ng-icon name="lucideLoaderCircle" class="animate-spin" aria-hidden="true" />
+        Uploading…
+      } @else if (existing().length > 0) {
+        Replace
+      } @else {
+        Upload
+      }
+    </button>
+    <button hlmBtn variant="outline" type="button" (click)="cancel()">Cancel</button>
+  </div>
+</form>
