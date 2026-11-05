@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ANNOUNCEMENT_ROUTE } from '../core/announcement/announcement.model';
+import { ANNOUNCEMENT_ROUTE } from '../announcement/announcement.model';
 
 /** What a line break of the banner becomes in the one-line bar: a wide gap (decided by the user). */
 export const LINE_BREAK_GAP = '\u2003\u2003\u2003';

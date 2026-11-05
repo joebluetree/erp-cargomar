@@ -1,5 +1,4 @@
-import { Company, COLUMNS } from './company-list.model';
-import { sortCompanies } from './company-list.table';
+import { Company, COLUMNS, sortCompanies } from './company-list.model';
 
 function company(code: string, name: string, extra: Partial<Company> = {}): Company {
   return { id: code, code, name, address1: '', address2: '', address3: '', tel: '', email: '', web: '', ...extra };

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { MENU_CODES, MENU_CODE_DATA, RELATED_MENU_CODES_DATA } from '../../../core/navigation/menu.model';
-import { HolidayListService } from '../../admin/holiday-list/holiday-list.service';
+import { HolidayListService } from '../../admin/holiday-list/holiday-list/holiday-list.service';
 import { BranchListService } from './branch-list.service';
 
 export const BRANCH_LIST_ROUTES: Routes = [
@@ -18,6 +18,6 @@ export const BRANCH_LIST_ROUTES: Routes = [
     data: { [MENU_CODE_DATA]: MENU_CODES.holidayList },
     runGuardsAndResolvers: 'always',
     providers: [HolidayListService],
-    loadComponent: () => import('../../admin/holiday-list/holiday-list.page').then((m) => m.HolidayListPage),
+    loadComponent: () => import('../../admin/holiday-list/holiday-list/holiday-list.page').then((m) => m.HolidayListPage),
   },
 ];

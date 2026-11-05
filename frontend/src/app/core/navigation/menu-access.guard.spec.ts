@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { NoAccessPage } from '../../features/no-access/no-access.page';
+import { NoAccessPage } from '../no-access/no-access.page';
 import { SKIP_ERROR_NOTIFICATION } from '../errors/http-error.interceptor';
 import { MENU_CODES, MENU_CODE_DATA, MenuCodeRights, MenuRights, RELATED_MENU_CODES_DATA } from './menu.model';
 import { MenuRightsStore } from './menu-rights.store';

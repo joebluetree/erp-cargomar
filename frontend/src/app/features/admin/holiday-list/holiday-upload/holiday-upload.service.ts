@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, finalize } from 'rxjs';
-import { SKIP_ERROR_NOTIFICATION } from '../../../core/errors/http-error.interceptor';
+import { SKIP_ERROR_NOTIFICATION } from '../../../../core/errors/http-error.interceptor';
 
 /** What the backend answers for a saved holiday file: the name it was saved under. */
 export interface HolidayUpload {

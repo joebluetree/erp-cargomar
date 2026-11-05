@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { SKIP_ERROR_NOTIFICATION } from '../../../core/errors/http-error.interceptor';
+import { SKIP_ERROR_NOTIFICATION } from '../../../../core/errors/http-error.interceptor';
 import { HolidayUploadService } from './holiday-upload.service';
 
 describe('HolidayUploadService', () => {

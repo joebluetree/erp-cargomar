@@ -1,19 +1,19 @@
-import { LoadingService } from '../core/loading/loading.service';
-import { LOADING_BAR_DELAY_MS } from '../shared/ui/loading-bar/loading-bar';
+import { LoadingService } from '../loading/loading.service';
+import { LOADING_BAR_DELAY_MS } from '../../shared/ui/loading-bar/loading-bar';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { AuthSession, SESSION_STORAGE_KEY } from '../core/auth/auth-session';
-import { testSession } from '../core/auth/auth-session.testing';
-import { authGuard } from '../core/auth/auth.guards';
-import { provideTestMenu } from '../core/navigation/menu.testing';
+import { AuthSession, SESSION_STORAGE_KEY } from '../auth/auth-session';
+import { testSession } from '../auth/auth-session.testing';
+import { authGuard } from '../auth/auth.guards';
+import { provideTestMenu } from '../navigation/menu.testing';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { vi } from 'vitest';
-import { routes } from '../app.routes';
+import { routes } from '../../app.routes';
 import { Shell } from './shell';
 
 @Component({ template: '<p id="page-body">Page body</p>' })

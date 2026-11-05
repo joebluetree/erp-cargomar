@@ -5,8 +5,8 @@ import { lucideLoaderCircle } from '@ng-icons/lucide';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
-import { SERVER_ERROR_MESSAGE, isApiError } from '../../../core/errors/api-error';
-import { FieldError } from '../../../shared/ui/field-error/field-error';
+import { SERVER_ERROR_MESSAGE, isApiError } from '../../../../core/errors/api-error';
+import { FieldError } from '../../../../shared/ui/field-error/field-error';
 import { HolidayUploadService } from './holiday-upload.service';
 
 /**

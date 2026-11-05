@@ -2,9 +2,12 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { findLookViolations, SourceFile } from './look-guard';
 
-/** Every template and code file of the screens (not their tests), read from disk. */
+/**
+ * Every template and code file of the screens (not their tests), read from disk: the feature screens, and the app's own
+ * screens kept in `core` (Dashboard, no-access page and common view).
+ */
 function featureFiles(): SourceFile[] {
-  const root = resolve(process.cwd(), 'src/app/features');
+  const roots = ['src/app/features', 'src/app/core/dashboard', 'src/app/core/no-access', 'src/app/core/common-view'];
   const files: SourceFile[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
@@ -13,7 +16,7 @@ function featureFiles(): SourceFile[] {
       else if (/\.(html|ts)$/.test(name) && !/\.spec\.ts$/.test(name)) files.push({ path: full, text: readFileSync(full, 'utf8') });
     }
   };
-  walk(root);
+  roots.forEach((root) => walk(resolve(process.cwd(), root)));
   return files;
 }
 
@@ -22,7 +25,8 @@ describe('look guard: screens use the shared look', () => {
     const paths = featureFiles().map((f) => f.path.split('\\').join('/'));
 
     expect(paths.some((p) => p.endsWith('features/reports/company-list/company-list.page.html'))).toBe(true);
-    expect(paths.some((p) => p.endsWith('features/dashboard/dashboard.html'))).toBe(true);
+    expect(paths.some((p) => p.endsWith('core/dashboard/dashboard.html'))).toBe(true);
+    expect(paths.some((p) => p.endsWith('core/no-access/no-access.page.ts'))).toBe(true);
     expect(paths.length).toBeGreaterThanOrEqual(8);
   });
 

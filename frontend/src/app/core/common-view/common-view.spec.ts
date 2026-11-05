@@ -7,13 +7,13 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
 import { routes } from '../../app.routes';
-import { AuthSession } from '../../core/auth/auth-session';
-import { testSession } from '../../core/auth/auth-session.testing';
-import { apiBaseUrlInterceptor } from '../../core/api/api-base-url.interceptor';
-import { authTokenInterceptor, sessionExpiryInterceptor } from '../../core/auth/auth.interceptors';
-import { httpErrorInterceptor } from '../../core/errors/http-error.interceptor';
-import { NotificationService } from '../../core/notifications/notification.service';
-import { Shell } from '../../shell/shell';
+import { AuthSession } from '../auth/auth-session';
+import { testSession } from '../auth/auth-session.testing';
+import { apiBaseUrlInterceptor } from '../api/api-base-url.interceptor';
+import { authTokenInterceptor, sessionExpiryInterceptor } from '../auth/auth.interceptors';
+import { httpErrorInterceptor } from '../errors/http-error.interceptor';
+import { NotificationService } from '../notifications/notification.service';
+import { Shell } from '../shell/shell';
 import { COMMON_VIEW_ROUTES, CommonViewMessagePage } from './common-view.routes';
 
 @Component({ template: '<p id="holidays">Holidays</p>' })

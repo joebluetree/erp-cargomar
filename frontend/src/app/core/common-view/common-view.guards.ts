@@ -3,12 +3,12 @@ import { HttpClient, HttpContext } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { CanActivateFn, RedirectCommand, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthSession } from '../../core/auth/auth-session';
-import { LOGIN_REQUEST } from '../../core/auth/auth.interceptors';
-import { SKIP_ERROR_NOTIFICATION } from '../../core/errors/http-error.interceptor';
-import { MENU_ID_PARAM } from '../../core/navigation/menu.model';
-import { MenuService } from '../../core/navigation/menu.service';
-import { LoginResponse } from '../admin/login/login.model';
+import { AuthSession } from '../auth/auth-session';
+import { LOGIN_REQUEST } from '../auth/auth.interceptors';
+import { SKIP_ERROR_NOTIFICATION } from '../errors/http-error.interceptor';
+import { MENU_ID_PARAM } from '../navigation/menu.model';
+import { MenuService } from '../navigation/menu.service';
+import { LoginResponse } from '../../features/admin/login/login.model';
 
 /** The path of the message page under `/view`, and the query parameter that says which message it shows. */
 export const COMMON_VIEW_MESSAGE_PATH = 'unavailable';

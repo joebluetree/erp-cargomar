@@ -11,10 +11,10 @@ import { ChangeBranchDialog } from '../../features/admin/change-branch/change-br
 import { SESSION_OPTIONS } from '../../features/admin/change-branch/change-branch.testing';
 import { LoginPage } from '../../features/admin/login/login.page';
 import { LoginService } from '../../features/admin/login/login.service';
-import { Dashboard } from '../../features/dashboard/dashboard';
+import { Dashboard } from '../../core/dashboard/dashboard';
 import { CompanyListPage } from '../../features/reports/company-list/company-list.page';
 import { CompanyListService } from '../../features/reports/company-list/company-list.service';
-import { Shell } from '../../shell/shell';
+import { Shell } from '../../core/shell/shell';
 import { TEST_MENU, provideTestMenu } from '../../core/navigation/menu.testing';
 import { clickableElements, clickableSelector } from './clickable';
 

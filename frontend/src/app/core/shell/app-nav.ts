@@ -2,10 +2,10 @@ import { Component, inject, output } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideChevronUp } from '@ng-icons/lucide';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MenuService } from '../core/navigation/menu.service';
-import { NavCollapseStore } from '../core/navigation/nav-collapse.store';
-import { DASHBOARD_ENTRY, NAV_ICONS, lookOf } from '../core/navigation/nav-look';
-import { AppIconTone } from '../shared/ui/icon-tone/icon-tone';
+import { MenuService } from '../navigation/menu.service';
+import { NavCollapseStore } from '../navigation/nav-collapse.store';
+import { DASHBOARD_ENTRY, NAV_ICONS, lookOf } from '../navigation/nav-look';
+import { AppIconTone } from '../../shared/ui/icon-tone/icon-tone';
 
 /** Counts the menus created, for unique ids. */
 let navCount = 0;

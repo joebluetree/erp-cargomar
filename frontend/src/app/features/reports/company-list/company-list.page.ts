@@ -14,10 +14,8 @@ import { TableToolbar } from '../../../shared/ui/table-toolbar/table-toolbar';
 import { TableWrapToggle } from '../../../shared/ui/table-wrap-toggle/table-wrap-toggle';
 import { TableStateStore } from '../../../shared/paging/table-state';
 import { AuthSession } from '../../../core/auth/auth-session';
-import { COLUMNS, COMPANY_LIST_STATE_KEY, CompanyListState, DEFAULT_SORT, SortColumn, SortState } from './company-list.model';
-import { CompanyListSelection } from './company-list.selection';
-import { CompanyListService } from './company-list.service';
-import { sortCompanies } from './company-list.table';
+import { COLUMNS, COMPANY_LIST_STATE_KEY, CompanyListState, DEFAULT_SORT, SortColumn, SortState, sortCompanies } from './company-list.model';
+import { CompanyListService, CompanyListSelection } from './company-list.service';
 
 /**
  * The Company List report. The backend filters and pages: a search or a page change is one request. What the user

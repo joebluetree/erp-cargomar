@@ -1,5 +1,4 @@
-import { Branch, COLUMNS } from './branch-list.model';
-import { sortBranches } from './branch-list.table';
+import { Branch, COLUMNS, sortBranches } from './branch-list.model';
 
 function branch(code: string, name: string, extra: Partial<Branch> = {}): Branch {
   return { id: code, code, name, address1: '', address2: '', address3: '', tel: '', email: '', web: '', ...extra };

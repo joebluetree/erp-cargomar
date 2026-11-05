@@ -6,15 +6,15 @@ import { lucideArrowLeft, lucideUpload } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { AuthSession } from '../../../core/auth/auth-session';
-import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
-import { NotificationService } from '../../../core/notifications/notification.service';
-import { HolidayUploadDialog } from './holiday-upload.dialog';
-import { PageTitle } from '../../../shared/ui/page-title/page-title';
-import { PageRule } from '../../../shared/ui/page-rule/page-rule';
+import { AuthSession } from '../../../../core/auth/auth-session';
+import { MenuRightsStore } from '../../../../core/navigation/menu-rights.store';
+import { NotificationService } from '../../../../core/notifications/notification.service';
+import { HolidayUploadDialog } from '../holiday-upload/holiday-upload.dialog';
+import { PageTitle } from '../../../../shared/ui/page-title/page-title';
+import { PageRule } from '../../../../shared/ui/page-rule/page-rule';
 import { EMPTY_VALUE, HOLIDAY_COLUMNS, NOT_FOUND_TEXT } from './holiday-list.model';
 import { HolidayListService } from './holiday-list.service';
-import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
+import { MENU_CODES, MENU_ID_PARAM } from '../../../../core/navigation/menu.model';
 
 /**
  * The Holiday List screen: the holidays of the logged-in user's own branch for the session's financial year, view

@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
 import { historyEpochGuard } from './core/navigation/history-epoch';
 import { menuAccessGuard } from './core/navigation/menu-access.guard';
-import { commonViewNoDashboardGuard } from './features/common-view/common-view.guards';
-import { Shell } from './shell/shell';
+import { commonViewNoDashboardGuard } from './core/common-view/common-view.guards';
+import { Shell } from './core/shell/shell';
 
 export const routes: Routes = [
   // Outside the shell, with the common view below. A logged-in user is sent to the Dashboard.
@@ -16,7 +16,7 @@ export const routes: Routes = [
   // the menu's own route inside the shell, which then shows only the content. No session is needed to open it.
   {
     path: 'view',
-    loadChildren: () => import('./features/common-view/common-view.routes').then((m) => m.COMMON_VIEW_ROUTES),
+    loadChildren: () => import('./core/common-view/common-view.routes').then((m) => m.COMMON_VIEW_ROUTES),
   },
   {
     path: '',
@@ -31,7 +31,7 @@ export const routes: Routes = [
         pathMatch: 'full',
         // The common view has no Dashboard: Back from its screen goes to the previous page instead.
         canActivate: [commonViewNoDashboardGuard],
-        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+        loadComponent: () => import('./core/dashboard/dashboard').then((m) => m.Dashboard),
       },
       {
         path: 'reports/companies',
@@ -72,7 +72,7 @@ export const routes: Routes = [
       {
         // In place of a screen without the view right (the menu access guard keeps the screen's URL).
         path: 'no-access',
-        loadComponent: () => import('./features/no-access/no-access.page').then((m) => m.NoAccessPage),
+        loadComponent: () => import('./core/no-access/no-access.page').then((m) => m.NoAccessPage),
       },
       // Further feature routes are added here as lazy children; a screen with a menu gets the menu access guard
       // (canActivateChild), and its own routes name their menu in data.menuCode.

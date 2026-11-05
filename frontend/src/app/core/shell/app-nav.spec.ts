@@ -3,8 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
-import { MenuModule } from '../core/navigation/menu.model';
-import { TEST_MENU, provideTestMenu } from '../core/navigation/menu.testing';
+import { MenuModule } from '../navigation/menu.model';
+import { TEST_MENU, provideTestMenu } from '../navigation/menu.testing';
 import { AppNav } from './app-nav';
 
 @Component({ template: '' })

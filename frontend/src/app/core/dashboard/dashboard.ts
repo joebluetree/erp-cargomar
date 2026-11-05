@@ -2,8 +2,8 @@ import { Component, inject } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { MenuService } from '../../core/navigation/menu.service';
-import { NAV_ICONS, lookOf } from '../../core/navigation/nav-look';
+import { MenuService } from '../navigation/menu.service';
+import { NAV_ICONS, lookOf } from '../navigation/nav-look';
 import { AppIconTone } from '../../shared/ui/icon-tone/icon-tone';
 import { PageTitle } from '../../shared/ui/page-title/page-title';
 

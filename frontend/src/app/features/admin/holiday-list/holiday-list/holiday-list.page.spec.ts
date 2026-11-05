@@ -6,17 +6,17 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { vi } from 'vitest';
-import { AuthSession, SESSION_STORAGE_KEY } from '../../../core/auth/auth-session';
-import { testSession } from '../../../core/auth/auth-session.testing';
-import { NotificationService } from '../../../core/notifications/notification.service';
+import { AuthSession, SESSION_STORAGE_KEY } from '../../../../core/auth/auth-session';
+import { testSession } from '../../../../core/auth/auth-session.testing';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { Holiday } from './holiday-list.model';
 import { HolidayListPage } from './holiday-list.page';
 import { HolidayListService } from './holiday-list.service';
-import { HolidayUploadDialog } from './holiday-upload.dialog';
+import { HolidayUploadDialog } from '../holiday-upload/holiday-upload.dialog';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { of } from 'rxjs';
-import { MENU_CODES, MenuRights } from '../../../core/navigation/menu.model';
-import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
+import { MENU_CODES, MenuRights } from '../../../../core/navigation/menu.model';
+import { MenuRightsStore } from '../../../../core/navigation/menu-rights.store';
 
 const HOLIDAYS: Holiday[] = [
   { holiday: 'Republic Day', day: 'Monday', date: '26-01-2026' },
