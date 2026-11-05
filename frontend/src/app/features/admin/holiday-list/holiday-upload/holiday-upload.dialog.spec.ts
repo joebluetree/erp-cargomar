@@ -4,8 +4,8 @@ import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { vi } from 'vitest';
-import { httpErrorInterceptor } from '../../../core/errors/http-error.interceptor';
-import { NotificationService } from '../../../core/notifications/notification.service';
+import { httpErrorInterceptor } from '../../../../core/errors/http-error.interceptor';
+import { NotificationService } from '../../../../core/notifications/notification.service';
 import { HolidayUploadDialog, MAX_FILES } from './holiday-upload.dialog';
 
 describe('HolidayUploadDialog', () => {

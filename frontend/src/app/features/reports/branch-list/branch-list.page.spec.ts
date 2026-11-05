@@ -13,8 +13,7 @@ import { testSession } from '../../../core/auth/auth-session.testing';
 import { TableStateStore } from '../../../shared/paging/table-state';
 import { BRANCH_LIST_STATE_KEY, Branch, BranchListState } from './branch-list.model';
 import { BranchListPage } from './branch-list.page';
-import { BranchListSelection } from './branch-list.selection';
-import { BranchListService } from './branch-list.service';
+import { BranchListService, BranchListSelection } from './branch-list.service';
 
 function branch(n: number, extra: Partial<Branch> = {}): Branch {
   const code = `C${String(n).padStart(2, '0')}`;

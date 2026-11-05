@@ -2,9 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { MenuModule } from '../../core/navigation/menu.model';
-import { TEST_MENU, provideTestMenu } from '../../core/navigation/menu.testing';
-import { NAV_LOOK } from '../../core/navigation/nav-look';
+import { MenuModule } from '../navigation/menu.model';
+import { TEST_MENU, provideTestMenu } from '../navigation/menu.testing';
+import { NAV_LOOK } from '../navigation/nav-look';
 import { Dashboard } from './dashboard';
 
 describe('Dashboard', () => {

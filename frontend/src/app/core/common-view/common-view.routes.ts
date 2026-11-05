@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router, Routes } from '@angular/router';
-import { MENU_NOT_AVAILABLE_MESSAGE } from '../admin/login/auto-login.guard';
+import { MENU_NOT_AVAILABLE_MESSAGE } from '../../features/admin/login/auto-login.guard';
 import { COMMON_VIEW_MESSAGE_PATH, COMMON_VIEW_REASON_PARAM, commonViewGuard } from './common-view.guards';
 
 /** The message for a link without a valid APPDETAILS row. */

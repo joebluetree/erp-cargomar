@@ -38,10 +38,9 @@ import {
   SortColumn,
   SortState,
   StatusOption,
+  sortEmployees,
 } from './employee-list.model';
-import { EmployeeListSelection } from './employee-list.selection';
-import { EmployeeListService } from './employee-list.service';
-import { sortEmployees } from './employee-list.table';
+import { EmployeeListSelection, EmployeeListService } from './employee-list.service';
 
 /**
  * The Employee List: the employees of the session's company and branch, current, relieved or both (admin-emp-status),

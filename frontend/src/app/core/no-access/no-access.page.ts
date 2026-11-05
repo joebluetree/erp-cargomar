@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NO_ACCESS_TEXT } from '../../core/navigation/menu.model';
+import { NO_ACCESS_TEXT } from '../navigation/menu.model';
 import { PageTitle } from '../../shared/ui/page-title/page-title';
 
 /** Shown in place of a screen the user has no view right on (admin-user-rights design D5). */

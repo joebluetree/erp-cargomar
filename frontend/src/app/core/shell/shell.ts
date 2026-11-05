@@ -5,15 +5,15 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
-import { AnnouncementStore } from '../core/announcement/announcement.store';
-import { AuthSession } from '../core/auth/auth-session';
-import { ThemeService } from '../core/theme/theme.service';
-import { AppIconTone } from '../shared/ui/icon-tone/icon-tone';
+import { AnnouncementStore } from '../announcement/announcement.store';
+import { AuthSession } from '../auth/auth-session';
+import { ThemeService } from '../theme/theme.service';
+import { AppIconTone } from '../../shared/ui/icon-tone/icon-tone';
 import { AnnouncementBar } from './announcement-bar';
 import { AppNav } from './app-nav';
-import { LoadingService } from '../core/loading/loading.service';
-import { LoadingBar } from '../shared/ui/loading-bar/loading-bar';
-import { LoadingOverlay } from '../shared/ui/loading-overlay/loading-overlay';
+import { LoadingService } from '../loading/loading.service';
+import { LoadingBar } from '../../shared/ui/loading-bar/loading-bar';
+import { LoadingOverlay } from '../../shared/ui/loading-overlay/loading-overlay';
 
 /**
  * The frame around every page: header, sidebar and content area.
@@ -78,7 +78,7 @@ export class Shell {
    * shell does not depend on it statically. The dialog gives the focus back to this button when it closes.
    */
   protected async changeBranch(): Promise<void> {
-    const { ChangeBranchDialog } = await import('../features/admin/change-branch/change-branch.dialog');
+    const { ChangeBranchDialog } = await import('../../features/admin/change-branch/change-branch.dialog');
     // 36rem, so each label fits on the same line as its field. The dialog caps itself at 28rem from `sm` up, so the cap
     // is raised too (the classes are merged); on narrow screens it still stays within the window.
     this.dialogs.open(ChangeBranchDialog, { contentClass: 'w-xl sm:max-w-xl' });

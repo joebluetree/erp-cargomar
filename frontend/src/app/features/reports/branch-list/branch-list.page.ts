@@ -21,10 +21,8 @@ import { TableToolbar } from '../../../shared/ui/table-toolbar/table-toolbar';
 import { TableWrapToggle } from '../../../shared/ui/table-wrap-toggle/table-wrap-toggle';
 import { TableStateStore } from '../../../shared/paging/table-state';
 import { AuthSession } from '../../../core/auth/auth-session';
-import { BRANCH_LIST_STATE_KEY, Branch, BranchListState, COLUMNS, DEFAULT_SORT, SortColumn, SortState } from './branch-list.model';
-import { BranchListSelection } from './branch-list.selection';
-import { BranchListService } from './branch-list.service';
-import { sortBranches } from './branch-list.table';
+import { BRANCH_LIST_STATE_KEY, Branch, BranchListState, COLUMNS, DEFAULT_SORT, SortColumn, SortState, sortBranches } from './branch-list.model';
+import { BranchListService, BranchListSelection } from './branch-list.service';
 import { MENU_CODES, MENU_ID_PARAM } from '../../../core/navigation/menu.model';
 import { MenuRightsStore } from '../../../core/navigation/menu-rights.store';
 

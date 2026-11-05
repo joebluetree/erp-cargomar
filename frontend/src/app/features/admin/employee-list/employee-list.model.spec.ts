@@ -1,5 +1,4 @@
-import { COLUMNS, Employee } from './employee-list.model';
-import { sortEmployees } from './employee-list.table';
+import { COLUMNS, Employee, sortEmployees } from './employee-list.model';
 
 function employee(id: string, name: string | null, extra: Partial<Employee> = {}): Employee {
   return { id, code: id, name, fatherName: null, dateOfBirth: null, address: null, mobile: null, email: null, branch: null, ...extra };
