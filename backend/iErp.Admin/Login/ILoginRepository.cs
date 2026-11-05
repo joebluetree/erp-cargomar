@@ -7,6 +7,12 @@ public interface ILoginRepository
     /// <summary>Users that may log in (not locked, not deleted) with this user code in this company, ignoring case and spaces.</summary>
     Task<IReadOnlyList<User>> FindUsersAsync(string userCode, string companyCode, CancellationToken ct = default);
 
+    /// <summary>
+    /// Users with this user code in this company that are not deleted, locked or not, ignoring case and spaces. The common
+    /// view (admin-common-endpoint) does not check the user's status.
+    /// </summary>
+    Task<IReadOnlyList<User>> FindNotDeletedUsersAsync(string userCode, string companyCode, CancellationToken ct = default);
+
     /// <summary>The not-deleted company (type "C") with this code, ignoring case and spaces.</summary>
     Task<Company?> FindCompanyAsync(string companyCode, CancellationToken ct = default);
 

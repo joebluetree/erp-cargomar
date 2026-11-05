@@ -1,5 +1,12 @@
 <!-- While a backend request runs the application is inert (no focus or keys) and the freeze layer catches clicks. -->
 <div class="flex min-h-screen flex-col" data-slot="app-content" [attr.inert]="loading.busy() ? '' : null">
+  @if (commonView()) {
+    <!-- A common view session (admin-common-endpoint): only the content area, with the loading bar at the top. -->
+    <app-loading-bar class="fixed inset-x-0 top-0 z-10" [active]="loading.busy()" />
+    <main class="page w-full min-w-0 flex-1 p-6">
+      <router-outlet />
+    </main>
+  } @else {
   <!-- The latest announcement, above the header; without one the header is the top line (admin-notify-bar). -->
   @if (announcements.barText(); as text) {
     <app-announcement-bar [text]="text" />
@@ -93,8 +100,10 @@
       <router-outlet />
     </main>
   </div>
+  }
 </div>
 
+@if (!commonView()) {
 <hlm-sheet side="left" [state]="menuOpen() ? 'open' : 'closed'" (stateChanged)="menuOpen.set($event === 'open')">
   <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
@@ -103,5 +112,6 @@
     <app-nav (navigated)="menuOpen.set(false)" />
   </hlm-sheet-content>
 </hlm-sheet>
+}
 
 <app-loading-overlay [active]="loading.busy()" />

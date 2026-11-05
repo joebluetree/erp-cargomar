@@ -44,6 +44,23 @@ public class LoginController(ILoginService service) : ControllerBase
             : Problem(StatusCodes.Status401Unauthorized, AutoLoginResult.FailedMessage);
     }
 
+    /// <summary>
+    /// The session details of the user's APPDETAILS row, without checking login credentials and without a token
+    /// (admin-common-endpoint). The common view then sends the app id with every request (header <c>X-App-Id</c>), and
+    /// the row is checked again each time. Every failure is the one 401 answer "This link is not valid.".
+    /// </summary>
+    [HttpPost("common-view")]
+    [ProducesResponseType<SessionDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CommonView([FromBody] AutoLoginRequest request, CancellationToken ct)
+    {
+        var identity = await service.ResolveCommonViewAsync(request.AppId!, ct);
+        return identity is not null
+            ? Ok(identity.Session)
+            : Problem(StatusCodes.Status401Unauthorized, AutoLoginResult.CommonViewFailedMessage);
+    }
+
     private ObjectResult Problem(int status, string title) =>
         new(ApiProblem.Create(HttpContext, status, title)) { StatusCode = status };
 }

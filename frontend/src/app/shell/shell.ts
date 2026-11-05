@@ -38,6 +38,12 @@ export class Shell {
   /** The latest announcement, for the bar above the header. */
   protected readonly announcements = inject(AnnouncementStore);
 
+  /**
+   * True for a session started by the common view (admin-common-endpoint design D3): only the content area is shown,
+   * with no announcement bar, header, sidebar or menu.
+   */
+  protected readonly commonView = computed(() => this.auth.session()?.commonView === true);
+
   /** The header's main title: the logged-in company, or the fixed name when there is no session. */
   protected readonly title = computed(() => this.auth.details()?.company || 'Cargomar Pvt Ltd');
 

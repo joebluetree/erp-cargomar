@@ -13,4 +13,7 @@ public enum AutoLoginOutcome
 public record AutoLoginResult(AutoLoginOutcome Outcome, LoginResponse? Response = null)
 {
     public const string FailedMessage = "Automatic login failed. Please log in.";
+
+    /// <summary>The one answer of a failed common view login (admin-common-endpoint).</summary>
+    public const string CommonViewFailedMessage = "This link is not valid.";
 }

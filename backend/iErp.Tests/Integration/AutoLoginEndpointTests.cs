@@ -33,6 +33,14 @@ public class AutoLoginEndpointTests
         switchable.FindYearAsync("CMP", "y-1", Arg.Any<CancellationToken>())
             .Returns(new FinancialYear { Id = "y-1", Code = 2024, Name = "2024-2025", CompanyCode = "CMP" });
 
+        // The common view's lookups: the user locked or not, and the branch and year of the company (no allotment).
+        repository.FindNotDeletedUsersAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(
+            [new User { Id = "u-1", Code = "U01", Name = "ADMIN", Password = Lib.Encrypt(Password), CompanyCode = "CMP", BranchId = "b-1" }]);
+        switchable.FindCompanyBranchAsync("c-1", "b-2", Arg.Any<CancellationToken>())
+            .Returns(new Company { Id = "b-2", Type = "B", ParentId = "c-1", Name = "Chennai" });
+        switchable.FindCompanyYearAsync("CMP", "y-1", Arg.Any<CancellationToken>())
+            .Returns(new FinancialYear { Id = "y-1", Code = 2024, Name = "2024-2025", CompanyCode = "CMP" });
+
         var client = new ApiFactory().WithWebHostBuilder(b => b.ConfigureServices(s =>
         {
             s.AddScoped(_ => repository);
@@ -116,6 +124,73 @@ public class AutoLoginEndpointTests
         var response = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), "/api/admin/login/auto"));
 
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
+        await repository.DidNotReceiveWithAnyArgs().FindAppDetailsAsync(default!, default);
+    }
+
+    // ---- POST /api/admin/login/common-view (admin-common-endpoint design D1) ----
+
+    private static Task<HttpResponseMessage> PostCommonViewAsync(HttpClient client, object body) =>
+        client.PostAsJsonAsync("/api/admin/login/common-view", body);
+
+    [Fact]
+    public async Task Common_view_returns_the_row_s_session_details_without_a_token()
+    {
+        var (client, repository) = ClientWith();
+
+        var response = await PostCommonViewAsync(client, new { appId = AppId });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Chennai", body.GetProperty("branchName").GetString());
+        Assert.Equal("y-1", body.GetProperty("yearId").GetString());
+        // No login: no token is issued, and the users that may log in are not asked for.
+        Assert.False(body.TryGetProperty("token", out _));
+        await repository.DidNotReceiveWithAnyArgs().FindUsersAsync(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task A_request_with_the_app_id_header_runs_as_the_row_s_user_branch_and_year_and_is_checked_every_time()
+    {
+        var (client, repository) = ClientWith();
+        client.DefaultRequestHeaders.Add("X-App-Id", AppId);
+
+        var first = await client.GetFromJsonAsync<JsonElement>("/test-endpoints/session");
+        await client.GetFromJsonAsync<JsonElement>("/test-endpoints/session");
+
+        Assert.Equal("b-2", first.GetProperty("branchId").GetString());
+        await repository.Received(2).FindAppDetailsAsync(AppId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task A_request_with_the_app_id_of_a_logged_out_row_returns_401()
+    {
+        var (client, _) = ClientWith(loggedOut: "Y");
+        client.DefaultRequestHeaders.Add("X-App-Id", AppId);
+
+        var body = await ProblemAsync(await client.GetAsync("/test-endpoints/session"), HttpStatusCode.Unauthorized);
+
+        Assert.Equal("Authentication is required.", body.GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task Common_view_answers_an_unknown_id_and_a_logged_out_row_with_the_same_401_problem()
+    {
+        foreach (var client in new[] { ClientWith(known: false).Client, ClientWith(loggedOut: "Y").Client })
+        {
+            var body = await ProblemAsync(await PostCommonViewAsync(client, new { appId = AppId }), HttpStatusCode.Unauthorized);
+            Assert.Equal("This link is not valid.", body.GetProperty("title").GetString());
+            Assert.False(body.TryGetProperty("token", out _));
+        }
+    }
+
+    [Fact]
+    public async Task Common_view_with_a_missing_app_id_returns_400_and_reads_nothing()
+    {
+        var (client, repository) = ClientWith();
+
+        var body = await ProblemAsync(await PostCommonViewAsync(client, new { appId = " " }), HttpStatusCode.BadRequest);
+
+        Assert.Equal("App id is required.", body.GetProperty("errors").GetProperty("AppId")[0].GetString());
         await repository.DidNotReceiveWithAnyArgs().FindAppDetailsAsync(default!, default);
     }
 }

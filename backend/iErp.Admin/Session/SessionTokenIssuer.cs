@@ -31,8 +31,11 @@ public class SessionTokenIssuer(IOptions<JwtOptions> jwtOptions, TimeProvider ti
         return new JsonWebTokenHandler().CreateToken(descriptor);
     }
 
-    /// <summary>The session claims; the employee claim only when the user has an employee (design D3).</summary>
-    private static List<Claim> Claims(string userId, SessionDto session)
+    /// <summary>
+    /// The session claims; the employee claim only when the user has an employee (design D3). The common view's app id
+    /// authentication (admin-common-endpoint) gives a request the same claims, so every service reads it the same way.
+    /// </summary>
+    public static List<Claim> Claims(string userId, SessionDto session)
     {
         List<Claim> claims =
         [
