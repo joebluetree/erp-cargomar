@@ -12,14 +12,21 @@ export const LOGIN_REQUEST = new HttpContextToken<boolean>(() => false);
 
 export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please log in again.';
 
-/** Adds the session's token to every API request while a session exists. Runs after `apiBaseUrlInterceptor`. */
+/** The header that carries the common view's APPDETAILS id in place of a token (admin-common-endpoint). */
+export const APP_ID_HEADER = 'X-App-Id';
+
+/**
+ * Adds the session's token to every API request while a session exists. Runs after `apiBaseUrlInterceptor`. The common
+ * view has no token: it sends its APPDETAILS id instead, which the backend checks on every request.
+ */
 export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = inject(AuthSession).session()?.token;
+  const session = inject(AuthSession).session();
   const base = inject(API_BASE_URL).replace(/\/+$/, '');
-  if (!token || req.context.get(LOGIN_REQUEST) || !req.url.startsWith(`${base}/`)) {
+  if (!session || req.context.get(LOGIN_REQUEST) || !req.url.startsWith(`${base}/`)) {
     return next(req);
   }
-  return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
+  if (session.appId) return next(req.clone({ setHeaders: { [APP_ID_HEADER]: session.appId } }));
+  return session.token ? next(req.clone({ setHeaders: { Authorization: `Bearer ${session.token}` } })) : next(req);
 };
 
 /**
@@ -35,6 +42,13 @@ export const sessionExpiryInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && error.status === 401 && !req.context.get(LOGIN_REQUEST)) {
         req.context.set(SKIP_ERROR_NOTIFICATION, true);
+        // The common view's APPDETAILS row is no longer valid (for example the old system logged it out): it has no
+        // login screen to go to, so it shows only "This link is not valid." (admin-common-endpoint).
+        if (auth.session()?.appId) {
+          auth.end();
+          void router.navigateByUrl('/view/unavailable?reason=link');
+          return throwError(() => error);
+        }
         if (auth.isLoggedIn()) {
           auth.end();
           notifications.warn(SESSION_EXPIRED_MESSAGE);

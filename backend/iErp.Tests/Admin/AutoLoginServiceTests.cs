@@ -245,4 +245,97 @@ public class AutoLoginServiceTests
         Assert.NotEmpty(logged);
         Assert.DoesNotContain(logged, m => m.Contains(AppId) || m.Contains(StoredPassword) || m.Contains("wrong-pass", StringComparison.OrdinalIgnoreCase));
     }
+
+    // ---- The common view (admin-common-endpoint design D1): who a request is for, with no credential check ----
+
+    /// <summary>
+    /// The common view's setup: the user found locked or not (none when <paramref name="users"/> is empty), branch b-2
+    /// and year y-1 of the company. Nothing is allotted: the common view does not ask for the user's branches or years.
+    /// </summary>
+    private static Setup CommonViewWith(AppDetail[]? rows = null, User[]? users = null)
+    {
+        var setup = ServiceWith(rows: rows);
+        setup.Repository.FindNotDeletedUsersAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(users ?? [Admin()]);
+        setup.Switchable.FindCompanyBranchAsync("c-1", "b-2", Arg.Any<CancellationToken>()).Returns(Chennai);
+        return setup;
+    }
+
+    private static Task<CommonViewIdentity?> CommonViewLogin(Setup setup, string appId = AppId) =>
+        setup.Service.ResolveCommonViewAsync(appId);
+
+    [Fact]
+    public async Task Common_view_is_the_row_s_user_company_branch_and_year()
+    {
+        var setup = CommonViewWith(rows: [Row(loggedOut: " n ")]);
+
+        var result = await CommonViewLogin(setup, "  " + AppId + "  ");
+
+        Assert.Equal(
+            new CommonViewIdentity("u-1",
+                new SessionDto("U01", "ADMIN", "c-1", "CMP", "Cargomar Pvt Ltd", "b-2", "Chennai", "y-1", "2024", "2024-2025", "e-1")),
+            result);
+        await setup.Repository.Received(1).FindAppDetailsAsync(AppId, Arg.Any<CancellationToken>());
+        await setup.Repository.Received(1).FindNotDeletedUsersAsync("U01", "CMP", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Common_view_checks_no_password_no_lock_and_no_allotted_branch_or_year()
+    {
+        var locked = Admin();
+        locked.Locked = "Y";
+        var setup = CommonViewWith(rows: [Row(password: "WRONG")], users: [locked]);
+
+        var result = await CommonViewLogin(setup);
+
+        Assert.NotNull(result);
+        await setup.Repository.DidNotReceiveWithAnyArgs().FindUsersAsync(default!, default!, default);
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindBranchAsync(default!, default!, default!, default);
+        await setup.Switchable.DidNotReceiveWithAnyArgs().FindYearAsync(default!, default!, default);
+    }
+
+    public static TheoryData<string, Func<Setup>> CommonViewFailures => new()
+    {
+        { "unknown id", () => CommonViewWith(rows: []) },
+        { "two rows", () => CommonViewWith(rows: [Row(), Row()]) },
+        { "logged out", () => CommonViewWith(rows: [Row(loggedOut: "Y")]) },
+        { "logged out empty", () => CommonViewWith(rows: [Row(loggedOut: null)]) },
+        { "no branch", () => CommonViewWith(rows: [Row(branchId: " ")]) },
+        { "no year", () => CommonViewWith(rows: [Row(yearId: null)]) },
+        { "no user code", () => CommonViewWith(rows: [new AppDetail { Id = AppId, UserCode = " ", CompanyCode = "CMP", BranchId = "b-2", YearId = "y-1", LoggedOut = "N" }]) },
+        { "unknown or deleted user", () => CommonViewWith(users: []) },
+        { "branch of another company", () => CommonViewWith(rows: [Row(branchId: "b-other")]) },
+        { "year of another company", () => CommonViewWith(rows: [Row(yearId: "y-other")]) },
+    };
+
+    [Theory]
+    [MemberData(nameof(CommonViewFailures))]
+    public async Task Every_common_view_failure_is_null(string reason, Func<Setup> setup)
+    {
+        var result = await CommonViewLogin(setup());
+
+        Assert.True(result is null, reason);
+    }
+
+    [Fact]
+    public async Task Common_view_with_an_unknown_company_fails()
+    {
+        var setup = CommonViewWith();
+        setup.Repository.FindCompanyAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((Company?)null);
+
+        Assert.Null(await CommonViewLogin(setup));
+    }
+
+    [Fact]
+    public async Task Common_view_never_logs_the_app_id_or_the_password()
+    {
+        var logged = new List<string>();
+        foreach (var setup in new[] { CommonViewWith(rows: []), CommonViewWith(rows: [Row(loggedOut: "Y")]), CommonViewWith(rows: [Row(yearId: "y-9")]) })
+        {
+            await CommonViewLogin(setup);
+            logged.AddRange(setup.Logger.Messages);
+        }
+
+        Assert.NotEmpty(logged);
+        Assert.DoesNotContain(logged, m => m.Contains(AppId) || m.Contains(StoredPassword));
+    }
 }

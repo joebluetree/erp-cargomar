@@ -116,6 +116,51 @@ public class LoginService(
         return new AutoLoginResult(AutoLoginOutcome.Success, Issue(user, company, branch, year));
     }
 
+    /// <summary>
+    /// Who a common view request is for (admin-common-endpoint design D1): the user, company, branch and year of the
+    /// user's APPDETAILS row, only while its USER_LOGGED_OUT is "N". It logs nobody in and issues no token; it is read
+    /// again for every request. Unlike the automatic login, it checks no login credentials: not the password, not the
+    /// user's lock, and not the branches or years the user may switch to. The branch and the year must only belong to
+    /// the company. Every failure is null; the reason is logged without the app id.
+    /// </summary>
+    public async Task<CommonViewIdentity?> ResolveCommonViewAsync(string appId, CancellationToken ct = default)
+    {
+        var rows = await repository.FindAppDetailsAsync(appId.Trim(), ct);
+        if (rows.Count != 1)
+            return CommonViewFailed($"{rows.Count} login details rows for the app id");
+
+        var row = rows[0];
+        var userCode = row.UserCode?.Trim() ?? "";
+        var companyCode = row.CompanyCode?.Trim() ?? "";
+        var branchId = row.BranchId?.Trim() ?? "";
+        var yearId = row.YearId?.Trim() ?? "";
+        if (!string.Equals(row.LoggedOut?.Trim(), "N", StringComparison.OrdinalIgnoreCase))
+            return CommonViewFailed("logged out", userCode, companyCode);
+        if (userCode.Length == 0 || companyCode.Length == 0 || branchId.Length == 0 || yearId.Length == 0)
+            return CommonViewFailed("incomplete login details", userCode, companyCode);
+
+        var company = await repository.FindCompanyAsync(companyCode, ct);
+        var users = company is null ? [] : await repository.FindNotDeletedUsersAsync(userCode, companyCode, ct);
+        if (company is null || users.Count != 1)
+            return CommonViewFailed("unknown user or company", userCode, companyCode);
+
+        var branch = await switchable.FindCompanyBranchAsync(company.Id, branchId, ct);
+        if (branch is null)
+            return CommonViewFailed("branch not of the company", userCode, companyCode);
+
+        var year = await switchable.FindCompanyYearAsync(company.Code ?? "", yearId, ct);
+        if (year is null)
+            return CommonViewFailed("year not of the company", userCode, companyCode);
+
+        return new CommonViewIdentity(users[0].Id, SessionOf(users[0], company, branch, year));
+    }
+
+    private CommonViewIdentity? CommonViewFailed(string reason, string userCode = "", string companyCode = "")
+    {
+        logger.LogWarning("Common view refused for user {UserCode} of company {CompanyCode}: {Reason}", userCode, companyCode, reason);
+        return null;
+    }
+
     private static AutoLoginResult Failed() => new(AutoLoginOutcome.Failed);
 
     /// <summary>The user and the company when the credentials are right, else null. Both logins use it.</summary>
@@ -142,14 +187,16 @@ public class LoginService(
         return branch is null || branch.ParentId != company.Id ? null : branch;
     }
 
+    private static SessionDto SessionOf(User user, Company company, Company branch, FinancialYear year) => new(
+        user.Code ?? "", user.Name ?? "",
+        company.Id, company.Code ?? "", company.Name ?? "",
+        branch.Id, branch.Name ?? "",
+        year.Id, year.Code?.ToString(CultureInfo.InvariantCulture) ?? "", year.Name ?? "",
+        SessionDto.CleanEmployeeId(user.EmployeeId));
+
     private LoginResponse Issue(User user, Company company, Company branch, FinancialYear year)
     {
-        var session = new SessionDto(
-            user.Code ?? "", user.Name ?? "",
-            company.Id, company.Code ?? "", company.Name ?? "",
-            branch.Id, branch.Name ?? "",
-            year.Id, year.Code?.ToString(CultureInfo.InvariantCulture) ?? "", year.Name ?? "",
-            SessionDto.CleanEmployeeId(user.EmployeeId));
+        var session = SessionOf(user, company, branch, year);
         var expiresAt = time.GetUtcNow().AddMinutes(jwtOptions.Value.LifetimeMinutes);
         var token = tokens.Issue(user.Id, session, expiresAt);
         return new LoginResponse(token, expiresAt, session);

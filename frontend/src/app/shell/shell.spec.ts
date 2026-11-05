@@ -85,6 +85,33 @@ describe('Shell', () => {
     expect([content.hasAttribute('inert'), freeze()]).toEqual([false, null]);
   });
 
+  describe('common view session (admin-common-endpoint)', () => {
+    it('shows only the routed page: no announcement bar, header, sidebar or menu button', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession({ commonView: true })));
+
+      const { harness, el } = await render();
+      await settle(harness);
+
+      expect(el.querySelector('main #page-body')?.textContent).toBe('Page body');
+      expect(el.querySelector('header, aside, app-nav, app-announcement-bar')).toBeNull();
+      expect(el.querySelector('button[aria-label="Open menu"], button[aria-label="Log out"]')).toBeNull();
+      expect(drawerNav()).toBeNull();
+      // The loading bar and the busy freeze stay.
+      expect(el.querySelector('app-loading-bar')).not.toBeNull();
+    });
+
+    it('shows the full shell again when a normal session replaces it', async () => {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(testSession({ commonView: true })));
+      const { harness, el } = await render();
+
+      TestBed.inject(AuthSession).start(testSession());
+      await settle(harness);
+
+      expect(el.querySelector('header')).not.toBeNull();
+      expect(el.querySelector('aside app-nav')).not.toBeNull();
+    });
+  });
+
   it('shows the header with the app name, the sidebar menu and the routed page', async () => {
     const { el } = await render();
 

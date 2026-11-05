@@ -1,5 +1,6 @@
-import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { isApiError } from '../errors/api-error';
 import { CanActivateChildFn, RedirectCommand, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { SKIP_ERROR_NOTIFICATION } from '../errors/http-error.interceptor';
@@ -38,7 +39,10 @@ export const menuAccessGuard: CanActivateChildFn = async (route, state) => {
     const rights = await firstValueFrom(http.get<MenuCodeRights[]>('admin/menu/rights', { params, context }));
     rights.forEach(({ code: c, ...r }) => store.set(c, r));
     return rights.find((r) => r.code === code)?.view === true ? true : denied;
-  } catch {
-    return denied;
+  } catch (error) {
+    // A 401 means the session (or the common view's link) is no longer valid: the session expiry interceptor has
+    // already ended it and is opening the login screen (or the common view's message), so this navigation just stops.
+    const status = isApiError(error) || error instanceof HttpErrorResponse ? error.status : 0;
+    return status === 401 ? false : denied;
   }
 };

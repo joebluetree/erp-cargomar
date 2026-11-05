@@ -18,6 +18,16 @@ export interface Session {
   yearName: string;
   /** The user's employee (`USERM.USER_EMP_ID`); null when the user has none. Not shown on screen. */
   employeeId: string | null;
+  /**
+   * True for the common view (`/view?appid=…&menuid=…`, admin-common-endpoint): the Shell then shows only the content
+   * area. Absent for a normal or automatic login.
+   */
+  commonView?: boolean;
+  /**
+   * The common view's APPDETAILS id. Nobody is logged in and there is no token (`token` is empty): every request sends
+   * this id instead, and the backend checks its row each time. It does not expire on its own.
+   */
+  appId?: string;
 }
 
 export const SESSION_STORAGE_KEY = 'ierp-session';
@@ -120,6 +130,8 @@ export class AuthSession {
 }
 
 function isExpired(session: Session): boolean {
+  // The common view has no token to expire: the backend checks its APPDETAILS row on every request instead.
+  if (session.appId) return false;
   const expiresAt = Date.parse(session.expiresAt);
   return Number.isNaN(expiresAt) || expiresAt <= Date.now();
 }

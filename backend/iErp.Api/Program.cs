@@ -8,7 +8,9 @@ using iErp.Data;
 using iErp.ModuleTemplate;
 using iErp.Reports;
 using iErp.Shared.Auth;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -42,9 +44,16 @@ builder.Services.AddOptions<JwtOptions>()
 builder.Services.AddOptions<EmployeeImagesOptions>().Bind(builder.Configuration.GetSection(EmployeeImagesOptions.SectionName));
 // Branch holiday files: the folder is set in appsettings.json (HolidayLists:Folder) and may be changed without a code change.
 builder.Services.AddOptions<HolidayListsOptions>().Bind(builder.Configuration.GetSection(HolidayListsOptions.SectionName));
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+// The common view (admin-common-endpoint) authenticates with the APPDETAILS app id (header X-App-Id) instead of a token;
+// every protected endpoint accepts either.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer()
+    .AddScheme<AuthenticationSchemeOptions, AppIdAuthenticationHandler>(AppIdAuthenticationHandler.SchemeName, null);
 builder.Services.ConfigureOptions<ConfigureJwtBearer>();
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(o => o.DefaultPolicy =
+    new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme, AppIdAuthenticationHandler.SchemeName)
+        .RequireAuthenticatedUser()
+        .Build());
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentSession, HttpCurrentSession>();
 

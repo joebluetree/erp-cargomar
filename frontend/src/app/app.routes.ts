@@ -2,14 +2,21 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
 import { historyEpochGuard } from './core/navigation/history-epoch';
 import { menuAccessGuard } from './core/navigation/menu-access.guard';
+import { commonViewNoDashboardGuard } from './features/common-view/common-view.guards';
 import { Shell } from './shell/shell';
 
 export const routes: Routes = [
-  // The only screen outside the shell. A logged-in user is sent to the Dashboard.
+  // Outside the shell, with the common view below. A logged-in user is sent to the Dashboard.
   {
     path: 'login',
     canMatch: [guestGuard],
     loadChildren: () => import('./features/admin/login/login.routes').then((m) => m.LOGIN_ROUTES),
+  },
+  // The common view (admin-common-endpoint): `/view?appid=…&menuid=…` starts a session from the APPDETAILS row and opens
+  // the menu's own route inside the shell, which then shows only the content. No session is needed to open it.
+  {
+    path: 'view',
+    loadChildren: () => import('./features/common-view/common-view.routes').then((m) => m.COMMON_VIEW_ROUTES),
   },
   {
     path: '',
@@ -22,6 +29,8 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
+        // The common view has no Dashboard: Back from its screen goes to the previous page instead.
+        canActivate: [commonViewNoDashboardGuard],
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
       {

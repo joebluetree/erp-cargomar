@@ -21,6 +21,16 @@ public class LoginRepository(AppDbContext db) : ILoginRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<User>> FindNotDeletedUsersAsync(string userCode, string companyCode, CancellationToken ct = default)
+    {
+        var user = userCode.Trim().ToUpperInvariant();
+        var code = companyCode.Trim().ToUpperInvariant();
+        return await db.Set<User>().AsNoTracking()
+            .Where(u => u.Code!.Trim().ToUpper() == user && u.CompanyCode!.Trim().ToUpper() == code)
+            .Where(u => u.Deleted != "Y" && u.DeletedDate == null)
+            .ToListAsync(ct);
+    }
+
     public Task<Company?> FindCompanyAsync(string companyCode, CancellationToken ct = default)
     {
         var code = companyCode.Trim().ToUpperInvariant();
